@@ -1,0 +1,37 @@
+h1 {
+   color: #4c493a;
+   font-family: Verdana, Arial, Helvetica;
+   text-align: center;
+}
+h2 {
+   color: #4c493a;
+   font-family: Verdana, Arial, Helvetica;
+}
+a.tab {
+   color: #945545;
+   text-decoration: none;
+   font-weight: bold;
+   font-family: Verdana, Arial, Helvetica;
+}
+a.tab:active {
+   color: #b67767;
+}
+a.menu {
+   color: #8B6D00;
+   text-decoration: none;
+   font-weight: bold;
+   font-family: Verdana, Arial, Helvetica;
+}
+a.menu:active {
+   color: #b67767;
+}
+a.menu-dcho {
+   color: #554433;
+   text-decoration: none;
+   font-size: small;
+   font-weight: bold;
+   font-family: Verdana, Arial, Helvetica;
+}
+a.menu-dcho:active {
+   color: #b67767;
+}

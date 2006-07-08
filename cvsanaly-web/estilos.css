@@ -1,0 +1,14 @@
+a:link { color: #633; }
+a:visited { color: #636; }
+a:active { color: #933; }
+a:hover { text-decoration: none; }
+td { font: 12px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; }
+dt { font: 11px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; font-weight: bolder; margin-left: 20px; margin-top: 8px; text-align: justify; }
+dd { font: 11px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; margin-left: 40px; text-align: justify; }
+p { font: 12px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; margin-left: 11px; margin-right: 10px; text-align:justify; }
+.cabecera { font: 24px "Times New Roman", Times, "Times NR", Georgia, Palatino, serif; color: #663; text-align: center; padding-top: 8px; text-decoration: none; }
+.subcabecera { font: 14px "Times New Roman", Times, "Times NR", Georgia, Palatino, serif; color: #663; margin-left: 16px; }
+.none { font: 12px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; }
+.normal { font: 12px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; margin-left: 11px; margin-right: 10px; text-align:justify; }
+.menu { font: 15px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; padding-left: 25px;  padding-bottom: 4px; }
+.submenu { font: 12px Arial, "Arial MT", Geneva, Verdana, "MS Sans Serif", sans-serif; padding-left: 45px; padding-bottom: 4px; }

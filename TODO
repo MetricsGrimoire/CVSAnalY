@@ -1,0 +1,10 @@
+TODO
+====
+
+[X] number of files quite different from previous version
+[X] use argv instead of annoying config file
+[ ] Basic tables should be only three: files, log and commiter (jgb)
+[ ] cvsanal_temp_commiters takes long time when high number of modules :-(
+[ ] cvsanaly commiters/module bug
+[ ] add graphs
+[ ] checkout?

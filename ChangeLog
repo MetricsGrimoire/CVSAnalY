@@ -1,0 +1,169 @@
+2006-06-23  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+
+	* intermediate.py: intermediate tables algorithm
+	* modrequest.py: new file added
+	* cvsanaly-web: web engine added
+
+2006-06-20  Alvaro Navarro 	<anavarro@gsyc.escet.urjc.es>
+
+	* new version from scratch
+	* INSTALL: new file added
+	* pycvsanaly: renamed directory
+	* wizard.py: removed automatic creating of database
+	* file.py: new class that stores file info
+	* commiter.py: new class that stores commiters
+	* commit.py: new class that stores commit log
+	* directory.py: new class that stores directories (now modules)
+	* database.py: SQL wrapper
+	* connection.py: framework in order to create connections
+	* tables.py: dictionary format for tables
+
+2005-09-15 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* db.py, cvsanal_log, cvsanal_file_log2sql: fixed bug. modules with
+	blank space crashed mysql_server.
+
+2005-07-26 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_file_svn2file: first svn beta support
+
+2005-07-24 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_file_svn2file: new functions to add commiters and
+	commiters_module. New fixed Bugs.
+	* cvsanal_module_log2sql: fully implementation of SVN functions
+
+2005-07-21 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_tree: new improves
+	* cvsanal_file_svn2file: directories, files, commiter_module and
+	commiters working
+
+2005-07-18 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_tree: fixed bugs in father_id
+	* cvsanal_file_svn2file: now we have to call 'tree2mysql' without name
+	arguemt.
+
+2005-07-18 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_tree:	new implementation for directories.
+	* cvsanal_file_svn2file: new improves in files/directories
+
+2005-07-04 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_file_svn2file: directories and files working with svn
+
+2005-07-03 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_file_svn2file: authors, commiters_module, modules works
+
+2005-06-02 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_graph_pie:	commiter_name in pie graph bug fixed.
+
+2005-06-01 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_file_svn2file: first integration to svn
+
+2005-05-17 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_stats: general stats added to cvsanaly
+
+2005-05-13 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* polygini.pl: polygini script added
+	* cvsanal_graphs_inequality: now it works fine
+	* cvsanal_stats: general stats showed at the end of the process
+
+2005-05-12 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanaly.py: step flag added
+	* cvsanal_utils.py: checkdirectory added
+	* cvsanal_*: be sure that directories are initialized
+	* cvsanaly_wizard: new improves
+
+2005-05-03 Gregorio Robles	<grex@gsyc.escet.urjc.es>
+
+	* cvsanal_temp_archaeology: statistical data about the `age' of
+	  the files in the repository
+	  (command line tool. Not yet integrated into cvsanaly.py!)
+	* cvsanal_temp_lifetime: statistical data about the life time of
+	  the files in the repository
+	  (command line tool. Not yet integrated into cvsanaly.py!)
+	* cvsanal_temp_evolution: software evolution analysis based on
+	  modules (files) in the repository
+	  (command line tool. Not yet integrated into cvsanaly.py!)
+
+2005-05-01 Gregorio Robles	<grex@gsyc.escet.urjc.es>
+
+	* cvsanal_temp_modrequest: statistical data for modification requests
+	  command line tool. Not yet integrated into cvsanaly.py!
+
+2005-04-29 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_graph_evolution: fixed bug with module_id/commiter_id
+	* db.py: first_commiter_date function fixed
+
+2005-04-28 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_plugin_graphs/*: commiter_id fixed bugs
+
+2005-04-26 Gregorio Robles	<grex@gsyc.escet.urjc.es>
+
+	* cvsanaly_modules_db_newstructure: creates SQL directory if it
+	  does not exist
+	* plugin_commiters_time/cvsanal_commiters_time: efficient queries
+	  although now it does not discriminate by modules
+
+2005-04-26 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_temp_modrequest: new file added
+
+2005-04-25 Gregorio Robles	<grex@gsyc.escet.urjc.es>
+
+	* cvsanaly: modification requests should be computed before the
+	  intermediate tables (so that we can extract info from it)
+
+2005-04-25 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_log_cvs2sql: file_id in revision 1.1 bug fixed!
+
+2005-04-25 Gregorio Robles	<grex@gsyc.escet.urjc.es>
+
+	* csvanal_file_cvs2sql: we insert fileType id instead of content. This
+	  change should make database queries more efficient
+	* cvsanal_modules_mewdbstructure: fileType type changed from char(16) to
+	  int(2). Now it is a FK linked with the PK of the cvsanal_fileType table.
+	* cvsanal_intermediate_db_tables: fileType type changes (see above)
+	  Also enhanced some queries for temp_modules and temp_commiters
+	* cvsanal_remove_aggregated_modules: exception included so that it doesn't
+	  stop when CVSROOT has not been included
+	* cvsanal_log: creates log directory if it does not exist
+	* cvsanal_sendingMail: typo fixed
+
+2005-04-19 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_graphs_pie: added new graphs
+	* csvanal_intermediate_db_tables: commiters_temp fixed
+
+2005-04-15 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanal_libnsdm: Binary operator added
+	* cvsanal_file_cvs2sql:. small enhancements
+	* cvsanal_intermediate_db_tables: new primary key (varchar) in temp
+	commiters.
+
+2005-04-15 Gregorio Robles	<grex@gsyc.escet.urjc.es>
+
+	* csvanal_modrequest: Modification requests implemented
+	* cvsanaly.py: Call to modification request
+	* ChangeLog: created this changelog
+
+2005-04-12 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* cvsanaly_wizard.py: small enhancements
+
+2005-04-09 Alvaro Navarro	<anavarro@gsyc.escet.urjc.es>
+
+	* First public CVSAnalY version
