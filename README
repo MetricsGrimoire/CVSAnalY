@@ -1,6 +1,6 @@
 Requirements
 ------------
-carnarvon needs the following dependencies:
+CVSAnalY needs the following dependencies:
 
     * cvs
     * subversion
@@ -44,7 +44,7 @@ enjoy,
 
 	Gregorio Robles
 	Alvaro Navarro
-	 {grex,anavarro} arroba gsyc.escet.urjc.es
+	 {grex,anavarro} at gsyc.escet.urjc.es
 
 http://libresoft.urjc.es
 Libre Software Engineering
