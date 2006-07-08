@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Copyright (C) 2006 Alvaro Navarro Clemente
 #
 # This program is free software; you can redistribute it and/or modify
