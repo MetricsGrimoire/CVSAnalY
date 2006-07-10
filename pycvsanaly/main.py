@@ -35,7 +35,6 @@ import getopt
 
 
 import database as dbmodule
-import parserconfig as parsermodule
 import repository as rpmodule
 
 from tables import *
@@ -88,7 +87,7 @@ def main():
     password = args[1]
     database = args[2]
     hostname = args[3]
-    type = "cvs"
+    type = "svn"
     logfile = ""
 
     for o, a in opts:
@@ -124,7 +123,7 @@ def main():
 
     # CVS/SVN interactive
     repos = rpmodule.RepositoryFactory.create(type)
-    repos.log(db,logfile)
+    repos.log(db, logfile)
 
     # This should go in a new cvsanaly-web script
     intmodule.intermediate_table_commiters(db)

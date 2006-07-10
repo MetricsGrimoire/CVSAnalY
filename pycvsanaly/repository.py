@@ -197,7 +197,7 @@ class RepositoryCVS(Repository):
     def __init__(self):
         pass
 
-    def log(self,db, logfile=''):
+    def log(self, db, logfile=''):
 
         if logfile:
             linelog = open(logfile,'r')
@@ -213,7 +213,6 @@ class RepositoryCVS(Repository):
         minus = ''
         sum_plus = 0
         sum_minus = 0
-        isbinary = 0
         inAttic = 0
         isbinary =0
         cvs_flag= 0
@@ -440,10 +439,110 @@ class RepositorySVN(Repository):
     def __init__(self):
         pass
 
-    def checkout(self):
-        """
-        SVN Checkout
-        """
-        os.chdir(self.src_dir);
+    def _getNextLine(self, logfile, linelog):
+        
+        if logfile:
+            line = linelog.readline()
+        else:
+            line = linelog[1].readline()
 
-        os.system('svn co --revision {' + str(self.date) + '} ' +  self.repository)
+#            print "Line:", line[:-1]
+        return line
+
+
+    def log(self, db, logfile=''):
+        """
+
+        """
+
+        if logfile:
+            linelog = open(logfile, 'r')
+        else:
+            linelog = os.popen3 ('/usr/bin/svn --verbose log .')
+
+        filename = ''
+        dirname = ''
+        commitername = ''
+        modificationdate = ''
+        revision = ''
+        linesComment = ''
+# Plus and minus are not available on SVN
+#        plus = ''
+#        minus = ''
+#        sum_plus = 0
+#        sum_minus = 0
+
+# We don't use these variables yet!
+        isbinary = 0
+        inAttic = 0
+        cvs_flag= 0
+        newcommit = 0
+        external = 0
+        checkin= 0
+
+        logtxt_flag = 0
+
+        authors = {}
+        modulecommiters = {}
+        actualcommiters = []
+        commits = []
+
+        f = None
+        c = None
+
+        mtree = tree(0)
+
+        while 1:
+            line = self._getNextLine(logfile, linelog)
+            if not line:
+                break
+            else:
+                line = line[:-1]
+                pattern0 = re.compile("^r(\d*) \| (.*) \| (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d) ([+-]\d\d\d\d) \(.*\) \| (.*) line")
+
+                mobj0 = pattern0.match(line)
+                if mobj0:
+                    revision     = mobj0.group(1)
+                    commitername = mobj0.group(2)
+                    year         = mobj0.group(3)
+                    month        = mobj0.group(4)
+                    day          = mobj0.group(5)
+                    rest_date    = mobj0.group(6)
+                    timezone     = mobj0.group(7)
+                    linesComment = mobj0.group(8)
+
+                    print revision, commitername, year, month, day, rest_date, timezone, linesComment
+
+                    ######
+                    # Let's look at affected files
+
+                    # First line: throw it away
+                    line = self._getNextLine(logfile, linelog)
+#                    print "Thrown away"
+
+                    #
+                    moreFiles = True
+                    while moreFiles:
+                        line = self._getNextLine(logfile, linelog)
+                        if line[:5] == '   M ' or line[:5] == '   A ' or line[:5] == '   D ':
+                            line = line.split()
+                            modification = line[0]
+                            path         = line[1]
+                            moreFiles = True
+                            print path, modification
+                        else:
+                            moreFiles = False
+
+                    ######
+                    # Let's look at the attached comment
+
+                    comment = ''
+                    for index in range(int(linesComment)):
+                        comment += self._getNextLine(logfile, linelog).replace('\n', ' ')
+
+
+                    # Removing trailing and other spaces
+                    comment = ' '.join(comment.split())
+                    
+                    print "Comment: '" + comment + "'"
+                    
