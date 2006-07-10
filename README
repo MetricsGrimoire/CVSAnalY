@@ -25,7 +25,7 @@ You are ready to use cvsanaly!
 
 Running cvsanaly
 ---------------
-Run cvsanaly in your local repository checkout and run cvsanaly:
+Checkout to obtain a local version of your repository and then run cvsanaly:
 
     $ cd project/
     ~/project$ cvsanaly <username> <password> <database> <hostname>
