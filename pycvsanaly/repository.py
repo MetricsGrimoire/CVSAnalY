@@ -439,14 +439,39 @@ class RepositorySVN(Repository):
     def __init__(self):
         pass
 
+    def get_fileid(self, mfiles, filename):
+        for f in mfiles:
+            if filename == f:
+                return mfiles[f][0]
+                break
+
+    def files2sql(self, mfiles, db):
+        for f in mfiles:
+            id = mfiles[f][0]
+            properties_dict = mfiles[f][1]
+
+            query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype) "
+            query += " VALUES ('" + str(id) + "','"
+            query += str(properties_dict['module_id']) + "','"
+            query += str(properties_dict['name']) + "','"
+            query += str(properties_dict['creation_date']) + "','"
+            query += str(properties_dict['last_modification']) + "','"
+            query += str(properties_dict['size']) + "','"
+            query += str(properties_dict['filetype']) + "');"
+
+            db.insertData(query)
+
+    def print_files(self, files):
+        for f in files:
+            print str(files[f][0]) + "\t" + str(files[f][1])
+
     def _getNextLine(self, logfile, linelog):
-        
+
         if logfile:
             line = linelog.readline()
         else:
             line = linelog[1].readline()
-
-#            print "Line:", line[:-1]
+            #print "Line:", line[:-1]
         return line
 
 
@@ -472,6 +497,7 @@ class RepositorySVN(Repository):
         modulecommiters = {}
         actualcommiters = []
         commits = []
+        mfiles = {}
 
         f = None
         c = None
@@ -498,8 +524,7 @@ class RepositorySVN(Repository):
                     timezone     = mobj0.group(7)
                     linesComment = mobj0.group(8)
 
-                    print revision, commitername, year, month, day, rest_date, timezone, linesComment
-
+                    #print revision, commitername, year, month, day, rest_date, timezone, linesComment
 
                     creationdate = (year + "-" + month + "-" + day + " " + rest_date)
                     if not authors.has_key(commitername):
@@ -523,7 +548,7 @@ class RepositorySVN(Repository):
                             fileraw      = line[1]
                             moreFiles = True
                             fileList.append((fileraw, modification))
-                            print fileraw, modification
+                            #print fileraw, modification
                         else:
                             moreFiles = False
 
@@ -535,7 +560,7 @@ class RepositorySVN(Repository):
                         comment += self._getNextLine(logfile, linelog).replace('\n', ' ')
                     # Removing trailing and other spaces
                     comment = ' '.join(comment.split())
-                    print "Comment: '" + comment + "'"
+                    #print "Comment: '" + comment + "'"
 
                     ######
                     ######
@@ -557,14 +582,20 @@ class RepositorySVN(Repository):
                             filepath = '/'
                         mtree.addDirectory(filepath)
 
+
                         file_properties['name'] = filename
                         file_properties['filetype'] = filetype
                         file_properties['module_id'] = str(mtree.getid(filepath))
                         file_properties['filetype'] = filetype
-                        
-                        f = File()
-                    
-                        commit_properties['file_id'] = str(f.get_id())
+                        file_properties['size'] = '' # TODO
+                        file_properties['creation_date'] = str(creationdate)
+                        file_properties['last_modification'] = str(modificationdate)
+                       
+                        if not mfiles.has_key(fileraw):
+                            properties = file_properties.copy()
+                            mfiles[fileraw] = (len(mfiles), properties)
+
+                        commit_properties['file_id'] = str(self.get_fileid(mfiles, fileraw))
                         commit_properties['commiter_id'] = str(authors[commitername])
                         commit_properties['revision'] = str(revision)
                         commit_properties['plus'] = 0 # No plus in SVN logs
@@ -576,11 +607,7 @@ class RepositorySVN(Repository):
                         commit_properties['filetype'] = str(filetype)
                         commit_properties['module_id'] = str(mtree.getid(filepath))
                         c = Commit(commit_properties)
-                        file_properties['size'] = '' # TODO
-                        file_properties['creation_date'] = str(creationdate)
-                        file_properties['last_modification'] = str(modificationdate)
-                        f.add_properties(file_properties)
-                    
+
                         modulecommiters[mtree.getid(filepath)] = actualcommiters
 
         # FIXME: modification and bug fixing on the way! grx
@@ -588,7 +615,8 @@ class RepositorySVN(Repository):
         #    Files are considered differently!!
         try:
             # Files
-            f.files2sql(db)
+            #f.files2sql(db)
+            self.files2sql(mfiles, db)
             # Directories
             mtree.tree2mysql(db,mtree.root,"",0,"")
             # Commiters

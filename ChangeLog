@@ -1,3 +1,7 @@
+2006-07-11  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+
+	* repository.py: fixed bug in files table
+
 2006-06-23  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
 	* intermediate.py: intermediate tables algorithm
