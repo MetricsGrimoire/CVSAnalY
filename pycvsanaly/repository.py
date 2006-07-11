@@ -136,7 +136,7 @@ class Repository:
 
     def countLOCs(self,filename):
         """
-        CVS does not count the initial lenght of a file that is imported
+        CVS does not count the initial length of a file that is imported
         into the repository. In order to have a real picture a measure
         of the file size at a given time is needed.
 
@@ -426,7 +426,7 @@ class RepositoryCVS(Repository):
             # Commiters-module
             self.commitersmodule2sql(db, modulecommiters)
         except:
-            sys.exit("Cannot get log! maybe this is not a CVS/SVN work directory or you have problems with your connection\n")
+            sys.exit("Cannot get log! Maybe this is not a CVS working directory or you are having problems with your connection\n")
 
         if logfile:
             linelog.close()
@@ -460,29 +460,15 @@ class RepositorySVN(Repository):
         else:
             linelog = os.popen3 ('/usr/bin/svn --verbose log .')
 
-        filename = ''
+        fileList = []
         dirname = ''
         commitername = ''
         modificationdate = ''
         revision = ''
         linesComment = ''
-# Plus and minus are not available on SVN
-#        plus = ''
-#        minus = ''
-#        sum_plus = 0
-#        sum_minus = 0
-
-# We don't use these variables yet!
-        isbinary = 0
-        inAttic = 0
-        cvs_flag= 0
-        newcommit = 0
-        external = 0
-        checkin= 0
-
-        logtxt_flag = 0
 
         authors = {}
+
         modulecommiters = {}
         actualcommiters = []
         commits = []
@@ -502,6 +488,7 @@ class RepositorySVN(Repository):
 
                 mobj0 = pattern0.match(line)
                 if mobj0:
+                    fileList     = []
                     revision     = mobj0.group(1)
                     commitername = mobj0.group(2)
                     year         = mobj0.group(3)
@@ -513,23 +500,30 @@ class RepositorySVN(Repository):
 
                     print revision, commitername, year, month, day, rest_date, timezone, linesComment
 
+
+                    creationdate = (year + "-" + month + "-" + day + " " + rest_date)
+                    if not authors.has_key(commitername):
+                        authors[commitername] = len(authors)
+
+                    if not authors[commitername] in actualcommiters:
+                        actualcommiters.append(authors[commitername])
+
                     ######
                     # Let's look at affected files
 
                     # First line: throw it away
                     line = self._getNextLine(logfile, linelog)
-#                    print "Thrown away"
-
-                    #
+                    # But not the other lines
                     moreFiles = True
                     while moreFiles:
                         line = self._getNextLine(logfile, linelog)
                         if line[:5] == '   M ' or line[:5] == '   A ' or line[:5] == '   D ':
                             line = line.split()
                             modification = line[0]
-                            path         = line[1]
+                            fileraw      = line[1]
                             moreFiles = True
-                            print path, modification
+                            fileList.append((fileraw, modification))
+                            print fileraw, modification
                         else:
                             moreFiles = False
 
@@ -539,10 +533,72 @@ class RepositorySVN(Repository):
                     comment = ''
                     for index in range(int(linesComment)):
                         comment += self._getNextLine(logfile, linelog).replace('\n', ' ')
-
-
                     # Removing trailing and other spaces
                     comment = ' '.join(comment.split())
-                    
                     print "Comment: '" + comment + "'"
+
+                    ######
+                    ######
+                    # Parsing complete!
+                    # Now feeding our objects with the data
+
+                    # Directory and File
+                    for fileTuple in fileList:
+                        fileraw = fileTuple[0]
+                        type = fileTuple[1]
+
+                        fileraw = fileraw.replace("'","\\'")
+
+                        filename = fileraw.split('/')[-1]
+                        filepath = fileraw[:-len(filename)]
+                        filetype = self.analyseFile(filename)
+
+                        if not filepath:
+                            filepath = '/'
+                        mtree.addDirectory(filepath)
+
+                        file_properties['name'] = filename
+                        file_properties['filetype'] = filetype
+                        file_properties['module_id'] = str(mtree.getid(filepath))
+                        file_properties['filetype'] = filetype
+                        
+                        f = File()
                     
+                        commit_properties['file_id'] = str(f.get_id())
+                        commit_properties['commiter_id'] = str(authors[commitername])
+                        commit_properties['revision'] = str(revision)
+                        commit_properties['plus'] = 0 # No plus in SVN logs
+                        commit_properties['minus'] = 0 # No plus in SVN logs
+                        commit_properties['inattic'] = '' # TODO
+                        commit_properties['cvs_flag'] = '' # TODO
+                        commit_properties['external'] = '' # TODO
+                        commit_properties['date_log'] = str(creationdate)
+                        commit_properties['filetype'] = str(filetype)
+                        commit_properties['module_id'] = str(mtree.getid(filepath))
+                        c = Commit(commit_properties)
+                        file_properties['size'] = '' # TODO
+                        file_properties['creation_date'] = str(creationdate)
+                        file_properties['last_modification'] = str(modificationdate)
+                        f.add_properties(file_properties)
+                    
+                        modulecommiters[mtree.getid(filepath)] = actualcommiters
+
+        # FIXME: modification and bug fixing on the way! grx
+        #    SVN commits are not CVS commits, they are transactions!
+        #    Files are considered differently!!
+        try:
+            # Files
+            f.files2sql(db)
+            # Directories
+            mtree.tree2mysql(db,mtree.root,"",0,"")
+            # Commiters
+            self.commiters2sql(db,authors)
+            # Commits
+            c.commits2sql(db)
+            # Commiters-module
+            self.commitersmodule2sql(db, modulecommiters)
+        except:
+            sys.exit("Cannot get log! maybe this is not a SVN working directory or you are having problems with your connection\n")
+
+        if logfile:
+            linelog.close()
