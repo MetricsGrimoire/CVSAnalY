@@ -37,8 +37,11 @@ during commit yet!
 
 import time
 
-delta1 = 600
-delta2 = 45
+#delta1 = 600
+#delta2 = 45
+
+delta1 = 300
+delta2 = 15
 
 def modrequest(db):
 
@@ -49,7 +52,7 @@ def modrequest(db):
 
     MRList = []
     modrequest_id = 0
-    for commiter_id in range(1,numCommiters+1):
+    for commiter_id in range(0,numCommiters+1):
         commitList = db.doubleIntStr2list(db.querySQL('commit_id, date_log', 'log', "commiter_id=" + str(commiter_id), 'date_log'))
         time_first = 0
         MRtempList = []
@@ -74,3 +77,8 @@ def modrequest(db):
                 db.insertData("INSERT INTO cvsanal_modrequest (request_id, commit_id) VALUES (" + str(modrequest_id) + ", " + str(commitList[index]) + ");\n")
         MRList = []
 
+# To run it from the command line:
+#import database as dbmodule
+#conection = "mysql://user:passwd@localhost/database"
+#db = dbmodule.Database(conection)
+#modrequest(db)
