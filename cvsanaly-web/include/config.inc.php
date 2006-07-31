@@ -124,7 +124,7 @@ $config_menu[] = "Modules";
 $config_menu[] = "Commiters";
 //$config_menu[] = "Graphs";
 $config_menu[] = "Inequality";
-$config_menu[] = "Comments";
+//$config_menu[] = "Comments";
 //$config_menu[] = "Generations";
 $config_menu[] = "FAQ";
 $config_menu[] = "Credits";
@@ -205,13 +205,14 @@ $config_RightColumnWidth = '67%';
 /**
  * Settings for Comments database.
  *
- */
 
 $Comments_Database = 'cvsanaly_gaim';
 $Comments_Table    = 'comments';
 $Comments_Host     = 'localhost';
 $Comments_User     = 'operator';
 $Comments_Password = 'operator';
+
+ */
 			      
 
 /**

@@ -1,0 +1,192 @@
+cvsanaly (1.0.0-0.1) unstable; urgency=low
+
+    * wizard.py: new wizard added
+    * main.py: new filed iscomment in annotates (now stores comments too)
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 11 Apr 2006 19:30:37 +2000
+
+cvsanaly (0.6.0-0.1) unstable; urgency=low
+
+    * stats.py: optimize get dates function
+    * database.py: exception integrity database
+    * globals.py: added metainfo about program
+    * database.py: function close()
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 06 Apr 2006 14:40:01 +2000
+
+cvsanaly (0.5.9-0.1) unstable; urgency=low
+
+    * repository.py: fixed bug in collect function
+    * stats.py: new way to make lines graph
+    * parserconfig.py: new filed start_date. with blank gets actual date
+    * main.py: no graphs in this step
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 03 Apr 2006 14:40:01 +2000
+
+cvsanaly (0.5.8-0.2) unstable; urgency=high
+
+    * globals.py: fixed bug with mkdir function
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 30 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.5.8-0.1) unstable; urgency=low
+
+    * fileCVS.py: compare date between max_date and timestamp
+    * fileCVS.py: report function that print in a file errors
+    * globals.py: added new file to store static data
+    * globals.py: mkdir added
+    * main.py: removed mkdir
+    * repository.py: total files in progressbar is relative to maxfiles
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 29 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.5.5-0.1) unstable; urgency=low
+
+    * fileCVS.py: now revision is stored completly
+    * main.py: revision filed in annotates table, now is varchar
+    * main.py: timestamps now is sotored in main loop
+    * parserconfig.py: new format to max_date (year-month-day)
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 28 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.5.4-0.1) unstable; urgency=low
+
+    * respository.py: now add files into database before analysis.
+    * docs: new directory added
+    * fileCVS.py: db_object passed for adding commiters in parse time
+    * commiter.py: modified setcommiter function
+    * commiter.py: added mutex
+    * file.py: modified addfile function
+    * main.py: deleted last step
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 27 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.5.2-0.2) unstable; urgency=high
+
+    * repository.py: bug in collect function. list should be initialized
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 23 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.5.2-0.1) unstable; urgency=low
+
+    * stats.py: graphs with more options such xyscales
+    * stats.py: optimization of some graphs
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 22 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.5.0-0.1) unstable; urgency=low
+
+    * repository.py: new way to make checkouts
+    * stats.py: graphs output to gnuplot
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 21 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.9-0.1) unstable; urgency=low
+
+    * repositorySVN: deleted, no longer needed
+    * repositoryCVS: deleted, no longer needed
+    * repository.py: added progressbar and only one blame method
+    * database.py: new method added 'createUser'. fixed bugs
+    * main.py: new way to initialize database.
+    * parserConfig.py: fixed bug when calculate dates
+    * stats.py: new way to make graphs in memory
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 19 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.8-0.2) unstable; urgency=high
+
+    * fileSVN.py: fixed bug in date
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 13 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.8-0.1) unstable; urgency=low
+
+    * fileSVN.py: SVN Fixed bugs. Some logs without commiter
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 11 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.7-0.1) unstable; urgency=low
+
+    * fileSVN.py: SVN support checkout and blame
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 09 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.6-0.1) unstable; urgency=low
+
+    * debian: New debian directory. Support debian packages
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 08 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.5-0.1) unstable; urgency=low
+
+    * Added heads with license and comments to pydoc
+    * main.py: New main loop
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 06 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.3-0.1) unstable; urgency=low
+
+    * New study in time added
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 03 Mar 2006 14:40:01 +2000
+
+cvsanaly (0.4.2-0.1) unstable; urgency=high
+
+    * threadworkd.py: fixed theard bugs
+    * commiter.py: Commiter class support
+    * database.py: Database class updated
+    * repository.py: Updated file factory repository
+    * fileCVS: fixed bugs
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 23 Feb 2006 14:40:01 +2000
+
+cvsanaly (0.4.1-0.1) unstable; urgency=low
+
+    * threadworkd.py: threads full support with files
+    * database.py: Database class new methods
+    * repository.py: New class factory. Now should be easier create new repositories
+    * fileCVS.py: updated with new methods
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 22 Feb 2006 14:40:01 +2000
+
+cvsanaly (0.4.0-0.2) unstable; urgency=high
+
+    * main.py: Main fixed bugs
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 20 Feb 2006 14:40:01 +2000
+
+cvsanaly (0.3.9-0.1) unstable; urgency=low
+
+    * threadworkd.py: theads support
+    * main.py: Fixed bugs
+    * database.py: Database class updated
+    * repository: New classes CVS and SVN.
+    * Main updated again
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 15 Feb 2006 14:40:01 +2000
+
+cvsanaly (0.3.5-0.1) unstable; urgency=low
+
+    * database.py: Database class fixed bugs
+    * main.py: Main steps alterations
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 14 Feb 2006 14:40:01 +2000
+
+cvsanaly (0.3.2-0.2) unstable; urgency=high
+
+    * bug dates in blames fixed
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 09 Jan 2006 14:40:01 +2000
+
+cvsanaly (0.3.2-0.0) unstable; urgency=low
+
+    * man pages updated
+    * main.py: Updated files names
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 04 Jan 2006 14:40:01 +2000
+
+cvsanaly (0.3.0-0.0) unstable; urgency=low
+
+    * Initial import
+
+ -- Alvaro Navarro <anavarro@gsyc.escet.urjc.es>  Tue, 20 Dec 2006 14:40:01 +2000
