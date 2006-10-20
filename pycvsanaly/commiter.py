@@ -36,7 +36,11 @@ class Commiter:
     created_commiters = []
 
     def __init__(self,properties_dict=None, commits_list=None):
-        """Constructor. Can accept a dictionary containing the properties of the commiter, and a list of commits objects affecting this commiter."""
+        """
+        Constructor. 
+        Can accept a dictionary containing the properties of the commiter, 
+        and a list of commits objects affecting this commiter.
+        """
 
         if properties_dict:
             self.properties_dict = properties_dict.copy()
@@ -56,7 +60,10 @@ class Commiter:
 
 
     def search_commiter(self,commiter_id):
-        """Looks for a commiter with a given id. It returns a commiter object, or None if given id does not exist."""
+        """
+        Looks for a commiter with a given id. 
+        It returns a commiter object, or None if given id does not exist.
+        """
 
         try:
             commiter = Commiter.created_commiters(commiter_id)
@@ -66,16 +73,22 @@ class Commiter:
         return commiter
 
     def get_id(self):
-        """Return integer id of this commiter"""
+        """
+        Return integer id of this commiter
+        """
         return self.id
 
 
     def add_commit(self,commit_obj):
-        """Add a commit affecting this Commiter."""
+        """
+        Add a commit affecting this Commiter.
+        """
         self.__commits_list.append(commit_obj)
 
 
     def get_commits(self):
-        """Get a list of the commits affecting this Commiter."""
+        """
+        Get a list of the commits affecting this Commiter.
+        """
         return self.__commits_list
 

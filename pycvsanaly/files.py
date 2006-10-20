@@ -36,7 +36,11 @@ class File:
     created_files = []
 
     def __init__(self,properties_dict=None, commits_list=None):
-        """Constructor. Can accept a dictionary containing the properties of the file, and a list of commits objects affecting this file."""
+        """
+        Constructor. 
+        Can accept a dictionary containing the properties of the file, 
+        and a list of commits objects affecting this file.
+        """
 
         if properties_dict:
             self.properties_dict = properties_dict.copy()
@@ -66,35 +70,41 @@ class File:
         return file
 
     def get_id(self):
-        """Return integer id of this file"""
+        """
+        Return integer id of this file
+        """
+
         return self.id
 
 
-    def add_properties(self, properties):
-        """ Add properties """
-        self.properties_dict = properties.copy()
-        
+    def add_properties(self, db, properties):
+        """ 
+        Add properties 
+        """
+
+        query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype) "
+        query += " VALUES ('" + str(self.id) + "','"
+        query += str(properties['module_id']) + "','"
+        query += str(properties['name']) + "','"
+        query += str(properties['creation_date']) + "','"
+        query += str(properties['last_modification']) + "','"
+        query += str(properties['size']) + "','"
+        query += str(properties['filetype']) + "');"
+
+        db.insertData(query)
+
     def add_commit(self,commit_obj):
-        """Add a commit affecting this file."""
+        """
+        Add a commit affecting this file.
+        """
+
         self.__commits_list.append(commit_obj)
 
 
     def get_commits(self):
-        """Get a list of the commits affecting this file."""
+        """
+        Get a list of the commits affecting this file.
+        """
+
         return self.__commits_list
-
-    def files2sql(self,db):
-
-        for f in File.created_files:
-            if f.properties_dict:
-                query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype) "
-                query += " VALUES ('" + str(f.id) + "','"
-                query += str(f.properties_dict['module_id']) + "','"
-                query += str(f.properties_dict['name']) + "','"
-                query += str(f.properties_dict['creation_date']) + "','"
-                query += str(f.properties_dict['last_modification']) + "','"
-                query += str(f.properties_dict['size']) + "','"
-                query += str(f.properties_dict['filetype']) + "');"
-            
-                db.insertData(query)
 

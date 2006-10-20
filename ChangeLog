@@ -1,3 +1,15 @@
+2006-10-20  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+
+	* repository.py:
+	    - New way for storing data without having to
+	      waint until the process ends.
+	    - Don't store commiters-module. We can obtain 
+	      it later with a simple query.
+	* commit.py: commit2sql function no longer needed.
+	* file.py: file2sql function no longer needed.
+	* directories.py: new implementation with absolute path.
+	* main.py: new flag in order to indicate type of repository.
+
 2006-07-11  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
 	* repository.py: fixed bug in files table

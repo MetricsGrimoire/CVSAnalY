@@ -34,10 +34,14 @@ class Commit:
     # Static variables
     counter = 0
     created_commits = []
-        
-    def __init__(self,properties_dict=None, files_list=None):
-        """Constructor. Can accept a dictionary containing the properties of this commit, and a list of files objects affected by this commit."""
-        
+
+    def __init__(self, properties_dict=None, files_list=None):
+        """
+        Constructor. 
+        Can accept a dictionary containing the properties of this commit, 
+        and a list of files objects affected by this commit.
+        """
+
         if properties_dict:
             self.properties_dict = properties_dict.copy()
         else:
@@ -48,53 +52,62 @@ class Commit:
         else:
             self.__files_list = []
 
-        
         self.id = Commit.counter
 
         Commit.counter += 1
         Commit.created_commits.append(self)
-        
-    
+
     def search_commit(self,commit_id):
-        """Looks for a commit with a given id. It returns a Commit object, or None if given id does not exist."""
-    
+        """
+        Looks for a commit with a given id. 
+        It returns a Commit object, or None if given id does not exist.
+        """
         try:
             commit = Commit.created_commits(commit_id)
         except:
             commit = None
 
         return commit
-            
+
     def get_id(self):
-        """Return integer id of this commit"""
+        """
+        Return integer id of this commit
+        """
+
         return self.id
-        
-            
+
     def add_file(self,file_obj):
-        """Add a file affected by this commit."""
+        """
+        Add a file affected by this commit.
+        """
+
         self.__files_list.append(file_obj)
 
 
     def get_files(self):
-        """Get a list of the files affected by this commit."""
+        """
+        Get a list of the files affected by this commit.
+        """
+
         return self.__files_list
 
 
-    def commits2sql(self,db):
+    def add_properties(self, db, properties):
 
-        for c in Commit.created_commits:
-            query = "INSERT INTO log (commit_id, file_id, commiter_id, revision, plus, minus, inattic, cvs_flag, external, date_log, filetype, module_id) "
-            query += " VALUES ('" + str(c.id) + "','"
-            query += str(c.properties_dict['file_id']) + "','"
-            query += str(c.properties_dict['commiter_id']) + "','"
-            query += str(c.properties_dict['revision']) + "','"
-            query += str(c.properties_dict['plus']) + "','"
-            query += str(c.properties_dict['minus']) + "','"
-            query += str(c.properties_dict['inattic']) + "','"
-            query += str(c.properties_dict['cvs_flag']) + "','"
-            query += str(c.properties_dict['external']) + "','"
-            query += str(c.properties_dict['date_log']) + "','"
-            query += str(c.properties_dict['filetype']) + "','"
-            query += str(c.properties_dict['module_id']) + "');"
+        query  = "INSERT INTO log (commit_id, file_id, commiter_id, revision, "
+        query += "plus, minus, inattic, cvs_flag, external, date_log, filetype, module_id) "
+        query += " VALUES ('" + str(self.id) + "','"
+        query += str(properties['file_id']) + "','"
+        query += str(properties['commiter_id']) + "','"
+        query += str(properties['revision']) + "','"
+        query += str(properties['plus']) + "','"
+        query += str(properties['minus']) + "','"
+        query += str(properties['inattic']) + "','"
+        query += str(properties['cvs_flag']) + "','"
+        query += str(properties['external']) + "','"
+        query += str(properties['date_log']) + "','"
+        query += str(properties['filetype']) + "','"
+        query += str(properties['module_id']) + "');"
 
-            db.insertData(query)
+        db.insertData(query)
+

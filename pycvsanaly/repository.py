@@ -110,12 +110,6 @@ class Repository:
         # if not found, specify it as unknown
         return config_files_names.index('unknown')
 
-
-    def clean_properties(self):
-
-        k = directory_propierties.getkeys()
-        
-            
     def isFileInAttic(self,file):
         """
         Looks if a given file is in the Attic
@@ -157,22 +151,6 @@ class Repository:
         except IOError:
                 result = 0
         return result
-
-    def commitersmodule2sql(self, db, comms):
-        """
-        @type  db: Database object
-        @param db: Object that represents connection with a database
-
-        @type comms: dictionary
-        @param comms: list of commiters
-
-        """
-        for co in comms:
-            for i in comms[co]:
-                query = "INSERT INTO commiters_module (commiter_id,module_id) VALUES ('"
-                query += str(i) + "','" + str(co) + "');"
-
-                db.insertData(query)
 
     def commiters2sql(self, db, comms):
         """
@@ -220,17 +198,11 @@ class RepositoryCVS(Repository):
         external = 0
         checkin= 0
 
-        logtxt_flag = 0
-
         authors = {}
-        modulecommiters = {}
-        actualcommiters = []
-        commits = []
 
         f = None
         c = None
-
-        mtree = tree(0)
+	d = Directory()
 
         while 1:
             if logfile:
@@ -245,7 +217,6 @@ class RepositoryCVS(Repository):
                 pattern1 = re.compile("^Working file: (.*)")
                 pattern2 = re.compile("^keyword substitution: b")
                 pattern3 = re.compile("^revision ([\d\.]*)")
-                #pattern4 = re.compile("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d)(.*);  author: (.*);  state: (.*);  lines: \+(.*) -(.*)")
                 pattern4 = re.compile("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d)(.*);  author: (.*);  state: (.*);  lines: \+(\d*) -(\d*)")
                 pattern5 = re.compile("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d)(.*);  author: (.*);  state: ")
                 pattern6 = re.compile("^CVS_SILENT")
@@ -255,10 +226,8 @@ class RepositoryCVS(Repository):
 
                 mobj0 = pattern0.match(line)
                 if mobj0:
-
                     inAttic = self.isFileInAttic(mobj0.group(1))
                     isbinary = 0
-                    newcommit = 0 
                     cvs_flag = 0
                     revision = ''
                     sum_plus = 0
@@ -268,10 +237,8 @@ class RepositoryCVS(Repository):
                     minus = '0'
                     modificationdate = ''
                     creationdate = ''
-                    commits = []
-                    actualcommiters = []
                     filepath = ''
-                    #filename = ''
+                    newcommit = 0
 
                 mobj1 = pattern1.match(line)
                 if mobj1:
@@ -286,14 +253,17 @@ class RepositoryCVS(Repository):
 
                     if not filepath:
                         filepath = '/'
-                    mtree.addDirectory(filepath)
+                    d.add_directory(filepath)
+                    print fileraw
 
                     file_properties['name'] = filename
                     file_properties['filetype'] = filetype
-                    file_properties['module_id'] = str(mtree.getid(filepath))
+                    file_properties['module_id'] = str(d.get_id(filepath))
                     file_properties['filetype'] = filetype
 
                     f = File()
+
+                    newcommit = 1
 
                 mobj2 = pattern2.match(line)
                 if mobj2:
@@ -304,72 +274,49 @@ class RepositoryCVS(Repository):
                     revision = mobj3.group(1)
 
                 mobj4 = pattern4.match(line)
-                if mobj4:
+                mobj5 = pattern5.match(line)
+                if mobj4 or mobj5:
 
-                    
                     if not filepath:
                         filepath = '/'
 
                     # Commiter and Date
-                    year       = mobj4.group(1)
-                    month      = mobj4.group(2)
-                    day        = mobj4.group(3)
-                    rest_date  = mobj4.group(4)
+                    if mobj4:
+                        year       = mobj4.group(1)
+                        month      = mobj4.group(2)
+                        day        = mobj4.group(3)
+                        rest_date  = mobj4.group(4)
+                    else:
+                        year       = mobj5.group(1)
+                        month      = mobj5.group(2)
+                        day        = mobj5.group(3)
+                        rest_date  = mobj5.group(4)
 
-                    creationdate = (year + "-" + month + "-" + day + " " + rest_date)
+                    commit_date = (year + "-" + month + "-" + day + " " + rest_date)
 
                     if not modificationdate:
-                        modificationdate = creationdate
+                        modificationdate = commit_date
+                    creationdate = commit_date
 
-                    # Create new Commiter object
-                    commitername =  mobj4.group(6)
+                    # Create new Commiter objects
+                    if mobj4:
+                        commitername =  mobj4.group(6)
+                    else:
+                        commitername =  mobj5.group(6)
+
                     if not authors.has_key(commitername):
                         authors[commitername] = len(authors)
 
-                    if not authors[commitername] in actualcommiters:
-                        actualcommiters.append(authors[commitername])
-
-                    plus       = mobj4.group(8)
-                    minus      = mobj4.group(9)
-                    sum_plus  += int(plus)
-                    sum_minus += int(minus)
+                    if mobj4:
+                        plus       = mobj4.group(8)
+                        minus      = mobj4.group(9)
+                        sum_plus  += int(plus)
+                        sum_minus += int(minus)
 
                     if isbinary:
                         plus = "0"
                         minus = "0"
 
-                    newcommit = 1
-                    logtxt_flag = 1
-                    logtxt = ''
-
-                mobj5 = pattern5.match(line)
-                if mobj5:
-                    if not filepath:
-                        filepath = '/'
-
-                    # Date
-                    year       = mobj5.group(1)
-                    month      = mobj5.group(2)
-                    day        = mobj5.group(3)
-                    rest_date  = mobj5.group(4)
-
-                    creationdate = (year + "-" + month + "-" + day + " " + rest_date)
-
-                    if not modificationdate:
-                        modificationdate = creationdate
-                        
-                    # Create new Commiter object
-                    commitername =  mobj5.group(6)
-                    if not authors.has_key(commitername):
-                        authors[commitername] = len(authors)
-
-                    if not authors[commitername] in actualcommiters:
-                        actualcommiters.append(authors[commitername])
-
-                    newcommit = 1
-                    logtxt_flag = 1
-                    logtxt = ''
-                    
                 mobj6 = pattern6.match(line)
                 if mobj6:
                     cvs_flag = 1
@@ -380,19 +327,13 @@ class RepositoryCVS(Repository):
 
                 mobj8 = pattern8.match(line)
                 mobj9 = pattern9.match(line)
-                if mobj9:
-                    newcommit = 0
 
-                if mobj9 and not isbinary and not inAttic:
-                    checkin = self.countLOCs(filepath + "/" + filename)
-                    checkin = checkin - sum_plus + sum_minus
-                    plus    = str(checkin)
-                    minus   = "0"
-
-                if (mobj8 and newcommit) or mobj9:
-                    if revision != "1.1.1.1" and revision != "":
+                if mobj8 or mobj9:
+                    if revision != "1.1.1.1" and revision != "" and newcommit:
                         if not modificationdate:
                             modificationdate = creationdate
+
+			# Add commit
                         commit_properties['file_id'] = str(f.get_id())
                         commit_properties['commiter_id'] = str(authors[commitername])
                         commit_properties['revision'] = str(revision)
@@ -403,28 +344,31 @@ class RepositoryCVS(Repository):
                         commit_properties['external'] = str(external)
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
-                        commit_properties['module_id'] = str(mtree.getid(filepath))
-                        c = Commit(commit_properties)
+                        commit_properties['module_id'] = str(d.get_id(filepath))
+			c = Commit ()
+                        c.add_properties (db, commit_properties)
+
+                if mobj9:
+                    if newcommit:
+                        if not isbinary and not inAttic:
+                            checkin = self.countLOCs(filepath + "/" + filename)
+                            checkin = checkin - sum_plus + sum_minus
+		            if checkin < 0: checkin = 0
+                            plus    = str(checkin)
+                            minus   = "0"
+
+                        # Add file
                         file_properties['size'] = str(checkin)
                         file_properties['creation_date'] = str(creationdate)
                         file_properties['last_modification'] = str(modificationdate)
-                        f.add_properties(file_properties)
-
-                        modulecommiters[mtree.getid(filepath)] = actualcommiters
-                        # End of commit
+                        f.add_properties (db,file_properties)
                         newcommit = 0
-                        modificationdate = ""
+
         try:
-            # Files
-            f.files2sql(db)
             # Directories
-            mtree.tree2mysql(db,mtree.root,"",0,"")
+            d.directory2sql(db)
             # Commiters
             self.commiters2sql(db,authors)
-            # Commits
-            c.commits2sql(db)
-            # Commiters-module
-            self.commitersmodule2sql(db, modulecommiters)
         except:
             sys.exit("Cannot get log! Maybe this is not a CVS working directory or you are having problems with your connection\n")
 
@@ -494,15 +438,12 @@ class RepositorySVN(Repository):
 
         authors = {}
 
-        modulecommiters = {}
-        actualcommiters = []
         commits = []
         mfiles = {}
 
         f = None
         c = None
-
-        mtree = tree(0)
+        d = Directory()
 
         while 1:
             line = self._getNextLine(logfile, linelog)
@@ -530,12 +471,8 @@ class RepositorySVN(Repository):
                     if not authors.has_key(commitername):
                         authors[commitername] = len(authors)
 
-                    if not authors[commitername] in actualcommiters:
-                        actualcommiters.append(authors[commitername])
-
                     ######
                     # Let's look at affected files
-
                     # First line: throw it away
                     line = self._getNextLine(logfile, linelog)
                     # But not the other lines
@@ -548,7 +485,7 @@ class RepositorySVN(Repository):
                             fileraw      = line[1]
                             moreFiles = True
                             fileList.append((fileraw, modification))
-                            #print fileraw, modification
+                            print fileraw
                         else:
                             moreFiles = False
 
@@ -580,17 +517,16 @@ class RepositorySVN(Repository):
 
                         if not filepath:
                             filepath = '/'
-                        mtree.addDirectory(filepath)
-
+                        d.add_directory(filepath)
 
                         file_properties['name'] = filename
                         file_properties['filetype'] = filetype
-                        file_properties['module_id'] = str(mtree.getid(filepath))
+                        file_properties['module_id'] = str(d.get_id(filepath))
                         file_properties['filetype'] = filetype
                         file_properties['size'] = '' # TODO
                         file_properties['creation_date'] = str(creationdate)
                         file_properties['last_modification'] = str(modificationdate)
-                       
+
                         if not mfiles.has_key(fileraw):
                             properties = file_properties.copy()
                             mfiles[fileraw] = (len(mfiles), properties)
@@ -598,35 +534,31 @@ class RepositorySVN(Repository):
                         commit_properties['file_id'] = str(self.get_fileid(mfiles, fileraw))
                         commit_properties['commiter_id'] = str(authors[commitername])
                         commit_properties['revision'] = str(revision)
-                        commit_properties['plus'] = 0 # No plus in SVN logs
-                        commit_properties['minus'] = 0 # No plus in SVN logs
-                        commit_properties['inattic'] = '' # TODO
-                        commit_properties['cvs_flag'] = '' # TODO
-                        commit_properties['external'] = '' # TODO
+                        commit_properties['plus'] = 0           # No plus in SVN logs
+                        commit_properties['minus'] = 0          # No plus in SVN logs
+                        commit_properties['inattic'] = ''       # TODO
+                        commit_properties['cvs_flag'] = ''      # TODO
+                        commit_properties['external'] = ''      # TODO
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
-                        commit_properties['module_id'] = str(mtree.getid(filepath))
-                        c = Commit(commit_properties)
+                        commit_properties['module_id'] = str(d.get_id(filepath))
+                        c = Commit ()
+                        c.add_properties (db, commit_properties)
 
-                        modulecommiters[mtree.getid(filepath)] = actualcommiters
 
         # FIXME: modification and bug fixing on the way! grx
         #    SVN commits are not CVS commits, they are transactions!
         #    Files are considered differently!!
         try:
             # Files
-            #f.files2sql(db)
             self.files2sql(mfiles, db)
             # Directories
-            mtree.tree2mysql(db,mtree.root,"",0,"")
+            d.directory2sql(db)
             # Commiters
             self.commiters2sql(db,authors)
-            # Commits
-            c.commits2sql(db)
-            # Commiters-module
-            self.commitersmodule2sql(db, modulecommiters)
         except:
             sys.exit("Cannot get log! maybe this is not a SVN working directory or you are having problems with your connection\n")
 
         if logfile:
             linelog.close()
+

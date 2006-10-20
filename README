@@ -28,7 +28,7 @@ Running cvsanaly
 Checkout to obtain a local version of your repository and then run cvsanaly:
 
     $ cd project/
-    ~/project$ cvsanaly <username> <password> <database> <hostname>
+    ~/project$ cvsanaly <username> <password> <database>
 
 Credits
 -------

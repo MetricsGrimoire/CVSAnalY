@@ -43,31 +43,32 @@ import modrequest as mdmodule
 
 # Some stuff about the project
 author = "(C) 2004,2006 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
-name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA1")
+name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA2")
 credits = "\n%s \n%s\n" % (name,author)
 
 
 def usage():
-    print "Usage: %s username password database hostname" % (sys.argv[0])
+    print "Usage: %s username password database [hostname]" % (sys.argv[0])
     print """
 Options:
 
   -h, --help               Print this usage message.
 
+  -t, --type               Type of repository: [cvs|svn] (default=cvs)
   -l, --log-file           Use the current log file            
-  -d, --driver             Output driver [mysql|stdout]
+  -d, --driver             Output driver [mysql|stdout] (default=mysql)
   -w, --username           Database username
   -a, --password           User password 
   -d, --database           Database name
-  -h, --hostname           Name of the host which runs database server
+  -h, --hostname           Name of the host which runs database server (default=localhost)
 """
 
 def main():
 
     print credits
 
-    short_opts = "hno:u:p:d:h:l:"
-    long_opts = [ "help", "options", "driver=", "user=", "password=","database=","hostname=","log-file="]
+    short_opts = "hno:u:p:d:h:l:t:"
+    long_opts = [ "help", "options", "driver=", "user=", "password=","database=","hostname=","log-file=","type="]
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
@@ -77,8 +78,9 @@ def main():
 
     driver = "mysql"
     hostname = "localhost"
+    type = "cvs"
 
-    if len(args) < 4:
+    if len(args) < 3:
         usage()
         sys.exit(0)
 
@@ -86,8 +88,10 @@ def main():
     user = args[0]
     password = args[1]
     database = args[2]
-    hostname = args[3]
-    type = "svn"
+
+    if len(args) == 4:
+        hostname = args[3]
+
     logfile = ""
 
     for o, a in opts:
@@ -104,9 +108,11 @@ def main():
             hostname = a
         elif o in ("-l", "--log-file"):
             logfile = a
+        elif o in ("-t", "--type"):
+            type = a
 
-    conection = driver + "://" + user + ":" + password + "@" + hostname + "/" + database
-    db = dbmodule.Database(conection)
+    connection = driver + "://" + user + ":" + password + "@" + hostname + "/" + database
+    db = dbmodule.Database(connection)
 
     db.create_database()
     db.create_table('files',files)
@@ -125,9 +131,12 @@ def main():
     repos = rpmodule.RepositoryFactory.create(type)
     repos.log(db, logfile)
 
+    db.close()
+
     # This should go in a new cvsanaly-web script
-    intmodule.intermediate_table_commiters(db)
-    intmodule.intermediate_table_fileTypes(db)
-    intmodule.intermediate_table_modules(db)
-    mdmodule.modrequest(db)
+    #intmodule.intermediate_table_commitersmodules(db)
+    #intmodule.intermediate_table_commiters(db)
+    #intmodule.intermediate_table_fileTypes(db)
+    #intmodule.intermediate_table_modules(db)
+    #mdmodule.modrequest(db)
 
