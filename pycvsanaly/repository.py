@@ -45,7 +45,8 @@ file_properties = {'file_id':'',
                    'creation_date': '',
                    'last_modification': '',
                    'module_id':'',
-                   'size':''}
+                   'size':'',
+                   'fileraw':''}
 
 directory_properties = {'module_id':'',
                         'module':''}
@@ -61,7 +62,9 @@ commit_properties = {'commit_id':'',
                      'external':'',
                      'date_log':'',
                      'filetype':'',
-                     'module_id':''}
+                     'module_id':'',
+                     'fileraw':'',
+                     'intrunk':''}
 
 class RepositoryFactory:
     """
@@ -116,7 +119,7 @@ class Repository:
         
         In CVS a file is in the Attic if it has been removed from the
         working copy
-        
+       
         @type  file: string
         @param file: name of the file
         
@@ -260,6 +263,7 @@ class RepositoryCVS(Repository):
                     file_properties['filetype'] = filetype
                     file_properties['module_id'] = str(d.get_id(filepath))
                     file_properties['filetype'] = filetype
+                    file_properties['fileraw'] = fileraw
 
                     f = File()
 
@@ -333,6 +337,13 @@ class RepositoryCVS(Repository):
                         if not modificationdate:
                             modificationdate = creationdate
 
+                        # Find out if revision is in main trunk (revision is like x.y)
+                        if str(revision).count(".") > 1:
+                            intrunk = "0"
+                        else:
+                            intrunk = "1"
+                        
+
 			# Add commit
                         commit_properties['file_id'] = str(f.get_id())
                         commit_properties['commiter_id'] = str(authors[commitername])
@@ -345,6 +356,8 @@ class RepositoryCVS(Repository):
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
                         commit_properties['module_id'] = str(d.get_id(filepath))
+                        commit_properties['fileraw'] = str(fileraw)
+                        commit_properties['intrunk'] = str(intrunk)
 			c = Commit ()
                         c.add_properties (db, commit_properties)
 

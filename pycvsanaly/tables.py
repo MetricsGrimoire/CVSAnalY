@@ -42,6 +42,7 @@ files = {'file_id':'int(8) NOT NULL',
          'last_modification':'datetime NOT NULL',
          'size':'int(8)',
          'filetype':'int(1)',
+         'fileraw':'tinytext',
          'primary key':'file_id'}
 
 modules = { 'module_id': 'int(8) NOT NULL',
@@ -71,6 +72,8 @@ log = {'commit_id':'int(8) NOT NULL',
        'date_log':'datetime NOT NULL',
        'filetype':'int(1)',
        'module_id':'int(8)',
+       'fileraw':'tinytext',
+       'intrunk':'int(1)',
        'primary key':'commit_id'}
 
 
