@@ -57,15 +57,14 @@ class GlueTheosApp:
             try:
                 # Getting
                 self.CVSCheckout(filename,revision)
-                sha1 = self.getSHA1(filename)
-                nilsimsa = self.getNilsimsa(filename)
+                results_dict = self.measureFile(filename)
 
                 comp_filename = filename+'.gz'
 
                 # Storing
                 self.compressFile(filename)
                 try:
-                    self.db.insertFile(orig_filename,comp_filename,revision,rev_date,rev_time,sha1,nilsimsa,self.tmpdir)
+                    self.db.insertFile(orig_filename,comp_filename,revision,rev_date,rev_time,results_dict,self.tmpdir)
                 except:
                     print "   Error inserting this file"
 
@@ -79,6 +78,75 @@ class GlueTheosApp:
 
             #pair = self.db.cursor.fetchone()
             #print pair
+
+    def measureFile(self,filename):
+
+        # TODO: Implement the function for every metric
+        # TODO: Repeat for clean code
+        
+        sha1 = self.getSHA1(filename)
+        nilsimsa = self.getNilsimsa(filename)
+        sloc, lang, sloc_output = self.measureSloc(filename)
+        loc, wc_output = self.measureLoc(filename)
+        functions, ctags_output = self.measureFunctions(filename,lang)
+        mccabe, returns, mccabe_output = self.measureMcCabe(filename)
+        length, volume, level, mental_disc, halstead_output = self.measureHalstead(filename)
+
+        fields = ['sloc','lang','output_sloccount', \
+                  'loc','output_wc', \
+                  'functions','output_ctags', \
+                  'mccabe','returns','output_mccabe', \
+                  'length','volume','level','mental_disc','output_halstead']
+
+        # Create temp files for the output
+
+        fn_sloc_output = os.tmpnam()
+        fn_wc_output = os.tmpnam()
+        fn_ctags_output = os.tmpnam()
+        fn_mccabe_output = os.tmpnam()
+        fn_halstead_output = os.tmpnam()
+
+        filenames = {fn_sloc_output:sloc_output, \
+                     fn_wc_output:wc_output, \
+                     fn_ctags_output:ctags_output, \
+                     fn_mccabe_output:mccabe_output, \
+                     fn_halstead_output:halstead_output]
+
+        # Store output in each temp file
+        for fn in filenames.keys():
+            f = open(fn,'w')
+            f.write(filenames[fn])
+            f.close()
+
+        # The files will be stored in the database
+        contents = [sloc, lang, 'LOAD_FILE('+fn_sloc_output+')', \
+                   loc, 'LOAD_FILE('+fn_wc_output+')', \
+                   functions, 'LOAD_FILE('+fn_ctags_output+')', \
+                   mccabe, returns, 'LOAD_FILE('+fn_mccabe_output+')', \
+                   length, volume, level, mental_disc, 'LOAD_FILE('+fn_halstead_output+')']
+
+        for i in range(len(fields)):
+            field = fields[i]
+            content = contents[i]
+
+            results_dict[field] = content
+
+        return results_dict
+        
+    def measureSloc(self,filename):
+        pass #TODO
+
+    def measureLoc(self,filename):
+        pass #TODO
+
+    def measureFunctions(self,filename):
+        pass #TODO
+
+    def measureMcCabe(self,filename):
+        pass #TODO
+
+    def measureHalstead(self,filename):
+        pass #TODO
 
     def compressFile(self,filename):
         os.chdir(self.tmpdir)
