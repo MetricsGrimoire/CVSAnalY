@@ -1,3 +1,11 @@
+2006-12-02  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
+
+	* main.py:
+	    - New call interface (now options have to be named)
+	    - Messages and interface now should be in sync
+	* database.py
+	    - Support for empty passwd
+	
 2006-10-20  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
 	* repository.py:

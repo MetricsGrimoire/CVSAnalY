@@ -24,29 +24,45 @@ If you don't have root privileges, add to your $PATH the directory which contain
 You are ready to use cvsanaly!
 
 Running cvsanaly
----------------
-Checkout to obtain a local version of your repository and then run cvsanaly:
+----------------
+
+For the impatient: just checkout (from svn or cvs) to obtain a local
+version of your repository, and then run cvsanaly:
 
     $ cd project/
-    ~/project$ cvsanaly <username> <password> <database>
+    ~/project$ cvsanaly -u <user> -p <passwd> -d <database> -r <repo>
+
+<user> is the user of MySQL
+<passwd> is the password of MySQL for that user
+<database> is the name of the database in MySQL to use
+<repo> is svn or cvs (svn by default)
+
+More options, and a more detailed info about the options, can be
+learnt by running "cvsanaly -h"
+
 
 Credits
 -------
 
-CVSAnalY has been developed at the Universidad Rey Juan Carlos in Móstoles, near Madrid (Spain). It is part of 
-a wider research on Libre Software Engineering, a project that aims to gain knowledge on the process 
-that happens when Libre Software is generated.
+CVSAnalY has been developed by the GSyC/LibreSoft group at the
+Universidad Rey Juan Carlos in Móstoles, near Madrid (Spain). It is
+part of a wider research on libre software engineering, aimed to gain
+knowledge on how libre software is developed and maintained.
 
-If you want, you can get more information on the project in http://cvsanaly.tigris.org or http://libresoft.urjc.es
+More information
+----------------
+
+CVSAnalY:
+  http://cvsanaly.tigris.org
+
+The GSyC/LibreSoft group:
+  http://libresoft.es
 
 
-enjoy,
+Main authors
+------------
 
-	Gregorio Robles
-	Alvaro Navarro
-	 {grex,anavarro} at gsyc.escet.urjc.es
+Gregorio Robles
+Alvaro Navarro
 
-http://libresoft.urjc.es
-Libre Software Engineering
-Grupo de Sistemas y Comunicaciones
-Universidad Rey Juan Carlos
+  {grex,anavarro} at gsyc.escet.urjc.es

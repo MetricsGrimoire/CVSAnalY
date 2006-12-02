@@ -21,7 +21,7 @@
 """
 This module contains a basic SQL wrapper
 
-@authors:       Alvaro Navarro and Gregorio Robles
+@authors:      Alvaro Navarro and Gregorio Robles
 @organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
 @copyright:    Universidad Rey Juan Carlos (Madrid, Spain)
 @license:      GNU GPL version 2 or any later version
@@ -72,6 +72,8 @@ class Database:
             if len(gps) >= 3:
 
                 db = gps[2]
+        else:
+            print "Error (internal), bad url for database connection"
 
         self.username = user
         self.password = pwd
@@ -82,7 +84,7 @@ class Database:
         self.__connection = None
         self.__connection = cf.ConnectionFactory.get_connection(module)
         try:
-            self.__connection.connect(self.username, self.password, self.hostname, self.database)
+            self.__connection.connect(user=self.username, passwd=self.password, host=self.hostname, db=self.database)
         except:
             print ("Error in connection: username/password incorrect or database doesn't exist")
             self.create_user()

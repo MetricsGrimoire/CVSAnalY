@@ -48,27 +48,39 @@ credits = "\n%s \n%s\n" % (name,author)
 
 
 def usage():
-    print "Usage: %s username password database [hostname]" % (sys.argv[0])
+    print "Usage: %s [options]" % (sys.argv[0])
     print """
+Run inside the checked out svn or cvs directory to analyze
+
 Options:
 
-  -h, --help               Print this usage message.
+  -h, --help         Print this usage message.
 
-  -t, --type               Type of repository: [cvs|svn] (default=cvs)
-  -l, --log-file           Use the current log file            
-  -d, --driver             Output driver [mysql|stdout] (default=mysql)
-  -w, --username           Database username
-  -a, --password           User password 
-  -d, --database           Database name
-  -h, --hostname           Name of the host which runs database server (default=localhost)
+  -u, --user         User name for accesing the database
+  -p, --passwd       User password for accessing the database (default empty)
+  -d, --database     Database (schema) name
+
+  -h, --hostname     Host running the database server (default is localhost)
+  -l, --log-file     Log file name
+  -r, --repo-type    Type of repository (cvs|svn), default is svn
+  -i, --driver       Output driver (mysql|stdout), default is mysql
 """
 
 def main():
 
     print credits
 
-    short_opts = "hno:u:p:d:h:l:t:"
-    long_opts = [ "help", "options", "driver=", "user=", "password=","database=","hostname=","log-file=","type="]
+    # Short (one letter) options. Those requiring argument followed by :
+    short_opts = "hu:p:d:h:l:r:i:"
+    # Long options (all started by --). Those requiring argument followed by =
+    long_opts = [ "help", "user=", "passwd=", "database=", "hostname=", "log-file=", "repo-type", "driver"]
+
+    # Default options
+    passwd = ''
+    hostname = 'localhost'
+    logfile = ''
+    type = 'svn'
+    driver = 'mysql'
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
@@ -76,44 +88,45 @@ def main():
         usage()
         sys.exit(1)
 
-    driver = "mysql"
-    hostname = "localhost"
-    type = "cvs"
-
-    if len(args) < 3:
-        usage()
-        sys.exit(0)
+#    if len(args) < 3:
+#        usage()
+#        sys.exit(0)
 
     # Config args come from args
-    user = args[0]
-    password = args[1]
-    database = args[2]
+#    user = args[0]
+#    passwd = args[1]
+#    database = args[2]
+#    hostname = args[3]
 
-    if len(args) == 4:
-        hostname = args[3]
-
-    logfile = ""
-
-    for o, a in opts:
-        if o in ("-h", "--help"):
+    for opt, value in opts:
+        if opt in ("-h", "--help"):
             usage()
             sys.exit(0)
-        elif o in ("-u", "--user"):
-            user = a
-        elif o in ("-p", "--password"):
-            password = a
-        elif o in ("-d", "--database"):
-            database = a
-        elif o in ("-h", "--hostname"):
-            hostname = a
-        elif o in ("-l", "--log-file"):
-            logfile = a
-        elif o in ("-t", "--type"):
-            type = a
+        elif opt in ("-u", "--user"):
+            user = value
+        elif opt in ("-p", "--passwd"):
+            passwd = value
+        elif opt in ("-d", "--database"):
+            database = value
+        elif opt in ("-h", "--hostname"):
+            hostname = value
+        elif opt in ("-l", "--log-file"):
+            logfile = value
+        elif opt in ("-r", "--repo-type"):
+            type = value
+        elif opt in ("-i", "--driver"):
+            driver = value
 
-    connection = driver + "://" + user + ":" + password + "@" + hostname + "/" + database
-    db = dbmodule.Database(connection)
+    # Connect to the database
+#    if passwd == "":
+#        conection = driver + "://" + user + "@" + hostname + "/" + database
+#    else:
+    conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
+#    print conection
+        
+    db = dbmodule.Database(conection)
 
+    # Create database and tables
     db.create_database()
     db.create_table('files',files)
     db.create_table('commiters',commiters)
