@@ -184,7 +184,7 @@ class RepositoryCVS(Repository):
             linelog = open(logfile,'r')
         else:
             linelog = os.popen3 ('/usr/bin/cvs -z9 -Q log -N .')
-
+            
         filename = ''
         dirname = ''
         commitername = ''
@@ -448,7 +448,6 @@ class RepositorySVN(Repository):
         modificationdate = ''
         revision = ''
         linesComment = ''
-
         authors = {}
 
         commits = []
@@ -557,7 +556,6 @@ class RepositorySVN(Repository):
                         commit_properties['module_id'] = str(d.get_id(filepath))
                         c = Commit ()
                         c.add_properties (db, commit_properties)
-
 
         # FIXME: modification and bug fixing on the way! grx
         #    SVN commits are not CVS commits, they are transactions!

@@ -139,13 +139,35 @@ class Database:
 
 
         r = self.__connection.execute(query)
- 
+
         try:
             row = r.fetch_row(0)
         except AttributeError:
             sys.exit("Unknown error with mysql server")
             
         return row
+
+
+    def executeSQLRaw(self, query):
+        """
+        Raw SQL execute to the database
+        Input is the query (in SQL)
+        Output is a tuple of rows (rows are also tuples)
+        
+        """
+
+        r = self.__connection.execute(query)
+
+        # Dirty trick to avoid raising an exception when nothing
+        # is returned by the query -jgb
+        #try:
+        #    row = r.fetch_row(0)
+        #except AttributeError:
+        #    print("Unknown error with mysql server")
+
+        row = r.fetch_row(0)
+        return row
+
 
     def singleresult2list(self,row):
         """
@@ -167,6 +189,8 @@ class Database:
                 list.append([i, int(item[0])])
         return list
 
+
+        
     def tripleresult2orderedlist(self,row):
         """
         Takes as input a row of rows (as outputed by the querySQL method)

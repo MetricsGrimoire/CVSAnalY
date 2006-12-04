@@ -1,3 +1,10 @@
+2006-12-04  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
+
+	* main.py:
+	    - New options for generations analysis
+	    - New option for specifying folder for analysis output data
+	* generations.py: new file for performing generations analysis
+	
 2006-12-02  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
 
 	* main.py:

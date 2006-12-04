@@ -35,7 +35,7 @@ import _mysql_exceptions
 
 class Connection:
     """
-    Basic interface that defines which methos have to be
+    Basic interface that defines which methods have to be
     implemented
     """
 

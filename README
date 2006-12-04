@@ -40,6 +40,17 @@ version of your repository, and then run cvsanaly:
 More options, and a more detailed info about the options, can be
 learnt by running "cvsanaly -h"
 
+Analysis
+--------
+
+After feeding the database with information, CVSAnalY performs several
+analysis on that data:
+
+- generations:
+
+    Analysis on who has been working in the project. Data produced
+    can be feed to gnuplot's splot for visualization
+
 
 Credits
 -------
