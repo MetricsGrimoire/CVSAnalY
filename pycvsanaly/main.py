@@ -119,7 +119,7 @@ def main():
             passwd = value
         elif opt in ("-d", "--database"):
             database = value
-        elif opt in ("-d", "--folder"):
+        elif opt in ("-f", "--folder"):
             folder = value
         elif opt in ("-h", "--hostname"):
             hostname = value

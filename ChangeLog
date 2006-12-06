@@ -1,5 +1,14 @@
-2006-12-04  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
+2006-12-06  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
 
+	* generations.py: Simplified and more generic code. Now
+	   instead of quarters, we have periods. A view for
+	   periods of one quarter is currently used, so in the
+	   end we are still working with quartes, but any other
+	   period could now easily be selected, with the proper
+	   view.
+	
+2006-12-04  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
+	
 	* main.py:
 	    - New options for generations analysis
 	    - New option for specifying folder for analysis output data
