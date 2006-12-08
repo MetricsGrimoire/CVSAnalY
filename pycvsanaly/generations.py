@@ -314,7 +314,9 @@ class generations:
 
         """
         Matrix is two dimensional, with a value for each position.
-        Output it to a file suitable for being shown by gnuplot
+        Output it to a file suitable for being shown by gnuplot.
+        Both absolute and normalized (by the number of commits per period)
+        matrices are produced.
         """
 
         filehand = open(file, 'w')
@@ -322,6 +324,22 @@ class generations:
         for x in range(0, len(matrix)-1):
             for y in range(0, len(matrix[x])-1):
                 filehand.write (str(x) + ' ' + str(y) + ' ' + str(matrix[x,y]) + '\n')
+            filehand.write ('\n')
+
+        filehand.close()
+
+        filehand = open(file + '-normal', 'w')
+
+        for x in range(0, len(matrix)-1):
+            for y in range(0, len(matrix[x])-1):
+                if y in self.commitsPeriodDict:
+                    commitsNormalized = \
+                      float (matrix[x,y]) / self.commitsPeriodDict[y]
+                else:
+                    commitsNormalized = 0
+                filehand.write (str(x) + ' ' + str(y) + ' ' \
+                                + str(commitsNormalized) \
+                                + '\n')
             filehand.write ('\n')
 
         filehand.close()

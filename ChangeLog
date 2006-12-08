@@ -4,7 +4,8 @@
 	   periods of an arbitrary number of days are supported,
 	   in addition to quarters. Top fraction of commiters and
 	   arbitrary fraction of commits are also supported.
-	   Small fixes here and there.
+	   Small fixes here and there. Normalized (by total
+	   number of commits per period) matrices are also produced.
 
 2006-12-06  Jesus M. Gonzalez-Barahona <jgb@gsyc.escet.urjc.es>
 
