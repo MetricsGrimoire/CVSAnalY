@@ -168,7 +168,12 @@ def main():
 
 
     if doGenerations:
-        gen = generations.byQuarter(db, folder + '/generations')
+        period = generations.periodDays(300)
+        gen = generations.generations (db, folder + '/generations', period)
+        period = generations.periodDays(200)
+        gen = generations.generations (db, folder + '/generations', period)
+        period = generations.periodQuarter()
+        gen = generations.generations (db, folder + '/generations', period)
 
     db.close()
 
