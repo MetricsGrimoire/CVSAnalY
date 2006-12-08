@@ -168,6 +168,8 @@ def main():
 
 
     if doGenerations:
+        period = generations.periodSlots(10)
+        gen = generations.generations (db, folder + '/generations', period)
         period = generations.periodDays(300)
         gen = generations.generations (db, folder + '/generations', period)
         period = generations.periodDays(200)

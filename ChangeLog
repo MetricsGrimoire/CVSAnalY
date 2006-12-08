@@ -2,6 +2,7 @@
 
 	* generations.py: Simplified and more generic code. Now
 	   periods of an arbitrary number of days are supported,
+	   and periods specified as a number of slots,
 	   in addition to quarters. Top fraction of commiters and
 	   arbitrary fraction of commits are also supported.
 	   Small fixes here and there. Normalized (by total

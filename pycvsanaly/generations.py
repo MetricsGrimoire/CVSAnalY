@@ -17,7 +17,14 @@ set ticslevel 0
 set xlabel "Periods"
 set ylabel "History (periods)"
 set zlabel "Commits"
-splot "/tmp/kdepim/generations/largest" with lines
+splot "matrix_top_commiters" with lines
+
+It can be later output to a EPS file by:
+
+set terminal postscript
+set out "/tmp/draw.eps"
+set view 36,41
+splot "matrix_top_commiters" with lines
 """
 
 
@@ -95,7 +102,38 @@ class periodDays (period):
     
     def viewTemplate(self):
         return self.viewCreateTemplate
+
+class periodSlots (period):
+    """
+    Class for specifying the number of slots (periods) as kind of period
+    """
+
+    # SQL code for creating a view with the commits by commiter by period
+    #  (being the period a number of days)
+    #  The use of firstDate is for normalizing (first period will be 0)
+    #  days is the number of days for each period
+    viewCreateTemplateSlots = string.Template ("""
+    create or replace
+    view generations (period, commiter_id, commits)
+    as select (to_days(date_log) - to_days("$firstDate")) div ((to_days("$lastDate") - to_days("$firstDate")) div $slots) as period, commiter_id, count(commit_id)
+    from log
+    where filetype = 5
+    group by period, commiter_id
+    order by period, count(date_log) desc;
+    """)
+
+    def __init__(self, slots):
+        self.slots = slots
+        self.viewCreateTemplate = string.Template(
+          self.viewCreateTemplateSlots.safe_substitute (slots=slots))
         
+    def name(self):
+        return "slots-" + str (self.slots)
+    
+    def viewTemplate(self):
+        return self.viewCreateTemplate
+
+
 class generations:
 
     connection = None
@@ -118,9 +156,14 @@ class generations:
         result = self.connection.executeSQLRaw \
                  ("select min(date_log) from log;")
         self.firstDate = result[0][0]
+        # Get latest date from the log table
+        result = self.connection.executeSQLRaw \
+                 ("select max(date_log) from log;")
+        self.lastDate = result[0][0]
         # Produce SQL code for creating the view, based on the template
         viewCreateTemplate = periodKind.viewTemplate()
-        viewCreate = viewCreateTemplate.substitute (firstDate=self.firstDate)
+        viewCreate = viewCreateTemplate.substitute (firstDate=self.firstDate,
+                                                    lastDate=self.lastDate)
         # FIXME
         # Next query produces no row, therefore an exception is raised
         # should be fixed (by improving the database interface)
