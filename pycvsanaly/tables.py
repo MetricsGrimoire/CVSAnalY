@@ -74,6 +74,7 @@ log = {'commit_id':'int(8) NOT NULL',
        'module_id':'int(8)',
        'fileraw':'tinytext',
        'intrunk':'int(1)',
+       'state':'varchar(4)',
        'primary key':'commit_id'}
 
 

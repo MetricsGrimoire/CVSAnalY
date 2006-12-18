@@ -64,7 +64,8 @@ commit_properties = {'commit_id':'',
                      'filetype':'',
                      'module_id':'',
                      'fileraw':'',
-                     'intrunk':''}
+                     'intrunk':'',
+                     'state':''}
 
 class RepositoryFactory:
     """
@@ -200,6 +201,7 @@ class RepositoryCVS(Repository):
         newcommit = 0
         external = 0
         checkin= 0
+        state = ''
 
         authors = {}
 
@@ -221,7 +223,7 @@ class RepositoryCVS(Repository):
                 pattern2 = re.compile("^keyword substitution: b")
                 pattern3 = re.compile("^revision ([\d\.]*)")
                 pattern4 = re.compile("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d)(.*);  author: (.*);  state: (.*);  lines: \+(\d*) -(\d*)")
-                pattern5 = re.compile("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d)(.*);  author: (.*);  state: ")
+                pattern5 = re.compile("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d)(.*);  author: (.*);  state: (.*);")
                 pattern6 = re.compile("^CVS_SILENT")
                 pattern7 = re.compile("patch(es)?\s?.* from |patch(es)?\s?.* by |patch(es)?\s.*@|@.* patch(es)?|'s.* patch(es)?|s' .* patch(es)?|patch(es)? of | <.* [Aa][Tt] .*>| attached to #")
                 pattern8 = re.compile("^----------------------------")
@@ -321,6 +323,12 @@ class RepositoryCVS(Repository):
                         plus = "0"
                         minus = "0"
 
+                    # State
+                    if mobj4:
+                        state = mobj4.group(7)
+                    else:
+                        state = mobj5.group(7)
+                        
                 mobj6 = pattern6.match(line)
                 if mobj6:
                     cvs_flag = 1
@@ -358,6 +366,7 @@ class RepositoryCVS(Repository):
                         commit_properties['module_id'] = str(d.get_id(filepath))
                         commit_properties['fileraw'] = str(fileraw)
                         commit_properties['intrunk'] = str(intrunk)
+                        commit_properties['state'] = str(state)
 			c = Commit ()
                         c.add_properties (db, commit_properties)
 
