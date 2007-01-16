@@ -39,11 +39,6 @@ import plugins as plugmodule
 
 from tables import *
 
-#import intermediate_tables as intmodule
-#import modrequest as mdmodule
-
-#import generations
-
 # Some stuff about the project
 author = "(C) 2004,2007 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
 name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA4")
@@ -51,6 +46,7 @@ credits = "\n%s \n%s\n" % (name,author)
 
 
 def usage ():
+    print credits
     print "Usage: %s [options]" % (sys.argv[0])
     print """
 Run inside the checked out svn or cvs directory to analyze
@@ -82,7 +78,6 @@ Plugins:
 
 def main():
 
-    print credits
 
     # Short (one letter) options. Those requiring argument followed by :
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"

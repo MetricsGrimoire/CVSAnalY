@@ -85,7 +85,7 @@ class RepositoryFactory:
             sys.exit (-1)
 
         if not isvalid:
-            print ("Oops! Seems that current directory is not a valid %s work area. I can't find %s directory.\n\nSee --help for more details.\n") % (type, work_area[type])
+            print ("\nOops! Seems that current directory is not a valid %s work area. I can't find %s directory.\n\nSee --help for more details.\n") % (type, work_area[type])
             sys.exit (-1)
 
         if type.upper() == "CVS":
