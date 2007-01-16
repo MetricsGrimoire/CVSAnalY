@@ -83,7 +83,7 @@ def main():
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     short_opts = ""
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = [ "help", "type=", "branch=", "revision=", "log-file=", "path=", "driver=", "scan", "info=", "run-plugins="]
+    long_opts = [ "help", "database=", "type=", "branch=", "revision=", "log-file=", "path=", "driver=", "scan", "info=", "run-plugins="]
 
     # Prefix directory. cvs/svn binaries should be installed under this path
     prefixpath = '/usr/bin/'
@@ -92,7 +92,7 @@ def main():
     user = ''
     passwd = ''
     hostname = ''
-    database = ''
+    database = 'cvsanaly'
     logfile = ''
     branch = ''
     revision = ''
@@ -116,6 +116,8 @@ def main():
             logfile = value
         elif opt in ("-t", "--type"):
             type = 'svn'
+        elif opt in ("-b", "--database"):
+            database = value
         elif opt in ("-r", "--repo-type"):
             type = value
         elif opt in ("-d", "--driver"):
@@ -131,7 +133,6 @@ def main():
             p.get_information (value)
             sys.exit(0)
         elif opt in ("-r", "--run-plugins"):
-            #p.init (value)
             print "not implemented"
         else:
             print ('Unknown option ', opt)
