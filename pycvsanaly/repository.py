@@ -280,7 +280,7 @@ class RepositoryCVS(Repository):
                     if not filepath:
                         filepath = '/'
                     d.add_directory(filepath)
-                    print fileraw
+                    #print fileraw
 
                     file_properties['name'] = filename
                     file_properties['filetype'] = filetype
@@ -531,7 +531,7 @@ class RepositorySVN(Repository):
                             fileraw      = line[1]
                             moreFiles = True
                             fileList.append((fileraw, modification))
-                            print fileraw
+                            #print fileraw
                         else:
                             moreFiles = False
 

@@ -422,6 +422,10 @@ class Database:
 
             query = "CREATE DATABASE " + str(name) + ";\n"
             co.execute(query)
+
+            query = "USE " + str(name) + ";\n"
+            co.execute(query)
+
             co.close()
 
         except StandardError:
