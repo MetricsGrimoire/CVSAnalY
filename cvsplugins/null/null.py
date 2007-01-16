@@ -1,5 +1,6 @@
-#!/usr/bin/python
-# Copyright (C) 2006 Alvaro Navarro Clemente
+#!/usr/bin/env python
+
+# Copyright (C) 2006 Libresoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +19,6 @@
 # Authors : Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
 """
-Installer
 
 @author:       Alvaro Navarro
 @organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
@@ -27,13 +27,11 @@ Installer
 @contact:      anavarro@gsyc.escet.urjc.es
 """
 
-from distutils.core import setup
+__author__ = "Alvaro Navarro"
+__mail__ = "anavarro@gsyc.escet.urjc.es"
+__description__ = "null plugin"
 
-setup(name = "cvsanaly",
-      version = "1.0-BETA1",
-      author =  "Libresoft",
-      author_email = "anavarro@gsyc.es",
-      description = "An analysis tool for your CVS and Subversion repository",
-      url = "http://cvsanaly.tigris.org",
-      packages = ['pycvsanaly','cvsplugins'],
-      scripts = ["cvsanaly"])
+class NullPlugin(Plugin):
+
+    def run ():
+        print "test"

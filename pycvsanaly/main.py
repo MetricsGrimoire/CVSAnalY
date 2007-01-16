@@ -33,45 +33,51 @@ import string
 import stat
 import getopt
 
-
 import database as dbmodule
 import repository as rpmodule
+import plugins as plugmodule
 
 from tables import *
-import intermediate_tables as intmodule
-import modrequest as mdmodule
 
-import generations
+#import intermediate_tables as intmodule
+#import modrequest as mdmodule
+
+#import generations
 
 # Some stuff about the project
-author = "(C) 2004,2006 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
-name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA2")
+author = "(C) 2004,2007 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
+name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA4")
 credits = "\n%s \n%s\n" % (name,author)
 
 
-def usage():
+def usage ():
     print "Usage: %s [options]" % (sys.argv[0])
     print """
 Run inside the checked out svn or cvs directory to analyze
 
 Options:
 
-  -h, --help         Print this usage message.
+  --help            Print this usage message.
 
-  -u, --user         User name for accesing the database
-  -p, --passwd       User password for accessing the database (default empty)
-  -d, --database     Database (schema) name
-  -f, --folder       Folder (directory) to store resulting analysis
-                       (default /tmp/cvsanaly)
+  --type            Type of repository, cvs or svn (default is cvs)
+  --branch          Branch to be analyzed (default is trunk)
+  --revision        Start analysis from given revision
+  --log-file        Parse a given log file instead of get it from repository
+  --path            Set an alternative path for cvs/svn binary
+  --driver          Output driver mysql or stdout (default is stdout)
 
-  -h, --hostname     Host running the database server (default is localhost)
-  -l, --log-file     Log file name
-  -r, --repo-type    Type of repository (cvs|svn), default is svn
-  -i, --driver       Output driver (mysql|stdout), default is mysql
+Database:
 
-  -n, --no-download  Do not download data, assume it is already in the database
-  --do-generations   Do the generations analysis
-  --no-generarions   Don't do the generations analysis (default)
+  --user            Username for connect to database
+  --password        Password for connect to database
+  --database        Database which contains data previously analyzed
+  --hostname        Name of the host with a database server running
+
+Plugins:
+
+  --scan            Scan for plugins
+  --info            Retreives information from given plugin
+  --with-plugin     Execute list of plugin
 """
 
 def main():
@@ -79,110 +85,80 @@ def main():
     print credits
 
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hu:p:d:f:h:l:r:i:n"
+    #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
+    short_opts = ""
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = [ "help", "user=", "passwd=", "database=", "folder=", "hostname=", "log-file=", "repo-type=", "driver=", "no-download", "do-generations", "no-generations"]
+    long_opts = [ "help", "type=", "branch=", "revision=", "log-file=", "path=", "driver=", "scan", "info=", "run-plugins="]
+
+    # Prefix directory. cvs/svn binaries should be installed under this path
+    prefixpath = '/usr/bin/'
 
     # Default options
+    user = ''
     passwd = ''
-    hostname = 'localhost'
+    hostname = ''
+    database = ''
     logfile = ''
-    folder = '/tmp/cvsanaly'
-    type = 'svn'
-    driver = 'mysql'
-    download = True
-    doGenerations = False
-    
+    branch = ''
+    revision = ''
+    type = 'cvs'
+    driver = 'stdout'
+    directory = '.'
+
+    p = plugmodule.Loader ()
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
     except getopt.GetoptError:
         usage()
         sys.exit(1)
 
-#    if len(args) < 3:
-#        usage()
-#        sys.exit(0)
-
-    # Config args come from args
-#    user = args[0]
-#    passwd = args[1]
-#    database = args[2]
-#    hostname = args[3]
-
     for opt, value in opts:
-        if opt in ("-h", "--help"):
+        if opt in ("-h", "--help", "-help"):
             usage()
             sys.exit(0)
-        elif opt in ("-u", "--user"):
-            user = value
-        elif opt in ("-p", "--passwd"):
-            passwd = value
-        elif opt in ("-d", "--database"):
-            database = value
-        elif opt in ("-f", "--folder"):
-            folder = value
-        elif opt in ("-h", "--hostname"):
-            hostname = value
         elif opt in ("-l", "--log-file"):
             logfile = value
+        elif opt in ("-t", "--type"):
+            type = 'svn'
         elif opt in ("-r", "--repo-type"):
             type = value
-        elif opt in ("-i", "--driver"):
+        elif opt in ("-d", "--driver"):
             driver = value
-        elif opt in ("-n", "--no-download"):
-            download = False
-        elif opt in ("--do-generations"):
-            doGenerations = True
-        elif opt in ("--no-generations"):
-            doGenerations = False
+        elif opt in ("-b", "--branch"):
+            branch = value
+        elif opt in ("-p", "--path"):
+            binarypath = value
+        elif opt in ("-s", "--scan"):
+            p.scan ()
+            sys.exit(0)
+        elif opt in ("-i", "--info"):
+            p.get_information (value)
+            sys.exit(0)
+        elif opt in ("-r", "--run-plugins"):
+            #p.init (value)
+            print "not implemented"
         else:
             print ('Unknown option ', opt)
             usage()
 
     # Connect to the database
     conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
-        
     db = dbmodule.Database(conection)
 
-    if download:
-        print "Download data to the database"
-        # Create database and tables
-        db.create_database()
-        db.create_table('files',files)
-        db.create_table('commiters',commiters)
-        db.create_table('log',log)
-        db.create_table('modules', modules)
-        db.create_table('commiters_module',commiters_module)
-        db.create_table('comments',comments)
-        db.create_table('cvsanal_fileTypes',cvsanal_fileTypes)
-        db.create_table('cvsanal_temp_commiters',cvsanal_temp_commiters)
-        db.create_table('cvsanal_temp_modules',cvsanal_temp_modules)
-        db.create_table('cvsanal_temp_inequality',cvsanal_temp_inequality)
-        db.create_table('cvsanal_modrequest',cvsanal_modrequest)
+    # CVS/SVN interactive
+    repos = rpmodule.RepositoryFactory.create (type, directory)
 
-        # CVS/SVN interactive
-        repos = rpmodule.RepositoryFactory.create(type)
-        repos.log(db, logfile)
-    else:
-        print "Not downloading data, assuming the database already has it"
+    # Create database and tables
+    db.create_database()
+    db.create_table('files',files)
+    db.create_table('commiters',commiters)
+    db.create_table('log',log)
+    db.create_table('modules', modules)
+    db.create_table('commiters_module',commiters_module)
 
-
-    if doGenerations:
-        period = generations.periodSlots(10)
-        gen = generations.generations (db, folder + '/generations', period)
-        period = generations.periodDays(300)
-        gen = generations.generations (db, folder + '/generations', period)
-        period = generations.periodDays(200)
-        gen = generations.generations (db, folder + '/generations', period)
-        period = generations.periodQuarter()
-        gen = generations.generations (db, folder + '/generations', period)
+    # And finally we analyze log
+    repos.log (db, directory, prefixpath, logfile)
 
     db.close()
-
-    # This should go in a new cvsanaly-web script
-    #intmodule.intermediate_table_commitersmodules(db)
-    #intmodule.intermediate_table_commiters(db)
-    #intmodule.intermediate_table_fileTypes(db)
-    #intmodule.intermediate_table_modules(db)
-    #mdmodule.modrequest(db)
 

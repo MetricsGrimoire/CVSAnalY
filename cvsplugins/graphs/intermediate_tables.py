@@ -120,19 +120,26 @@ def intermediate_table_commiters(db):
     print "Calculating commiter statistical data "
     config_serverDateError_where = ''
 
-    moduleList = db.doubleIntStr2list(db.querySQL('module_id, module', 'modules')) 
+    moduleList = db.doubleIntStr2list(db.querySQL('module_id, module', 'modules'))
     for moduleRow in moduleList:
         module = db_module(moduleRow[1])
 
         for fileType in cfmodule.config_files_names:
             inAtticFilesDict = filesInAtticCommiters(db, "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'")
-        
+
             if not config_serverDateError_where:
                 AND = ''
             else:
                 AND = ' AND '
 
-            resultRow = db.querySQL('commiter_id, COUNT(*) AS commits, SUM(plus) AS plus, SUM(minus) AS minus, COUNT(DISTINCT(file_id)) AS sum_files, SUM(inAttic) AS inAtticCommits, SUM(external) AS external, SUM(cvs_flag) AS cvs_flag, MIN(date_log) AS first, MAX(date_log) AS last', 'log', "module_id='" + str(moduleRow[0]) + "' AND filetype='" + str(cfmodule.config_files_names.index(fileType)) + "' " + AND + config_serverDateError_where, 'commiter_id', 'commiter_id')
+            query  = 'commiter_id, COUNT(*) AS commits, SUM(plus) AS plus, SUM(minus) AS minus, COUNT(DISTINCT(file_id)) '
+            query += 'AS sum_files, SUM(inAttic) AS inAtticCommits, SUM(external) AS external, SUM(cvs_flag) AS cvs_flag,'
+            query += 'MIN(date_log) AS first, MAX(date_log) AS last'
+
+            where  = "module_id='" + str(moduleRow[0]) + "' AND filetype='"
+            where += str(cfmodule.config_files_names.index(fileType)) + "' " + AND + config_serverDateError_where
+
+            resultRow = db.querySQL(query, "log", where, "commiter_id", "commiter_id")
 
             if resultRow:
                 for resultTuple in resultRow:
@@ -140,26 +147,26 @@ def intermediate_table_commiters(db):
                         inAttic = inAtticFilesDict[resultTuple[0]]
                     except KeyError:
                         inAttic = 0
-                    query =  "INSERT INTO cvsanal_temp_commiters (commiter_id, module_id, commits, plus, minus, files, filetype, inAtticFiles, inAtticCommits, external, cvs_flag, first_commit, last_commit) "
+                    query  = "INSERT INTO cvsanal_temp_commiters (commiter_id, module_id, commits, plus, "
+                    query += "minus, files, filetype, inAtticFiles, inAtticCommits, external, cvs_flag, first_commit, last_commit) "
                     query += " VALUES ('" + str(resultTuple[0]) + "', '" + str(moduleRow[0]) + "','"
                     query += resultTuple[1] + "', '"
                     query += resultTuple[2] + "', '" + resultTuple[3] + "', '" + resultTuple[4] + "', '" + str(cfmodule.config_files_names.index(fileType))
                     query += "', '" + str(inAttic) + "', '" + resultTuple[5] + "', '" + resultTuple[6] + "', '" + resultTuple[7] + "', '"
                     query += resultTuple[8] + "', '" + resultTuple[9] + "');\n"
-                    db.insertData(query)
-                
 
+                    db.insertData(query)
 
 def intermediate_table_commiters_id(db):
-    
+
     print "Calculating statistical data for commiters_id"
-    
+
     db.insertData("DROP TABLE IF EXISTS cvsanal_commiters_id;")
     db.insertData("create table cvsanal_commiters_id as select * from commiters;")
 
-    
+
 def intermediate_table_fileTypes(db):
-    
+
     print "Calculating fileType statistical data "
     index =-1
     for fileType in cfmodule.config_files_names:
@@ -168,7 +175,7 @@ def intermediate_table_fileTypes(db):
 
 def intermediate_table_modules(db):
 
-    print "Calculating statistical data for modules"    
+    print "Calculating statistical data for modules"
     moduleList = db.querySQL('module_id, module', 'modules')
     moduleDict = {}
 

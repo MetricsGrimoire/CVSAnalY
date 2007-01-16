@@ -31,10 +31,9 @@ This module contains a basic SQL wrapper
 import os
 import time
 import sys
-import connection as cf
+import connectionfactory as cf
 import getpass
 import re
-import MySQLdb
 
 class Database:
 
@@ -46,6 +45,7 @@ class Database:
         db = ''
         module = ''
 
+        # Based on SQLdb parser
         match=re.match('([^:]*)://(.*)/([^\?]*)\?*(.*)', driver)
         if match:
             gps = match.groups()
@@ -82,7 +82,7 @@ class Database:
         self.module = module
 
         self.__connection = None
-        self.__connection = cf.ConnectionFactory.get_connection(module)
+        self.__connection = cf.ConnectionFactory.create_connector(module)
         try:
             self.__connection.connect(user=self.username, passwd=self.password, host=self.hostname, db=self.database)
         except:
@@ -143,8 +143,8 @@ class Database:
         try:
             row = r.fetch_row(0)
         except AttributeError:
-            sys.exit("Unknown error with mysql server")
-            
+            sys.exit("Unknown error with SQL server")
+
         return row
 
 
@@ -163,7 +163,7 @@ class Database:
         #try:
         #    row = r.fetch_row(0)
         #except AttributeError:
-        #    print("Unknown error with mysql server")
+        #    print("Unknown error with sql server")
 
         row = r.fetch_row(0)
         return row
@@ -190,7 +190,6 @@ class Database:
         return list
 
 
-        
     def tripleresult2orderedlist(self,row):
         """
         Takes as input a row of rows (as outputed by the querySQL method)
@@ -360,7 +359,7 @@ class Database:
 
         sql_code = "DROP TABLE IF EXISTS " + str(table_name) + ";\n"
         self.__connection.execute(sql_code)
-        
+
         sql_code = "CREATE TABLE IF NOT EXISTS "+table_name+" (\n"
         prim_key_code = ""
 
@@ -389,13 +388,13 @@ class Database:
         admin_password = getpass.getpass("MySQL admin password: ")
         try:
 
-            mysqlquery  = "GRANT ALL ON "+str(self.database)
-            mysqlquery += ".* TO " + str(self.username) + "@" + str(self.hostname)
-            mysqlquery += " IDENTIFIED BY \""+str(self.password)+"\";\n"
+            query  = "GRANT ALL ON "+str(self.database)
+            query += ".* TO " + str(self.username) + "@" + str(self.hostname)
+            query += " IDENTIFIED BY \""+str(self.password)+"\";\n"
 
-            connaux = cf.ConnectionFactory.get_connection(self.module)
+            connaux = cf.ConnectionFactory.create_connector(self.module)
             connaux.connect(admin_user, admin_password, self.hostname)
-            connaux.execute(mysqlquery)
+            connaux.execute(query)
             connaux.close()
 
             self.create_database()
@@ -415,14 +414,14 @@ class Database:
             name = self.database
 
         try:
-            co = cf.ConnectionFactory.get_connection("mysql")
+            co = cf.ConnectionFactory.create_connector(self.module)
             co.connect(self.username, self.password, self.hostname)
 
-            mysqlquery = "DROP DATABASE IF EXISTS " + str(name) + ";\n"
-            co.execute(mysqlquery)
+            query = "DROP DATABASE IF EXISTS " + str(name) + ";\n"
+            co.execute(query)
 
-            mysqlquery = "CREATE DATABASE " + str(name) + ";\n"
-            co.execute(mysqlquery)
+            query = "CREATE DATABASE " + str(name) + ";\n"
+            co.execute(query)
             co.close()
 
         except StandardError:

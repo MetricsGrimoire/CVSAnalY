@@ -17,7 +17,7 @@
 # Authors : Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
 """
-Connection framework
+Connection framework 
 
 @author:       Alvaro Navarro
 @organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
@@ -29,8 +29,6 @@ Connection framework
 import os
 import time
 import sys
-import _mysql
-import _mysql_exceptions
 
 
 class Connection:
@@ -49,53 +47,4 @@ class Connection:
         pass
 
 
-class ConnectionFactory:
-
-    def get_connection(driver):
-        if str(driver).lower() == "mysql":
-            return (ConnectionMySQL())
-        elif str(driver).lower() == "stdout":
-            return (ConnectionStdout())
-        else:
-            sys.exit("not implemented yet")
-
-    get_connection = staticmethod(get_connection)
-
-
-class ConnectionMySQL(Connection):
-
-    def __init__(self):
-        self._conn = None
-
-    def connect(self, user='', passwd='', host='', db=''):
-        self._conn = _mysql.connect(host, user, passwd, db)
-
-    def execute(self, query):
-
-        self._conn.query(query)
-        result = self._conn.store_result()
-
-        return result
-
-    def close(self):
-
-        try:
-            if self._conn != None:
-                self._conn.close()
-        except:
-            pass
-
-        self._conn = None
-
-class ConnectionStdout(Connection):
-
-    def __init__(self):
-        pass
-
-    def execute(self, query):
-        sys.stdout.flush()
-        sys.stdout.write (query)
-        print "\n"
-
-        return None
 

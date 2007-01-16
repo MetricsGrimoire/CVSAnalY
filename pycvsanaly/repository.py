@@ -67,11 +67,27 @@ commit_properties = {'commit_id':'',
                      'intrunk':'',
                      'state':''}
 
+work_area = { 'svn' : '.svn',
+              'cvs' : 'CVS'}
+
 class RepositoryFactory:
     """
     Basic Factory that abastracts the process to create new repositories
     """
-    def create(type):
+    def create(type, checkout_directory):
+
+        binary_directory = checkout_directory + '/' +  work_area[type]
+
+        try:
+            isvalid = os.path.isdir (binary_directory)
+        except KeyError:
+            print ("Error! '%s' is not a valid repository type") % (type)
+            sys.exit (-1)
+
+        if not isvalid:
+            print ("Oops! Seems that current directory is not a valid %s work area. I can't find %s directory.\n\nSee --help for more details.\n") % (type, work_area[type])
+            sys.exit (-1)
+
         if type.upper() == "CVS":
             return RepositoryCVS()
         if type.upper() == "SVN":
@@ -179,13 +195,18 @@ class RepositoryCVS(Repository):
     def __init__(self):
         pass
 
-    def log(self, db, logfile=''):
+    def log(self, db, checkout_directory='', path='', logfile=''):
+
+        cvsbinary = path + '/cvs'
+        if not os.path.isfile (cvsbinary):
+            print ("Error: Can't find cvs binary in path %s\n") % (path)
+            sys.exit (-1)
 
         if logfile:
             linelog = open(logfile,'r')
         else:
-            linelog = os.popen3 ('/usr/bin/cvs -z9 -Q log -N .')
-            
+            linelog = os.popen3 (cvsbinary + ' -z9 -Q log -N ' + checkout_directory)
+
         filename = ''
         dirname = ''
         commitername = ''
@@ -200,8 +221,8 @@ class RepositoryCVS(Repository):
         cvs_flag= 0
         newcommit = 0
         external = 0
-        checkin= 0
         state = ''
+        checkin= 0
 
         authors = {}
 
@@ -238,7 +259,7 @@ class RepositoryCVS(Repository):
                     sum_plus = 0
                     sum_minus = 0
                     external = 0
-                    plus = '0'
+                    plus  = '0'
                     minus = '0'
                     modificationdate = ''
                     creationdate = ''
@@ -328,7 +349,7 @@ class RepositoryCVS(Repository):
                         state = mobj4.group(7)
                     else:
                         state = mobj5.group(7)
-                        
+
                 mobj6 = pattern6.match(line)
                 if mobj6:
                     cvs_flag = 1
@@ -350,7 +371,6 @@ class RepositoryCVS(Repository):
                             intrunk = "0"
                         else:
                             intrunk = "1"
-                        
 
 			# Add commit
                         commit_properties['file_id'] = str(f.get_id())
@@ -367,6 +387,7 @@ class RepositoryCVS(Repository):
                         commit_properties['fileraw'] = str(fileraw)
                         commit_properties['intrunk'] = str(intrunk)
                         commit_properties['state'] = str(state)
+
 			c = Commit ()
                         c.add_properties (db, commit_properties)
 
@@ -441,15 +462,19 @@ class RepositorySVN(Repository):
         return line
 
 
-    def log(self, db, logfile=''):
+    def log(self, db, checkout_directory='', path='', logfile=''):
         """
 
         """
+        svnbinary = path + '/svn'
+        if not os.path.isfile (svnbinary):
+            print ("Error: Can't find svn binary in path %s\n") % (path)
+            sys.exit (-1)
 
         if logfile:
             linelog = open(logfile, 'r')
         else:
-            linelog = os.popen3 ('/usr/bin/svn --verbose log .')
+            linelog = os.popen3 (svnbinary + ' --verbose log ' + checkout_directory)
 
         fileList = []
         dirname = ''
