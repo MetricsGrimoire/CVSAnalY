@@ -28,8 +28,8 @@
 import os
 import sys
 
-main_module    = 'cvsplugins'
-main_function  = 'main'
+main_module  = 'cvsplugins'
+main_function = 'main'
 
 """
 All plugins should hitherate from this class
@@ -74,7 +74,6 @@ class Loader:
             # in sys.path, we add subdirectories.
             # Each subdirectory will be a plugin
             if os.path.isdir (aux):
-                #print "Searching plugins in " + aux
                 subdir = os.listdir(aux)
 
                 # Add each subdirectory as a valid plugin
@@ -118,4 +117,13 @@ class Loader:
         if not plugins:
             print "No plugins found: No such file or directory: " + main_module
         print "\n"
+
+    def run (self, plugin, db):
+
+        completepath = main_module + '.' + plugin + '.' + main_function
+        #try:
+        mod = self.my_import (completepath)
+        #except:
+        #    print "\nError: No plugin " + str(plugin) + " found!\n"
+        mod.run (db)
 

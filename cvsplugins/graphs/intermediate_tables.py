@@ -15,18 +15,19 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 # Authors : Gregorio Robles <grex@gsyc.escet.urjc.es>
+#           Alvaro Navarro  <anavarro@gsyc.escet.urjc.es>
 
 """
 Create intermediate tables. (very useful for cvsanaly-web)
 
-@author:       Gregorio Robles
+@author:       Gregorio Robles / Alvaro Navarro
 @organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
 @copyright:    Universidad Rey Juan Carlos (Madrid, Spain)
 @license:      GNU GPL version 2 or any later version
-@contact:      grex@gsyc.escet.urjc.es
+@contact:      grex/anavarro@gsyc.escet.urjc.es
 """
 
-import config_files as cfmodule
+import pycvsanaly.config_files as cfmodule
 
 config_serverDateError_where = ''
 

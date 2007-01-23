@@ -4,7 +4,16 @@ TODO
 [X] number of files quite different from previous version
 [X] use argv instead of annoying config file
 [X] Basic tables should be only three: files, log and commiter (jgb)
-[ ] cvsanal_temp_commiters takes long time when high number of modules :-(
-[ ] cvsanaly commiters/module bug
-[ ] add graphs
 [X] checkout?
+[ ] cvsanaly commiters/module bug
+
+23th January
+============
+[ ] add graphs from graphs/ directory
+[ ] cvsanal_temp_commiters takes long time when high number of modules. Idea: make stats only for 20 first most active directories.
+[ ] Autodetect svn/cvs (better than --type flag)
+[ ] is --revision flag useful?
+[ ] there is no way to pass options flags from command line to plugins.
+[ ] Directory table contains fields without utility (left, right, father_id).
+[ ] Podemos tener problemas al acceder a una base de datos desde un plugins con un usuario sin privilegios. Posible solucion es incluir un add privileges en el SQL que 'escupe' cvsanaly.
+

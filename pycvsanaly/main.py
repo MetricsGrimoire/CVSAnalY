@@ -73,25 +73,25 @@ Plugins:
 
   --scan            Scan for plugins
   --info            Retreives information from given plugin
-  --with-plugin     Execute list of plugin
+  --run-plugin      Execute plugin
 """
 
 def main():
 
 
     # Short (one letter) options. Those requiring argument followed by :
-    #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     short_opts = ""
+    #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = [ "help", "database=", "type=", "branch=", "revision=", "log-file=", "path=", "driver=", "scan", "info=", "run-plugins="]
+    long_opts = ["help","database=","type=","branch=","revision=","log-file=","path=","driver=","scan","info=","run-plugin="]
 
     # Prefix directory. cvs/svn binaries should be installed under this path
     prefixpath = '/usr/bin/'
 
     # Default options
-    user = ''
-    passwd = ''
-    hostname = ''
+    user = 'operator'
+    passwd = 'operator'
+    hostname = 'localhost'
     database = 'cvsanaly'
     logfile = ''
     branch = ''
@@ -99,7 +99,9 @@ def main():
     type = 'cvs'
     driver = 'stdout'
     directory = '.'
+    plugin = ''
 
+    # Scan for plugins
     p = plugmodule.Loader ()
 
     try:
@@ -112,28 +114,28 @@ def main():
         if opt in ("-h", "--help", "-help"):
             usage()
             sys.exit(0)
-        elif opt in ("-l", "--log-file"):
+        elif opt in ("--log-file"):
             logfile = value
-        elif opt in ("-t", "--type"):
+        elif opt in ("--type"):
             type = 'svn'
-        elif opt in ("-b", "--database"):
+        elif opt in ("--database"):
             database = value
-        elif opt in ("-r", "--repo-type"):
+        elif opt in ("--repo-type"):
             type = value
-        elif opt in ("-d", "--driver"):
+        elif opt in ("--driver"):
             driver = value
-        elif opt in ("-b", "--branch"):
+        elif opt in ("--branch"):
             branch = value
-        elif opt in ("-p", "--path"):
+        elif opt in ("--path"):
             binarypath = value
-        elif opt in ("-s", "--scan"):
+        elif opt in ("--scan"):
             p.scan ()
             sys.exit(0)
-        elif opt in ("-i", "--info"):
+        elif opt in ("--info"):
             p.get_information (value)
             sys.exit(0)
-        elif opt in ("-r", "--run-plugins"):
-            print "not implemented"
+        elif opt in ("--run-plugin"):
+            plugin = value
         else:
             print ('Unknown option ', opt)
             usage()
@@ -142,19 +144,21 @@ def main():
     conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
     db = dbmodule.Database(conection)
 
-    # CVS/SVN interactive
-    repos = rpmodule.RepositoryFactory.create (type, directory)
+    if plugin:
+        # Run plugins if needed
+        p.run (plugin, db)
+    else:
+        # CVS/SVN interactive
+        repos = rpmodule.RepositoryFactory.create (type, directory)
 
-    # Create database and tables
-    db.create_database()
-    db.create_table('files',files)
-    db.create_table('commiters',commiters)
-    db.create_table('log',log)
-    db.create_table('modules', modules)
-    db.create_table('commiters_module',commiters_module)
+        # Create database and tables
+        db.create_database()
+        db.create_table('files',files)
+        db.create_table('commiters',commiters)
+        db.create_table('log',log)
+        db.create_table('modules', modules)
 
-    # And finally we analyze log
-    repos.log (db, directory, prefixpath, logfile)
+        # And finally we analyze log
+        repos.log (db, directory, prefixpath, logfile)
 
     db.close()
-

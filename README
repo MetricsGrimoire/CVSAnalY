@@ -4,6 +4,9 @@ CVSAnalY needs the following dependencies:
 
     * cvs
     * subversion
+
+Optional dependencies for plugins:
+
     * python-2.x-MySQLdb
     * mysql-server
     * gnuplot
@@ -26,19 +29,14 @@ You are ready to use cvsanaly!
 Running cvsanaly
 ----------------
 
-For the impatient: just checkout (from svn or cvs) to obtain a local
+For the impatients: just checkout (from svn or cvs) to obtain a local
 version of your repository, and then run cvsanaly:
 
     $ cd project/
-    ~/project$ cvsanaly -u <user> -p <passwd> -d <database> -r <repo>
-
-<user> is the user of MySQL
-<passwd> is the password of MySQL for that user
-<database> is the name of the database in MySQL to use
-<repo> is svn or cvs (svn by default)
+    ~/project$ cvsanaly 
 
 More options, and a more detailed info about the options, can be
-learnt by running "cvsanaly -h"
+learnt by running "cvsanaly --help"
 
 Analysis
 --------
@@ -73,7 +71,15 @@ The GSyC/LibreSoft group:
 Main authors
 ------------
 
-Gregorio Robles
-Alvaro Navarro
+Gregorio Robles                 <grex at gsyc.escet.urjc.es>
+Alvaro Navarro                  <anavarro at gsyc.escet.urjc.es>
 
-  {grex,anavarro} at gsyc.escet.urjc.es
+Contributors
+------------
+
+Jesus M. Gonzalez-Barahona      <jgb at gsyc.escet.urjc.es>
+Israel Herraiz                  <herraiz at urjc.es>
+Juan Jose Amor                  <jjamor at gsyc.escet.urjc.es>
+Martin Michlmayr                <tbm at debian.org>
+Alvaro del Castillo             <acs at barrapunto.com>
+
