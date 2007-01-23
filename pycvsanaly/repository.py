@@ -74,18 +74,17 @@ class RepositoryFactory:
     """
     Basic Factory that abastracts the process to create new repositories
     """
-    def create(type, checkout_directory):
-
-        binary_directory = checkout_directory + '/' +  work_area[type]
-
-        try:
+    def create(checkout_directory):
+        for type in work_area:
+            binary_directory = checkout_directory + '/' +  work_area[type]
             isvalid = os.path.isdir (binary_directory)
-        except KeyError:
-            print ("Error! '%s' is not a valid repository type") % (type)
-            sys.exit (-1)
+            if isvalid:
+                break
 
         if not isvalid:
-            print ("\nOops! Seems that current directory is not a valid %s work area. I can't find %s directory.\n\nSee --help for more details.\n") % (type, work_area[type])
+            for type in work_area:
+                print ("The "+checkout_directory+" is not a valid %s work area. I can't find %s directory.") % (type, work_area[type])
+            print ("\nSee --help for more details.\n")
             sys.exit (-1)
 
         if type.upper() == "CVS":

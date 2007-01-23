@@ -55,7 +55,6 @@ Options:
 
   --help            Print this usage message.
 
-  --type            Type of repository, cvs or svn (default is cvs)
   --branch          Branch to be analyzed (default is trunk)
   --revision        Start analysis from given revision
   --log-file        Parse a given log file instead of get it from repository
@@ -83,7 +82,7 @@ def main():
     short_opts = ""
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","database=","type=","branch=","revision=","log-file=","path=","driver=","scan","info=","run-plugin="]
+    long_opts = ["help","database=","branch=","revision=","log-file=","path=","repodir=","driver=","scan","info=","run-plugin="]
 
     # Prefix directory. cvs/svn binaries should be installed under this path
     prefixpath = '/usr/bin/'
@@ -116,8 +115,6 @@ def main():
             sys.exit(0)
         elif opt in ("--log-file"):
             logfile = value
-        elif opt in ("--type"):
-            type = 'svn'
         elif opt in ("--database"):
             database = value
         elif opt in ("--repo-type"):
@@ -128,6 +125,8 @@ def main():
             branch = value
         elif opt in ("--path"):
             binarypath = value
+        elif opt in ("--repodir"):
+            directory = value
         elif opt in ("--scan"):
             p.scan ()
             sys.exit(0)
@@ -149,7 +148,7 @@ def main():
         p.run (plugin, db)
     else:
         # CVS/SVN interactive
-        repos = rpmodule.RepositoryFactory.create (type, directory)
+        repos = rpmodule.RepositoryFactory.create (directory)
 
         # Create database and tables
         db.create_database()
