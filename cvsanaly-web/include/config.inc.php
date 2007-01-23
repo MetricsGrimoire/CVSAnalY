@@ -48,9 +48,9 @@ if (!class_exists('DB')) {
 	}
 	class DB extends DB_Sql {
 	var $Host     = "localhost";
-	var $Database = "cvsanaly_gaim";
-	var $User     = "operator";
-	var $Password = "operator";
+	var $Database = "cvsanaly";
+	var $User     = "root";
+	var $Password = "";
 	}
 
 }

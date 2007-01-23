@@ -6,6 +6,8 @@ TODO
 [X] Basic tables should be only three: files, log and commiter (jgb)
 [X] checkout?
 [ ] cvsanaly commiters/module bug
+[ ] implement cvsanaly --revision flag
+[ ] implement cvsanaly --branch bug
 
 23th January
 ============

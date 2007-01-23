@@ -56,9 +56,9 @@ Options:
   --help            Print this usage message.
 
   --branch          Branch to be analyzed (default is trunk)
-  --revision        Start analysis from given revision
   --log-file        Parse a given log file instead of get it from repository
   --path            Set an alternative path for cvs/svn binary
+  --repodir         Set the repository dir
   --driver          Output driver mysql or stdout (default is stdout)
 
 Database:
@@ -82,7 +82,7 @@ def main():
     short_opts = ""
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","database=","branch=","revision=","log-file=","path=","repodir=","driver=","scan","info=","run-plugin="]
+    long_opts = ["help","database=","branch=","log-file=","path=","repodir=","driver=","scan","info=","run-plugin="]
 
     # Prefix directory. cvs/svn binaries should be installed under this path
     prefixpath = '/usr/bin/'
@@ -94,7 +94,6 @@ def main():
     database = 'cvsanaly'
     logfile = ''
     branch = ''
-    revision = ''
     type = 'cvs'
     driver = 'stdout'
     directory = '.'
