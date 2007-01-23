@@ -17,8 +17,6 @@
 # 
 # $Id: cvsanal_graph_inequality.py,v 1.3 2005/05/13 11:28:38 anavarro Exp $
 
-from config import *
-from db import *
 import os, time, math
 
 """
@@ -42,7 +40,7 @@ In general:
 """
 
 # Directory where evolution graphs will be located
-config_graphsDirectory = config_graphsDirectory + 'inequality/'
+config_graphsDirectory = 'inequality/'
 
 def file_plot(module, title='title', xlabel ='xlabel', ylabel='ylabel', dataStyle = 'linespoints', label = ''):
 	"""
@@ -335,17 +333,14 @@ def browseInTime(module_id, moduleName, time_start, time_slots, interval):
 			     + '\n')
 	output.close()
 
-def graph_inequality():
-	"""
-	"""
-	
+def graph_inequality(db):
+
 	if not os.path.isdir(config_graphsDirectory):
 		os.mkdir(config_graphsDirectory)
 	time_slots = 100
 	# Getting modules out of database
-	#moduleList = uniqueresult2list(querySQL('module', 'modules'))
-        result = doubleStrInt2list(querySQL('module,module_id', 'modules'))
-	
+        result = db.doubleStrInt2list(db.querySQL('module,module_id', 'modules'))
+
 	print "Calculating several inequality indexes and redundancies"
 
 	for module in result:
@@ -358,6 +353,3 @@ def graph_inequality():
 		browseInTime(moduleCode, moduleName, time_start, time_slots, interval)
 		file_plot(moduleName)
 
-if __name__ == '__main__':
-	graph_inequality()
-	db.close()

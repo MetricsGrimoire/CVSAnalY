@@ -171,6 +171,22 @@ class Repository:
                 result = 0
         return result
 
+    def directories2sql (self, db, comms):
+        """
+        @type  db: Database object
+        @param db: Object that represents connection with a database
+
+        @type comms: dictionary
+        @param comms: list of directories
+        """
+        for co in comms:
+            dir = co.replace('/', '_')
+            query = "INSERT INTO modules (module_id, module) VALUES ('"
+            query += str(comms[co]) + "','" + str(dir) + "');"
+
+            db.insertData(query)
+
+
     def commiters2sql(self, db, comms):
         """
         @type  db: Database object
@@ -227,7 +243,7 @@ class RepositoryCVS(Repository):
 
         f = None
         c = None
-	d = Directory()
+        mdirectories = {}
 
         while 1:
             if logfile:
@@ -278,12 +294,14 @@ class RepositoryCVS(Repository):
 
                     if not filepath:
                         filepath = '/'
-                    d.add_directory(filepath)
+                    if not mdirectories.has_key(filepath):
+                        mdirectories[filepath] = len(mdirectories)
+                    #d.add_directory(filepath)
                     #print fileraw
 
                     file_properties['name'] = filename
                     file_properties['filetype'] = filetype
-                    file_properties['module_id'] = str(d.get_id(filepath))
+                    file_properties['module_id'] = mdirectories[filepath]
                     file_properties['filetype'] = filetype
                     file_properties['fileraw'] = fileraw
 
@@ -382,7 +400,7 @@ class RepositoryCVS(Repository):
                         commit_properties['external'] = str(external)
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
-                        commit_properties['module_id'] = str(d.get_id(filepath))
+                        commit_properties['module_id'] = mdirectories[filepath]
                         commit_properties['fileraw'] = str(fileraw)
                         commit_properties['intrunk'] = str(intrunk)
                         commit_properties['state'] = str(state)
@@ -408,7 +426,7 @@ class RepositoryCVS(Repository):
 
         try:
             # Directories
-            d.directory2sql(db)
+            self.directories2sql (db, mdirectories)
             # Commiters
             self.commiters2sql(db,authors)
         except:
@@ -462,9 +480,7 @@ class RepositorySVN(Repository):
 
 
     def log(self, db, checkout_directory='', path='', logfile=''):
-        """
 
-        """
         svnbinary = path + '/svn'
         if not os.path.isfile (svnbinary):
             print ("Error: Can't find svn binary in path %s\n") % (path)
@@ -485,10 +501,10 @@ class RepositorySVN(Repository):
 
         commits = []
         mfiles = {}
+        mdirectories = {}
 
         f = None
         c = None
-        d = Directory()
 
         while 1:
             line = self._getNextLine(logfile, linelog)
@@ -562,11 +578,14 @@ class RepositorySVN(Repository):
 
                         if not filepath:
                             filepath = '/'
-                        d.add_directory(filepath)
+
+                        if not mdirectories.has_key(filepath):
+                            mdirectories[filepath] = len(mdirectories)
+                        #d.add_directory(filepath)
 
                         file_properties['name'] = filename
                         file_properties['filetype'] = filetype
-                        file_properties['module_id'] = str(d.get_id(filepath))
+                        file_properties['module_id'] = mdirectories[filepath]
                         file_properties['filetype'] = filetype
                         file_properties['size'] = '' # TODO
                         file_properties['creation_date'] = str(creationdate)
@@ -586,7 +605,7 @@ class RepositorySVN(Repository):
                         commit_properties['external'] = ''      # TODO
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
-                        commit_properties['module_id'] = str(d.get_id(filepath))
+                        commit_properties['module_id'] = mdirectories[filepath]
                         c = Commit ()
                         c.add_properties (db, commit_properties)
 
@@ -597,7 +616,7 @@ class RepositorySVN(Repository):
             # Files
             self.files2sql(mfiles, db)
             # Directories
-            d.directory2sql(db)
+            self.directories2sql (db, mdirectories)
             # Commiters
             self.commiters2sql(db,authors)
         except:

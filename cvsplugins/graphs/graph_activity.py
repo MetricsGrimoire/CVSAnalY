@@ -27,12 +27,11 @@
 @contact:      grex@gsyc.escet.urjc.es
 """
 
-from config import *
-from db import *
 import os, time
+import graph_utils as utils
 
 # Directory where evolution graphs will be located
-config_graphsDirectory = config_graphsDirectory + 'activity/'
+config_graphsDirectory = 'activity/'
 
 weekdayDict = {0: '1_Monday',
 	       1: '2_Tuesday',
@@ -105,24 +104,20 @@ def dateListSplit(dateList):
 		weekdayList.append(weekdayDict[time.strptime(date, '%Y-%m-%d')[6]])
 	return (hourList, weekdayList)
 
-def graph_activity():
+def plot(db):
 	"""
 	"""
 
 	if not os.path.isdir(config_graphsDirectory):
 		os.mkdir(config_graphsDirectory)
 
-	modulesList = uniqueresult2list(querySQL('module', 'modules'))
+	modulesList = db.uniqueresult2list(db.querySQL('module', 'modules'))
 
 	for module in modulesList:
-		#dateList = uniqueresult2list(querySQL('date', db_module(module) + '_log'))
-		dateList = uniqueresult2list(querySQL('date_log', 'log'))
+                module = utils.db_module (module)
+		dateList = db.uniqueresult2list(db.querySQL('date_log', 'log'))
 		(hourList, weekdayList) = dateListSplit(dateList)
 		ploticus_hour_activity('hours_' + module, hourList)
 		ploticus_weekDay_activity('weekdays_' + module, weekdayList)
 
 
-if __name__ == '__main__':
-
-	graph_activity()
-	db.close()

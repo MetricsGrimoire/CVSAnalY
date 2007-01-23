@@ -47,9 +47,6 @@ files = {'file_id':'int(8) NOT NULL',
 
 modules = { 'module_id': 'int(8) NOT NULL',
                 'module': 'varchar(64) NOT NULL',
-                'lft':'int(8) NOT NULL',
-                'rgt':'int(8) NOT NULL',
-                'father_dir': 'int(8) NOT NULL',
                 'primary key': 'module_id'}
 
 commiters = {'commiter_id':'int(8) unsigned NOT NULL',

@@ -38,7 +38,7 @@ class ConnectionStdout(cn.Connection):
     def execute(self, query):
 
         sys.stdout.flush()
-        sys.stdout.write (query)
+        sys.stdout.write (query + "\n")
 
         return None
 

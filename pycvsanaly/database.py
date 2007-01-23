@@ -155,7 +155,7 @@ class Database:
         Output is a tuple of rows (rows are also tuples)
         
         """
-
+        print query
         r = self.__connection.execute(query)
 
         # Dirty trick to avoid raising an exception when nothing
@@ -164,7 +164,6 @@ class Database:
         #    row = r.fetch_row(0)
         #except AttributeError:
         #    print("Unknown error with sql server")
-
         row = r.fetch_row(0)
         return row
 
@@ -431,7 +430,6 @@ class Database:
         except StandardError:
             print "WARNING: unable to create database. User " + self.username + " doesn't have privileges"
             self.create_user()
-
 
     def insertData(self,sqlcode):
          r = self.__connection.execute(sqlcode)

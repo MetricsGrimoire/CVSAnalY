@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # vim: set expandtab tabstop=4 shiftwidth=4:
 # +----------------------------------------------------------------------+
 # |                CVSAnalY: CVS and SVN Analysis Tool                   |
@@ -15,29 +14,27 @@
 # |          Gregorio Robles <grex@gsyc.escet.urjc.es>                   |
 # +----------------------------------------------------------------------+
 # 
-# $Id: cvsanal_graph_global.py,v 1.2 2005/04/29 00:01:16 anavarro Exp $
 
 """
 Creates global analysis graphs for the repository using gnuplot
 
-@author:       Gregorio Robles
+@author:       Gregorio Robles & Alvaro Navarro
 @organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
 @copyright:    Universidad Rey Juan Carlos (Madrid, Spain)
 @license:      GNU GPL version 2 or any later version
-@contact:      grex@gsyc.escet.urjc.es
+@contact:      {grex, anavarro}@gsyc.escet.urjc.es
 """
 
-from config import *
-from config_files import *
 import os, time, math
+import pycvsanaly.config_files as cfg_file_module
 
 # Directory where evolution graphs will be located
-config_graphsDirectory = config_graphsDirectory + 'global/'
+config_graphsDirectory = 'global/'
 
 
 # See a gnuplot tutorial at
 # http://www.cs.uni.edu/Help/gnuplot/
-    
+
 def file_plot(outputFile,
 	      listValues,
 	      title='title',
@@ -83,31 +80,23 @@ def file_plot(outputFile,
 	## make it work with Gnuplot.py
 	## this has been disabled as gnuplut.py does not handle
 	## dates properly
-	
+
 	output = open(config_graphsDirectory + outputFile + ".gnuplot", 'w')
 	output.write('set title "' + title + ' (log-log)"' + "\n")
 	output.write('set xlabel "'+ xlabel +' (log)"' + "\n")
-	output.write('set autoscale' + "\n") # let gnuplot determine ranges
-#	output.write('set label "yield point" at 1, 2' + "\n") # set label on the plot
-#	output.write('set key 0.01,100') # set key
-#	output.write('set timefmt "%d/%m/%y\t%H%M"' + "\n")
-#	output.write('set xdata time' + "\n")
-#	output.write('set xrange [ "1/6/02":"1/11/02" ]' + "\n")
-#	output.write('set format x "%d/%m/%y"' + "\n")
-#	output.write('set xrange [20:500]' + "\n")
+	output.write('set autoscale' + "\n")
 	output.write('set yrange [0:]' + "\n")
 	output.write('set ylabel "'+ ylabel +' (log)"' + "\n")
 	output.write('set grid' + "\n")
-	output.write('set data style ' + dataStyle + "\n") # dataStyle can be `lines`, `points`, `linespoints`, `impulses`, `dots`, `steps`, `errorbars`, `boxes`, and `boxerrorbars`
+	output.write('set data style ' + dataStyle + "\n")
 	output.write('set pointsize 1.2' + "\n")
-#	output.write('set logscale y' + "\n")
 	output.write('set terminal png' + "\n")
 	output.write('set output "' + config_graphsDirectory + outputFile + '.png"' + "\n")
 	string = 'plot '
 	i = 1
 	for description in listDescriptions:
 		i+=1
-		string += '"' + config_graphsDirectory + outputFile + '.dat" using 1:' + str(i) + ' title \'' + description + ' (log) \', ' 
+		string += '"' + config_graphsDirectory + outputFile + '.dat" using 1:' + str(i) + ' title \'' + description + ' (log) \', '
 	string = string[:-2] + "\n"
 	output.write(string)
 	output.close()
@@ -132,7 +121,7 @@ def file_plot(outputFile,
 	os.system('rm ' + config_graphsDirectory + outputFile + ".gnuplot")
 
 
-def modules_by_commits(filetype=''):
+def modules_by_commits(db, filetype=''):
 	"""
 
 	@type  : string 
@@ -141,14 +130,14 @@ def modules_by_commits(filetype=''):
 
 	@rtype: list
 	@return: Number of commits per module
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('commits', 'cvsanal_temp_modules', filetype, 'commits DESC')
-	return singleresult2list(result)
+	result = db.querySQL('commits', 'cvsanal_temp_modules', filetype, 'commits DESC')
+	return db.singleresult2list(result)
 
 
-def modules_by_commiters(filetype=''):
+def modules_by_commiters(db, filetype=''):
 	"""
 	
 	@type  : string 
@@ -157,14 +146,14 @@ def modules_by_commiters(filetype=''):
 
 	@rtype: list
 	@return:  Number of commiters per module
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('commiters', 'cvsanal_temp_modules', filetype, 'commiters DESC')
-	return singleresult2list(result)
+	result = db.querySQL('commiters', 'cvsanal_temp_modules', filetype, 'commiters DESC')
+	return db.singleresult2list(result)
 
 
-def modules_by_files(filetype=''):
+def modules_by_files(db, filetype=''):
 	"""
 
 
@@ -174,14 +163,14 @@ def modules_by_files(filetype=''):
 
 	@rtype:  list
 	@return: Number of files per module
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('files', 'cvsanal_temp_modules', filetype, 'files DESC')
-	return singleresult2list(result)
+	result = db.querySQL('files', 'cvsanal_temp_modules', filetype, 'files DESC')
+	return db.singleresult2list(result)
 
 
-def modules_by_plus(filetype=''):
+def modules_by_plus(db, filetype=''):
 	"""
 
 	@type  : string
@@ -190,14 +179,14 @@ def modules_by_plus(filetype=''):
 
 	@rtype: list
 	@return:  Number of aggregated lines per module
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('plus', 'cvsanal_temp_modules', filetype, 'plus DESC')
-	return singleresult2list(result)
+	result = db.querySQL('plus', 'cvsanal_temp_modules', filetype, 'plus DESC')
+	return db.singleresult2list(result)
 
 
-def modules_by_minus(filetype=''):
+def modules_by_minus(db, filetype=''):
 	"""
 
 	@type  : string
@@ -206,14 +195,14 @@ def modules_by_minus(filetype=''):
 
 	@rtype: list
 	@return: Number of removed lines per module
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('minus', 'cvsanal_temp_modules', filetype, 'minus DESC')
-	return singleresult2list(result)
+	result = db.querySQL('minus', 'cvsanal_temp_modules', filetype, 'minus DESC')
+	return db.singleresult2list(result)
 
 
-def modules_by_changes(filetype=''):
+def modules_by_changes(db, filetype=''):
 	"""
 
 	@type  : string
@@ -222,14 +211,14 @@ def modules_by_changes(filetype=''):
 
 	@rtype: list
 	@return: Number of aggregated, removed and changed lines per module
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('plus, minus, abs(plus-minus)', 'cvsanal_temp_modules', filetype, '(plus-minus) DESC')
-	return tripleresult2orderedlist(result)
+	result = db.querySQL('plus, minus, abs(plus-minus)', 'cvsanal_temp_modules', filetype, '(plus-minus) DESC')
+	return db.tripleresult2orderedlist(result)
 
 
-def commiter_by_modules(filetype=''):
+def commiter_by_modules(db, filetype=''):
 	"""
 
 	@type  : string
@@ -238,14 +227,14 @@ def commiter_by_modules(filetype=''):
 
 	@rtype: list
 	@return: Number of modules per commiter
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('COUNT(module_id) AS count', 'cvsanal_temp_commiters', filetype, 'count DESC', 'commiter_id')
-	return singleresult2list(result)
+	result = db.querySQL('COUNT(module_id) AS count', 'cvsanal_temp_commiters', filetype, 'count DESC', 'commiter_id')
+	return db.singleresult2list(result)
 
 
-def commiter_by_commits(filetype=''):
+def commiter_by_commits(db, filetype=''):
 	"""
 
 	@type  : string
@@ -254,14 +243,14 @@ def commiter_by_commits(filetype=''):
 
 	@rtype: list
 	@return: Number of commits per commiter
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('commits', 'cvsanal_temp_commiters', filetype, 'commits DESC', 'commiter_id')
-	return singleresult2list(result)
+	result = db.querySQL('commits', 'cvsanal_temp_commiters', filetype, 'commits DESC', 'commiter_id')
+	return db.singleresult2list(result)
 
 
-def commiter_by_files(filetype=''):
+def commiter_by_files(db, filetype=''):
 	"""
 
 	@type  : string
@@ -270,14 +259,14 @@ def commiter_by_files(filetype=''):
 
 	@rtype: list
 	@return: Number of files per commiter
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('files', 'cvsanal_temp_commiters', filetype, 'files DESC', 'commiter_id')
-	return singleresult2list(result)
+	result = db.querySQL('files', 'cvsanal_temp_commiters', filetype, 'files DESC', 'commiter_id')
+	return db.singleresult2list(result)
 
 
-def commiter_by_plus(filetype=''):
+def commiter_by_plus(db, filetype=''):
 	"""
 
 	@type  : string
@@ -286,14 +275,14 @@ def commiter_by_plus(filetype=''):
 
 	@rtype: list
 	@return: Number of aggregated lines per commiter
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('plus', 'cvsanal_temp_commiters', filetype, 'plus DESC', 'commiter_id')
-	return singleresult2list(result)
+	result = db.querySQL('plus', 'cvsanal_temp_commiters', filetype, 'plus DESC', 'commiter_id')
+	return db.singleresult2list(result)
 
 
-def commiter_by_minus(filetype=''):
+def commiter_by_minus(db, filetype=''):
 	"""
 
 	@type  : string
@@ -302,14 +291,14 @@ def commiter_by_minus(filetype=''):
 
 	@rtype: list
 	@return: Number of removed lines per commiter
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('minus', 'cvsanal_temp_commiters', filetype, 'minus DESC', 'commiter_id')
-	return singleresult2list(result)
+	result = db.querySQL('minus', 'cvsanal_temp_commiters', filetype, 'minus DESC', 'commiter_id')
+	return db.singleresult2list(result)
 
 
-def commiter_by_changes(filetype=''):
+def commiter_by_changes(db, filetype=''):
 	"""
 
 	@type  : string
@@ -318,33 +307,36 @@ def commiter_by_changes(filetype=''):
 
 	@rtype: list
 	@return: number of aggregated, removed and changed lines per commiter
-	"""	
+	"""
 	if filetype:
 		filetype = "filetype='" + filetype + "'"
-	result = querySQL('plus, minus, abs(plus-minus)', 'cvsanal_temp_commiters', filetype, 'abs(plus-minus) DESC', 'commiter_id')
-	return tripleresult2orderedlist(result)
+
+	result = db.querySQL('plus, minus, abs(plus-minus)',
+                'cvsanal_temp_commiters',
+                filetype,
+                'abs(plus-minus) DESC',
+                'commiter_id')
+
+	return db.tripleresult2orderedlist(result)
 
 
-def graph_global(db, config_graphsDirectory="graphs"):
-	"""
-	"""
+def plot (db):
 
+	print "Creating some general (global) statistics"
 	if not os.path.isdir(config_graphsDirectory):
 		os.mkdir(config_graphsDirectory)
 
-	print "Creating some general (global) statistics"
-
 	# Commits
 	file_plot('modules_by_commits', \
-		   modules_by_commits(), \
+		   modules_by_commits(db), \
 		   'Modules by number of commits', \
 		   'modules', \
 		   'commits', \
 		   ['Modules by number of commits'])
 
-	for filetype in config_files_names:
+	for filetype in cfg_file_module.config_files_names:
 		file_plot('modules_by_commits_' + filetype, \
-			   modules_by_commits(str(config_files_names.index(filetype))), \
+			   modules_by_commits(db, str(cfg_file_module.config_files_names.index(filetype))), \
 			   'Modules by number of ' + filetype + ' commits', \
 			   'modules', \
 			   filetype + ' commits', \
@@ -352,34 +344,62 @@ def graph_global(db, config_graphsDirectory="graphs"):
 
 	# Commiters
 	file_plot('modules_by_commiters', \
-			modules_by_commiters(), \
+			modules_by_commiters(db), \
 			'Modules by number of commiters', \
 			'modules', \
 			'commiters', \
 			['Modules by number of commiters'])
-			
-	for filetype in config_files_names:
+
+	for filetype in cfg_file_module.config_files_names:
 		file_plot('modules_by_commiters_' + filetype,\
-				modules_by_commiters(str(config_files_names.index(filetype))), \
+				modules_by_commiters(db, str(cfg_file_module.config_files_names.index(filetype))), \
 				'Modules by number of ' + filetype + ' commiters', \
 				'modules', \
 				filetype + ' commiters', \
 				['Modules by number of ' + filetype + ' commiters'])
 
 	# Files
-	file_plot('modules_by_files', modules_by_files(), 'Modules by number of files', 'modules', 'files', ['Modules by number of files'])
+	file_plot('modules_by_files',
+                modules_by_files(db),
+                'Modules by number of files',
+                'modules', 'files',
+                ['Modules by number of files'])
 
-#	file_plot('modules_by_plus', modules_by_plus(), 'Modules by number of added lines', 'modules', 'added lines', ['Modules by aggregated lines'])
-#	file_plot('modules_by_minus', modules_by_minus(), 'Modules by number of removed lines', 'modules', 'removed lines', ['Modules by removed lines'])
-	file_plot('modules_by_changes', modules_by_changes(), 'Modules by number of changes', 'modules', 'changed lines', ['Aggregated lines', 'Removed lines', 'Final lines (absolute)'])
-	
-	file_plot('commiter_by_commits', commiter_by_commits(), 'Commiters by number of commits', 'commiters', 'commits', ['Commiters by number of commits'])
-	file_plot('commiter_by_modules', commiter_by_modules(), 'Commiters by number of modules', 'commiters', 'modules', ['Commiters by number of modules'])
-	file_plot('commiter_by_files', commiter_by_files(), 'Commiters by number of files', 'commiters', 'files', ['Commiters by number of files'])
-#	file_plot('commiter_by_plus', commiter_by_plus(), 'Commiters by number of added lines', 'commiters', 'added lines', ['Commiters by number of aggregated lines'])
-#	file_plot('commiter_by_minus', commiter_by_minus(), 'Commiters by number of removed lines', 'commiters', 'removed lines', ['Commiters by number of removed lines'])
-	file_plot('commiter_by_changes', commiter_by_changes(), 'Commiters by number of changes', 'commiters', 'changed lines', ['Aggregated lines', 'Removed lines', 'Final lines (absolute)'])
+	file_plot('modules_by_changes',
+                modules_by_changes(db),
+                'Modules by number of changes',
+                'modules',
+                'changed lines',
+                ['Aggregated lines',
+                    'Removed lines',
+                    'Final lines (absolute)'])
 
-if __name__ == '__main__':
+	file_plot('commiter_by_commits',
+                commiter_by_commits(db),
+                'Commiters by number of commits',
+                'commiters', 'commits',
+                ['Commiters by number of commits'])
 
-	graph_global()
+	file_plot('commiter_by_modules',
+                commiter_by_modules(db),
+                'Commiters by number of modules',
+                'commiters',
+                'modules',
+                ['Commiters by number of modules'])
+
+	file_plot('commiter_by_files',
+                commiter_by_files(db),
+                'Commiters by number of files',
+                'commiters',
+                'files',
+                ['Commiters by number of files'])
+
+	file_plot('commiter_by_changes',
+                commiter_by_changes(db),
+                'Commiters by number of changes',
+                'commiters',
+                'changed lines',
+                ['Aggregated lines',
+                    'Removed lines',
+                    'Final lines (absolute)'])
+

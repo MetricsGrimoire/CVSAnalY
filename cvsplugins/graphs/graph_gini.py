@@ -15,14 +15,12 @@
 # |          Gregorio Robles <grex@gsyc.escet.urjc.es>                   |
 # +----------------------------------------------------------------------+
 # 
-# $Id: cvsanal_graph_gini.py,v 1.1 2005/04/06 22:03:58 anavarro Exp $
 
-from config import *
-from db import *
 import os, time
+import graph_utils as utils
 
 # Directory where evolution graphs will be located
-config_graphsDirectory = config_graphsDirectory + 'gini/'
+config_graphsDirectory = 'gini/'
 
 def file_plot(outputFile, listValues, title='title', xlabel ='xlabel', ylabel='ylabel', dataStyle = 'linespoints', label = ''):
 	"""
@@ -32,17 +30,17 @@ def file_plot(outputFile, listValues, title='title', xlabel ='xlabel', ylabel='y
 	## make it work with Gnuplot.py
 	## this has been disabled as gnuplut.py does not handle
 	## dates properly
-	
+
 	output = open(config_graphsDirectory + outputFile + ".gnuplot", 'w')
 	output.write('set title "Lorenz curve for module ' + title + '"' + "\n")
 	output.write('set xlabel "Number of developers: ' + xlabel + ' (normalized to 1)' + "\n")
-	output.write('set label "Gini coefficient (normalized): ' + label +'" at 0.088,0.82' + "\n") # set label on the plot
-	output.write('set key 0.4,0.96' + "\n") # set key
+	output.write('set label "Gini coefficient (normalized): ' + label +'" at 0.088,0.82' + "\n")
+	output.write('set key 0.4,0.96' + "\n")
 	output.write('set xrange [0:1]' + "\n")
 	output.write('set yrange [0:1]' + "\n")
 	output.write('set ylabel "Number of total commits: '+ ylabel  + ' (normalized to 1)"' + '"' + "\n")
 	output.write('set grid' + "\n")
-	output.write('set data style ' + dataStyle + "\n") # dataStyle can be `lines`, `points`, `linespoints`, `impulses`, `dots`, `steps`, `errorbars`, `boxes`, and `boxerrorbars`
+	output.write('set data style ' + dataStyle + "\n")
 	output.write('set pointsize 1.35' + "\n")
 	output.write('set terminal png' + "\n")
 	output.write('set output "' + config_graphsDirectory + outputFile + '.png"' + "\n")
@@ -54,7 +52,7 @@ def file_plot(outputFile, listValues, title='title', xlabel ='xlabel', ylabel='y
 	for value in listValues:
 		output.write(str(value[0]) + "\t" + str(value[1]) + "\t" + str(value[0]) + "\n")
 	output.close()
-	
+
 	# Execute gnuplots' temporary file
 	os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot")
 
@@ -70,7 +68,7 @@ def file_plotAllInOne(outputFile, listValues, title='', xlabel ='', ylabel='', d
 	## make it work with Gnuplot.py
 	## this has been disabled as gnuplut.py does not handle
 	## dates properly
-	
+
 	output = open(config_graphsDirectory + outputFile + ".gnuplot", 'w')
 	output.write('set title "Lorenz curve for module ' + title + '"' + "\n")
 	output.write('set xlabel "Developers (normalized to 1)' + "\n")
@@ -159,7 +157,7 @@ def file_plotAllInOneB(outputFile, listOfLists, title='', xlabel ='', ylabel='',
 		i+=1
 		output.write(string + "\n")
 	output.close()
-	
+
 	# Execute ploticus' temporary file
 	os.system('ploticus -png ' + config_graphsDirectory + outputFile + '.ploticus -o ' + config_graphsDirectory + outputFile + ".png")
 	# Delete temporary files
@@ -185,7 +183,7 @@ def getColor(listLength):
 	else:
 		return 'red'
 
-def giniInput(input):
+def giniInput(db, input):
 	"""
 	Extracts the data from the database and outputs
 	it in a file named after the variable input
@@ -195,16 +193,16 @@ def giniInput(input):
 	print "Calculating gini coefficients"
 	GiniInput = open(config_graphsDirectory + input, 'w')
 
-	result = doubleStrInt2list(querySQL('module,module_id', 'modules'))
+	result = db.doubleStrInt2list(db.querySQL('module,module_id', 'modules'))
 	for module in result:
-		moduleName = db_module(module[0])
-		commitList = querySQL('COUNT(*) AS count', 'log', 'module_id=' + str(module[1]), 'count', 'commiter_id')
+                moduleName = utils.db_module(module[0])
+		commitList = db.querySQL('COUNT(*) AS count', 'log', 'module_id=' + str(module[1]), 'count', 'commiter_id')
 		if commitList:
 			string =  module[0]
 		for commits in commitList:
 			string += "," + str(commits[0])
 		if commitList:
-			GiniInput.write(string + '\n')			
+			GiniInput.write(string + '\n')
 	GiniInput.close()
 
 def giniOutput(input, output):
@@ -238,8 +236,8 @@ def lorenzAllInOne(input):
 		for element in range(4, int(elementList[2])+4):
 			i+=1
 			values.append([float(i)/int(elementList[2]), elementList[element]])
-	file_plotAllInOne('all', values, config_dbname)
-	
+	file_plotAllInOne ('all', values, "Lorentz curve")
+
 
 def lorenzAllInOneB(input):
 	"""
@@ -265,7 +263,8 @@ def lorenzAllInOneB(input):
 			i+=1
 			values.append([float(i)/int(elementList[2]), elementList[element]])
 		listOfLists.append(values)
-	file_plotAllInOneB('all', listOfLists, config_dbname)
+
+	file_plotAllInOneB ('all', listOfLists, "Lorentz curve")
 
 
 def lorenz(input):
@@ -293,13 +292,21 @@ def lorenz(input):
 		for element in range(4, int(elementList[2])+4):
 			i+=1
 			values.append([float(i)/int(elementList[2]), elementList[element]])
-		file_plot(elementList[0], values, elementList[0], elementList[2], elementList[3], 'linespoints', elementList[1] + ' (' + str(giniNormalized) +')')
 
-def gini2db(input):
+                dirname = utils.db_module (elementList[0])
+		file_plot(dirname,
+                        values,
+                        elementList[0],
+                        elementList[2],
+                        elementList[3],
+                        'linespoints',
+                        elementList[1] + ' (' + str(giniNormalized) +')')
+
+def gini2db(db, input):
 	"""
 	Inserting gini coefficient to database
 	"""
-	
+
 	print "Inserting normalized Gini coefficients into database"
 	GiniOutput = open(config_graphsDirectory + input, 'r')
 	while 1:
@@ -319,23 +326,23 @@ def gini2db(input):
 		eu = (1-float(elementList[1]))/(1+float(elementList[1]))
 
 		# Looking for the module id
-		result = querySQL('module_id', 'modules', "module='" + elementList[0] + "'")
-		db.query("UPDATE cvsanal_temp_inequality SET gini ='" + str(elementList[1]) + "' WHERE module_id = '" + str(result[0][0]) + "'")
-		db.query("UPDATE cvsanal_temp_inequality SET concentration='" + str(giniNormalized) + "' WHERE module_id = '" + str(result[0][0]) + "'")
-		db.query("UPDATE cvsanal_temp_inequality SET eu='" + str(eu) + "' WHERE module_id = '" + str(result[0][0]) + "'")
+		result = db.querySQL ('module_id', 'modules', "module='" + elementList[0] + "'")
+                moduleName = utils.db_module (result[0][0])
+		db.insertData ("UPDATE cvsanal_temp_inequality SET gini ='" + str(elementList[1]) + "' WHERE module_id = '" + moduleName + "'")
+		db.insertData ("UPDATE cvsanal_temp_inequality SET concentration='" + str(giniNormalized) + "' WHERE module_id = '" + moduleName + "'")
+		db.insertData ("UPDATE cvsanal_temp_inequality SET eu='" + str(eu) + "' WHERE module_id = '" + moduleName + "'")
 
-def graph_gini():
-	"""
-	"""
-	
+def graph_gini(db):
+
 	if not os.path.isdir(config_graphsDirectory):
 		os.mkdir(config_graphsDirectory)
-	giniInput('gini.in')
+
+	giniInput(db, 'gini.in')
 	giniOutput('gini.in', 'gini.out')
 	lorenz('gini.out')
-	gini2db('gini.out')
+	gini2db(db, 'gini.out')
 
-def graph_giniAllInOne():
+def graph_giniAllInOne(db):
 	"""
 	The same as graph_gini, but all the modules lorenz curves are displayed
 	in an unique figure
@@ -343,11 +350,12 @@ def graph_giniAllInOne():
 
 	if not os.path.isdir(config_graphsDirectory):
 		os.mkdir(config_graphsDirectory)
-	giniInput('gini.in')
+
+	giniInput(db, 'gini.in')
 	giniOutput('gini.in', 'gini.out')
 	lorenzAllInOneB('gini.out')
 
-if __name__ == '__main__':
-	graph_gini()
-	graph_giniAllInOne()
-	db.close()
+def plot (db):
+	graph_gini (db)
+	graph_giniAllInOne (db)
+

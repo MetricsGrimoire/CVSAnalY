@@ -8,6 +8,7 @@ import tables_skeleton as tables
 import graph_global as g_global
 import graph_pie as g_pie
 import graph_gini as g_gini
+import graph_activity as g_activity
 
 graphs_directory = 'graphs'
 
@@ -38,3 +39,5 @@ def run (db):
     g_global.plot (db)
     g_pie.plot (db)
     g_gini.plot (db)
+    g_activity.plot (db)
+

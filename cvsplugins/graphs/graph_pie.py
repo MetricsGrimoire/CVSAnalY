@@ -28,13 +28,12 @@ file types (for the whole repository, each module and each commiter)
 @contact:      grex@gsyc.escet.urjc.es
 """
 
-from config import *
-from config_files import *
-from db import *
 import os, time
+import pycvsanaly.config_files as cfg_file_module
+import graph_utils as utils
 
 # Directory where evolution graphs will be located
-config_graphsDirectory = config_graphsDirectory + 'pie/'
+config_graphsDirectory = 'pie/'
 
 def ploticus_pie(outputFile, listValues):
 	"""
@@ -47,7 +46,7 @@ def ploticus_pie(outputFile, listValues):
 	@param listValues: List with the values for the pie graph
 	                   [integer, description]
 	"""
-	
+
 	output = open(config_graphsDirectory + outputFile + ".ploticus", 'w')
 	output.write('ploticus  -prefab pie  data=' + config_graphsDirectory + outputFile + '.dat  delim=tab values=1  labels=2  colorfld=3 legend=yes radius=1.2 -png -o ' + config_graphsDirectory + outputFile + '.png')
 	output.close()
@@ -55,9 +54,9 @@ def ploticus_pie(outputFile, listValues):
 	# Write data into data file
 	output = open(config_graphsDirectory + outputFile + ".dat", 'w')
 	for value in listValues:
-		output.write(str(value[0]) + "\t" + value[1] + "\t" + config_colorDict[value[1]] + "\n")
+		output.write(str(value[0]) + "\t" + value[1] + "\t" + cfg_file_module.config_colorDict[value[1]] + "\n")
 	output.close()
-	
+
 	# Execute gnuplots' temporary file
 	os.system('sh ' + config_graphsDirectory + outputFile + ".ploticus")
 
@@ -66,49 +65,50 @@ def ploticus_pie(outputFile, listValues):
 	os.system('rm ' + config_graphsDirectory + outputFile + ".ploticus")
 
 
-def filetype_commiter_pie():
+def filetype_commiter_pie(db):
 	"""
 	returns a tuple with commiter name and a list with two fields per item:
 	LOCs and filetype
 	"""
 
-	result = querySQL('commiter_id', 'cvsanal_commiters_id')
+	result = db.querySQL('commiter_id', 'commiters')
 
-	print "traza1"
 	for commiter in result:
-		
-		filetypeList = doubleIntStr2list(querySQL('SUM(ctc.commits), cf.filetype',
+
+		filetypeList = db.doubleIntStr2list(db.querySQL('SUM(ctc.commits), cf.filetype',
 							  'cvsanal_temp_commiters ctc, cvsanal_fileTypes cf',
 							  "ctc.filetype=cf.fileType_id AND ctc.commiter_id='" + commiter[0] + "'",
 							  'cf.filetype','cf.filetype'))
-		name = uniqueresult2list(querySQL("commiter","commiters","commiter_id='" + commiter[0] + "'"))
+		name = db.uniqueresult2list(db.querySQL("commiter","commiters","commiter_id='" + commiter[0] + "'"))
 		ploticus_pie('commiter_' + name[0], filetypeList)
 
 
-def filetype_module_pie():
+def filetype_module_pie(db):
 	"""
 	returns a tuple with module name and a list with two fields per item:
 	LOCs and filetype
 	"""
 
-	result = querySQL('module', 'modules')
+	result = db.querySQL('module', 'modules')
 
 	for module in result:
-		filetypeList = doubleIntStr2list(querySQL('SUM(ctm.commits), cf.filetype',
+                dir_aux = utils.db_module (module[0])
+		filetypeList = db.doubleIntStr2list(db.querySQL('SUM(ctm.commits), cf.filetype',
 							  'cvsanal_temp_modules ctm, cvsanal_fileTypes cf',
-							  "ctm.filetype=cf.fileType_id AND module='" + module[0] + "'",
+							  "ctm.filetype=cf.fileType_id AND module='" + str(dir_aux) + "'",
 							  'cf.filetype',
 							  'cf.filetype'))
-		ploticus_pie('module_' + module[0], filetypeList)
+
+		ploticus_pie('module_' + dir_aux, filetypeList)
 
 
-def filetype_repository_pie():
+def filetype_repository_pie(db):
 	"""
 	returns a tuple with repository name and a list with two fields per item:
 	LOCs and filetype
 	"""
 
-	resultList = doubleIntStr2list(querySQL('SUM(ctm.commits), cf.filetype',
+	resultList = db.doubleIntStr2list(db.querySQL('SUM(ctm.commits), cf.filetype',
 					    'cvsanal_temp_modules ctm, cvsanal_fileTypes cf',
 					    'ctm.filetype=cf.fileType_id',
 					    'cf.filetype',
@@ -117,7 +117,7 @@ def filetype_repository_pie():
 	ploticus_pie('cvsanal_repository', resultList)
 
 
-def graph_pie():
+def plot(db):
 	"""
 	"""
 
@@ -125,33 +125,9 @@ def graph_pie():
 		os.mkdir(config_graphsDirectory)
 
 	print "Creating file type pies for the whole repository"
-	filetype_repository_pie()
+	filetype_repository_pie (db)
 	print "Creating file type pies for modules"
-	filetype_module_pie()
+	filetype_module_pie (db)
 	print "Creating file type pies for commiters"
-	filetype_commiter_pie()
+	filetype_commiter_pie (db)
 
-
-if __name__ == '__main__':
-	"""
-	This is just for making the function callable from the
-	command line. Try '--help' for more information on this.
-	"""
-	import sys
-	from getargv import getopts
-
-	# Getting command line arguments
-
-	myargs = getopts(sys.argv)
-	if myargs.has_key('-h') or myargs.has_key('--help'):
-		print ""
-		print "    Usage:"
-		print "    python cvsanal_graph_pie.py"
-		print ""
-		print "    if not given, the optional command line values are taken from config.py"
-		sys.exit(1)
-
-	# Calling the log function
-
-	graph_pie()
-	db.close()
