@@ -1,3 +1,17 @@
+2007-01-23  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+
+	* pycvsanaly/repository.py
+	* cvsplugins/graphs/graph_gini.py
+	* cvsplugins/graphs/graph_global.py
+	* cvsplugins/graphs/graph_pie.py
+	* cvsplugins/graphs/tables_skeleton.py
+	
+	New grahps added and new way to store directories
+	replace '/' with '_' to avoid problems in graphs
+	creations.
+	rght, left and father_id fields removed from modules
+	table
+
 2007-01-23  Alvaro del Castillo <acs@gsyc.escet.urjc.es>
 
 	* pycvsanaly/repository.py
