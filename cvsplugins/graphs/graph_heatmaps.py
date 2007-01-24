@@ -29,12 +29,11 @@ in equally-large periods of time.
 @contact:      grex@gsyc.escet.urjc.es
 """
 
-from config import *
-from db import *
 import os, time
+import intermediate_tables as intmodule
 
 # Directory where evolution graphs will be located
-config_graphsDirectory = config_graphsDirectory + 'heatmaps/'
+config_graphsDirectory = 'heatmaps/'
 
 def commiterListAndDict(row):
 	"""
@@ -61,7 +60,7 @@ def commiterListAndDict(row):
 	return list, d
 	
 
-def commitersRepository(time_start, time_slots, interval):
+def commitersRepository(db, time_start, time_slots, interval):
 	"""
 	Returns a list with the contribution of commiters
 	in a given period of time
@@ -70,14 +69,14 @@ def commitersRepository(time_start, time_slots, interval):
 	commiters = []
 	end = time_start
 
-	result = querySQL('commiters.commiter, commiters.commiter_id, MIN(log.date_log) AS min',\
+	result = db.querySQL('commiters.commiter, commiters.commiter_id, MIN(log.date_log) AS min',\
 			  'log, commiters', \
 			  'log.commiter_id = commiters.commiter_id', \
 			  'min',\
 			  'commiters.commiter_id')
 	
 	commiterList, commiterDict = commiterListAndDict(result)
-	commiters.append(uniqueresult2list(result))
+	commiters.append(db.uniqueresult2list(result))
 
 	i = 0
 	while i < time_slots:
@@ -89,9 +88,9 @@ def commitersRepository(time_start, time_slots, interval):
 		# Excluding po files
 		# Uncomment this line and set not_po to '' to
 		# include translation files
-		result2 = querySQL('commiter_id, COUNT(*)', 'log, files', "date_log >'" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(start)) + "' AND files.file_id = log.file_id AND files.name not like 'po/%' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'commiter_id', 'commiter_id')
+		result2 = db.querySQL('commiter_id, COUNT(*)', 'log, files', "date_log >'" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(start)) + "' AND files.file_id = log.file_id AND files.name not like 'po/%' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'commiter_id', 'commiter_id')
 
-		list = doubleresult2list(result2)
+		list = db.doubleresult2list(result2)
 
 		# get total number of commits
 		total_commits = 0
@@ -115,7 +114,7 @@ def commitersRepository(time_start, time_slots, interval):
 	return commiters
 
 
-def commiters(moduleName, time_start, time_slots, interval):
+def commiters(db, moduleName, time_start, time_slots, interval):
 	"""
 	Returns a list with the contribution of commiters
 	in a given period of time
@@ -124,14 +123,14 @@ def commiters(moduleName, time_start, time_slots, interval):
 	commiters = []
 	end = time_start
 
-	result = querySQL('commiters.commiter, commiters.commiter_id, MIN(log.date_log) AS min',\
+	result = db.querySQL('commiters.commiter, commiters.commiter_id, MIN(log.date_log) AS min',\
 			  'log, commiters', \
 			  'log.commiter_id = commiters.commiter_id AND log.module_id=' + str(moduleName),\
 			  'min',\
 			  'commiters.commiter_id')
 	
 	commiterList, commiterDict = commiterListAndDict(result)
-	commiters.append(uniqueresult2list(result))
+	commiters.append(db.uniqueresult2list(result))
 
 	i = 0
 	while i < time_slots:
@@ -143,9 +142,9 @@ def commiters(moduleName, time_start, time_slots, interval):
 		# Excluding po files
 		# Uncomment this line and set not_po to '' to
 		# include translation files
-		result2 = querySQL('commiter_id, COUNT(*)', 'log, files', "log.module_id = '" + str(moduleName) + "' AND date_log >'" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(start)) + "' AND files.file_id = log.file_id AND files.name not like 'po/%' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'commiter_id', 'commiter_id')
+		result2 = db.querySQL('commiter_id, COUNT(*)', 'log, files', "log.module_id = '" + str(moduleName) + "' AND date_log >'" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(start)) + "' AND files.file_id = log.file_id AND files.name not like 'po/%' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'commiter_id', 'commiter_id')
 
-		list = doubleresult2list(result2)
+		list = db.doubleresult2list(result2)
 
 		# get total number of commits
 		total_commits = 0
@@ -193,7 +192,7 @@ def commiterList2file(list, time_slots='10'):
 			string += str(list[j][i+25*number_of_files]) + "\t"
 		data.write(string + '\n')
 	data.close()
-		
+
 	return len(list[0]), number_of_files+1
 
 
@@ -290,13 +289,9 @@ def ploticus(module, number_of_dev, number_of_files):
 			ploticus.write('outlinecolors: yes\n')
 		ploticus.close()
 
-		os.system('ploticus -png /' + config_graphsDirectory + str(file) + '.ploticus -o ' + config_graphsDirectory + module + '___' + str(file) + '.png')
-#		os.system('rm ' + config_graphsDirectory + str(file) + '.dat')
-#		os.system('rm ' + config_graphsDirectory + str(file) + '.ploticus')
+		os.system('ploticus -png /' + config_graphsDirectory + str(file) + '.ploticus -o ' + config_graphsDirectory + module + '___' + str(file) + '.png 2')
 
-def graph_heatmaps():
-	"""
-	"""
+def plot(db):
 
         time_slots = 10
 	if not os.path.isdir(config_graphsDirectory):
@@ -305,30 +300,22 @@ def graph_heatmaps():
 	# Getting heatmap for the whole repository
 	print "Creating heat map for the whole repository"
 	time_start = time.mktime(time.strptime('1997-04-09 00:25:19', '%Y-%m-%d %H:%M:%S'))
-	time_finish = time.mktime(time.strptime('2005-04-21 00:01:05', '%Y-%m-%d %H:%M:%S'))
+	time_finish = time.mktime(time.strptime('2007-04-21 00:01:05', '%Y-%m-%d %H:%M:%S'))
 	interval = (time_finish - time_start) / time_slots
-	commitersList = commitersRepository(time_start, time_slots, interval)
+	commitersList = commitersRepository(db, time_start, time_slots, interval)
         number_of_dev, number_of_files = commiterList2file(commitersList, time_slots)
-	ploticus('KDE', number_of_dev, number_of_files)
+	ploticus("whole repository", number_of_dev, number_of_files)
 
 
 	# Getting modules out of database
-	moduleList = doubleStrInt2list(querySQL('module,module_id', 'modules'))
+	moduleList = db.doubleStrInt2list(db.querySQL('module,module_id', 'modules'))
 
 	for module in moduleList:
 		print "Creating heat map for " + module[0]
-		moduleName = db_module(module[0])
-                time_start = time.mktime(time.strptime(first_commit('log',"module_id = " + str(module[1])), '%Y-%m-%d %H:%M:%S'))
-                time_finish =  time.mktime(time.gmtime())
+                time_start = time.mktime(time.strptime(intmodule.first_commit(db,'log',"module_id = " + str(module[1])), '%Y-%m-%d %H:%M:%S'))
+                time_finish = time.mktime(time.gmtime())
                 interval = (time_finish - time_start) / time_slots
-		commiterList = commiters(module[1], time_start, time_slots, interval)
+		commiterList = commiters(db, module[1], time_start, time_slots, interval)
 		number_of_dev, number_of_files = commiterList2file(commiterList, time_slots)
 		ploticus(module[0], number_of_dev, number_of_files)
 
-# # # # # # # # # # #
-#    Main program   #
-# # # # # # # # # # #
-
-if __name__ == '__main__':
-	graph_heatmaps()
-	db.close()

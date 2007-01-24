@@ -18,6 +18,7 @@
 # $Id: cvsanal_graph_inequality.py,v 1.3 2005/05/13 11:28:38 anavarro Exp $
 
 import os, time, math
+import intermediate_tables as intmodule
 
 """
 You can find information about all these inequality indexes
@@ -244,16 +245,16 @@ def avoidTooSmall(value):
 		value = 0.0
 	return value
 
-def indexes2db(module, atkinson, theil, reserve, d_and_r, kullback_liebler, hoover, coulter):
+def indexes2db(db, module, atkinson, theil, reserve, d_and_r, kullback_liebler, hoover, coulter):
 	"""
 	"""
 
 	# Looking for the module id
 	#result = querySQL('module_id', 'modules', "module='" + module + "'")
-	db.query("UPDATE cvsanal_temp_inequality SET atkinson ='" + str(atkinson) + "', theil  ='" + str(theil) + "', reserve  ='" + str(reserve) + "', d_and_r ='" + str(d_and_r) + "', kullback_liebler ='" + str(kullback_liebler) + "', hoover ='" + str(hoover) + "', coulter  ='" + str(coulter) + "' WHERE module_id = '" + str(module) + "'")
+	db.insertData("UPDATE cvsanal_temp_inequality SET atkinson ='" + str(atkinson) + "', theil  ='" + str(theil) + "', reserve  ='" + str(reserve) + "', d_and_r ='" + str(d_and_r) + "', kullback_liebler ='" + str(kullback_liebler) + "', hoover ='" + str(hoover) + "', coulter  ='" + str(coulter) + "' WHERE module_id = '" + str(module) + "'")
 
 
-def browseInTime(module_id, moduleName, time_start, time_slots, interval):
+def browseInTime(db, module_id, moduleName, time_start, time_slots, interval):
 	"""
 	"""
 
@@ -272,7 +273,7 @@ def browseInTime(module_id, moduleName, time_start, time_slots, interval):
 		where = ""
 
 		# Aggregated index
-		commitList = uniqueresult2list(querySQL('COUNT(*) AS count', 'log', "date_log > '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time_start)) + "' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'count', 'commiter_id'))
+		commitList = db.uniqueresult2list(db.querySQL('COUNT(*) AS count', 'log', "date_log > '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(time_start)) + "' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'count', 'commiter_id'))
 		total_commits = 0
 		total_commiters = 0
 		for commits in commitList:
@@ -295,10 +296,10 @@ def browseInTime(module_id, moduleName, time_start, time_slots, interval):
 			hoover_agg = hooverF(commitList, total_commiters, total_commits)
 			coulter_agg = coulterF(commitList, total_commiters, total_commits)
 
-		indexes2db(module_id, avoidTooSmall(atkinson_agg), avoidTooSmall(theil_agg), avoidTooSmall(reserve_agg), avoidTooSmall(d_and_r_agg), avoidTooSmall(kullback_liebler_agg), avoidTooSmall(hoover_agg), avoidTooSmall(coulter_agg))
+		indexes2db(db, module_id, avoidTooSmall(atkinson_agg), avoidTooSmall(theil_agg), avoidTooSmall(reserve_agg), avoidTooSmall(d_and_r_agg), avoidTooSmall(kullback_liebler_agg), avoidTooSmall(hoover_agg), avoidTooSmall(coulter_agg))
 
 		# Delta index
-		commitList = uniqueresult2list(querySQL('COUNT(*) AS count', 'log', "date_log > '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(start)) + "' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'count', 'commiter_id'))
+		commitList = db.uniqueresult2list(db.querySQL('COUNT(*) AS count', 'log', "date_log > '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(start)) + "' AND date_log < '" + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(end)) + "'", 'count', 'commiter_id'))
 		total_commits = 0
 		total_commiters = 0
 		for commits in commitList:
@@ -321,7 +322,7 @@ def browseInTime(module_id, moduleName, time_start, time_slots, interval):
 			hoover = hooverF(commitList, total_commiters, total_commits)
 			coulter = coulterF(commitList, total_commiters, total_commits)
 
-		
+
 		output.write(str(i)
 			     + '\t' + str(int(10000 * atkinson_agg))  + '\t' + str(int(10000 * atkinson))
 			     + '\t' + str(int(10000 * theil_agg))  + '\t' + str(int(10000 * theil))
@@ -333,13 +334,13 @@ def browseInTime(module_id, moduleName, time_start, time_slots, interval):
 			     + '\n')
 	output.close()
 
-def graph_inequality(db):
+def plot(db):
 
 	if not os.path.isdir(config_graphsDirectory):
 		os.mkdir(config_graphsDirectory)
 	time_slots = 100
 	# Getting modules out of database
-        result = db.doubleStrInt2list(db.querySQL('module,module_id', 'modules'))
+        result = db.doubleStrInt2list(db.querySQL('module, module_id', 'modules'))
 
 	print "Calculating several inequality indexes and redundancies"
 
@@ -347,9 +348,9 @@ def graph_inequality(db):
 		print "Working with " + module[0]
 		moduleCode = str(module[1])
 		moduleName = str(module[0])
-                time_start = time.mktime(time.strptime(first_commit('log','module_id = ' + str(module[1])), '%Y-%m-%d %H:%M:%S'))
+                time_start = time.mktime(time.strptime(intmodule.first_commit(db, 'log','module_id = ' + str(module[1])), '%Y-%m-%d %H:%M:%S'))
                 time_finish =  time.mktime(time.gmtime())
                 interval = (time_finish - time_start) / time_slots
-		browseInTime(moduleCode, moduleName, time_start, time_slots, interval)
+		browseInTime(db, moduleCode, moduleName, time_start, time_slots, interval)
 		file_plot(moduleName)
 

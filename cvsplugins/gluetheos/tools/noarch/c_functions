@@ -1,3 +1,0 @@
-#!/bin/sh
-
-ctags --c-kinds=f -f - "$1" | wc -l

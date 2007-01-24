@@ -30,7 +30,6 @@ file types (for the whole repository, each module and each commiter)
 
 import os, time
 import pycvsanaly.config_files as cfg_file_module
-import graph_utils as utils
 
 # Directory where evolution graphs will be located
 config_graphsDirectory = 'pie/'
@@ -92,14 +91,14 @@ def filetype_module_pie(db):
 	result = db.querySQL('module', 'modules')
 
 	for module in result:
-                dir_aux = utils.db_module (module[0])
+                moduleName = module[0]
 		filetypeList = db.doubleIntStr2list(db.querySQL('SUM(ctm.commits), cf.filetype',
 							  'cvsanal_temp_modules ctm, cvsanal_fileTypes cf',
-							  "ctm.filetype=cf.fileType_id AND module='" + str(dir_aux) + "'",
+							  "ctm.filetype=cf.fileType_id AND module='" + str(moduleName) + "'",
 							  'cf.filetype',
 							  'cf.filetype'))
 
-		ploticus_pie('module_' + dir_aux, filetypeList)
+		ploticus_pie('module_' + moduleName, filetypeList)
 
 
 def filetype_repository_pie(db):

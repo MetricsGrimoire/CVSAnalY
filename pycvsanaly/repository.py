@@ -76,7 +76,7 @@ class RepositoryFactory:
     """
     def create(checkout_directory):
         for type in work_area:
-            binary_directory = checkout_directory + '/' +  work_area[type]
+            binary_directory = os.path.join (checkout_directory, work_area[type])
             isvalid = os.path.isdir (binary_directory)
             if isvalid:
                 break
@@ -171,33 +171,69 @@ class Repository:
                 result = 0
         return result
 
-    def directories2sql (self, db, comms):
+    def directories2sql (self, db, mdirs):
         """
         @type  db: Database object
         @param db: Object that represents connection with a database
 
-        @type comms: dictionary
-        @param comms: list of directories
+        @type mdirs: dictionary
+        @param mdirs: list of directories
         """
-        for co in comms:
-            dir = co.replace('/', '_')
+        dir = ''
+        for co in mdirs:
+            dir = co
+            # ommit initial and final slash
+            try:
+                if dir != "/":
+                    if dir[0] == '/':
+                        dir = dir[1:]
+                    if dir[len(dir)-1] == '/':
+                        dir = dir[:len(dir)-1]
+            except:
+                dir = co
+
+            dir = dir.replace('/', '_')
             query = "INSERT INTO modules (module_id, module) VALUES ('"
-            query += str(comms[co]) + "','" + str(dir) + "');"
+            query += str(mdirs[co]) + "','" + str(dir) + "');"
 
             db.insertData(query)
 
 
-    def commiters2sql(self, db, comms):
+    def commiters2sql(self, db, mcommiters):
         """
         @type  db: Database object
         @param db: Object that represents connection with a database
 
-        @type comms: dictionary
-        @param comms: list of commiters
+        @type mcommiters: dictionary
+        @param mcommiters: list of commiters
         """
-        for co in comms:
+        for co in mcommiters:
             query = "INSERT INTO commiters (commiter_id, commiter) VALUES ('"
-            query += str(comms[co]) + "','" + str(co) + "');"
+            query += str(mcommiters[co]) + "','" + str(co) + "');"
+
+            db.insertData(query)
+
+
+    def files2sql(self, db, mfiles):
+        """
+        @type  db: Database object
+        @param db: Object that represents connection with a database
+
+        @type mfiles: dictionary
+        @param mfiles: list of files
+        """
+        for f in mfiles:
+            id = mfiles[f][0]
+            properties_dict = mfiles[f][1]
+
+            query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype) "
+            query += " VALUES ('" + str(id) + "','"
+            query += str(properties_dict['module_id']) + "','"
+            query += str(properties_dict['name']) + "','"
+            query += str(properties_dict['creation_date']) + "','"
+            query += str(properties_dict['last_modification']) + "','"
+            query += str(properties_dict['size']) + "','"
+            query += str(properties_dict['filetype']) + "');"
 
             db.insertData(query)
 
@@ -212,7 +248,8 @@ class RepositoryCVS(Repository):
 
     def log(self, db, checkout_directory='', path='', logfile=''):
 
-        cvsbinary = path + '/cvs'
+        cvsbinary = os.path.join (path, 'cvs')
+
         if not os.path.isfile (cvsbinary):
             print ("Error: Can't find cvs binary in path %s\n") % (path)
             sys.exit (-1)
@@ -296,7 +333,6 @@ class RepositoryCVS(Repository):
                         filepath = '/'
                     if not mdirectories.has_key(filepath):
                         mdirectories[filepath] = len(mdirectories)
-                    #d.add_directory(filepath)
                     #print fileraw
 
                     file_properties['name'] = filename
@@ -411,7 +447,7 @@ class RepositoryCVS(Repository):
                 if mobj9:
                     if newcommit:
                         if not isbinary and not inAttic:
-                            checkin = self.countLOCs(filepath + "/" + filename)
+                            checkin = self.countLOCs(os.path.join (filepath, filename))
                             checkin = checkin - sum_plus + sum_minus
 		            if checkin < 0: checkin = 0
                             plus    = str(checkin)
@@ -428,12 +464,12 @@ class RepositoryCVS(Repository):
             # Directories
             self.directories2sql (db, mdirectories)
             # Commiters
-            self.commiters2sql(db,authors)
+            self.commiters2sql (db,authors)
         except:
             sys.exit("Cannot get log! Maybe this is not a CVS working directory or you are having problems with your connection\n")
 
         if logfile:
-            linelog.close()
+            linelog.close ()
 
 class RepositorySVN(Repository):
     """
@@ -448,22 +484,6 @@ class RepositorySVN(Repository):
             if filename == f:
                 return mfiles[f][0]
                 break
-
-    def files2sql(self, mfiles, db):
-        for f in mfiles:
-            id = mfiles[f][0]
-            properties_dict = mfiles[f][1]
-
-            query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype) "
-            query += " VALUES ('" + str(id) + "','"
-            query += str(properties_dict['module_id']) + "','"
-            query += str(properties_dict['name']) + "','"
-            query += str(properties_dict['creation_date']) + "','"
-            query += str(properties_dict['last_modification']) + "','"
-            query += str(properties_dict['size']) + "','"
-            query += str(properties_dict['filetype']) + "');"
-
-            db.insertData(query)
 
     def print_files(self, files):
         for f in files:
@@ -481,7 +501,7 @@ class RepositorySVN(Repository):
 
     def log(self, db, checkout_directory='', path='', logfile=''):
 
-        svnbinary = path + '/svn'
+        svnbinary = os.path.join (path, 'svn')
         if not os.path.isfile (svnbinary):
             print ("Error: Can't find svn binary in path %s\n") % (path)
             sys.exit (-1)
@@ -612,16 +632,15 @@ class RepositorySVN(Repository):
         # FIXME: modification and bug fixing on the way! grx
         #    SVN commits are not CVS commits, they are transactions!
         #    Files are considered differently!!
+        self.directories2sql (db, mdirectories)
         try:
             # Files
-            self.files2sql(mfiles, db)
+            self.files2sql(db, mfiles)
             # Directories
-            self.directories2sql (db, mdirectories)
             # Commiters
             self.commiters2sql(db,authors)
         except:
             sys.exit("Cannot get log! maybe this is not a SVN working directory or you are having problems with your connection\n")
-
         if logfile:
             linelog.close()
 

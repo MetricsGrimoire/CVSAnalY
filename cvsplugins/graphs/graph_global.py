@@ -114,7 +114,7 @@ def file_plot(outputFile,
 
 	if os.path.getsize(config_graphsDirectory + outputFile + ".dat") != 0:
 		# Execute gnuplots' temporary file
-		os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot")
+		os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot 2> /dev/null")
 
 	# Delete temporary files
 	os.system('rm ' + config_graphsDirectory + outputFile + ".dat")

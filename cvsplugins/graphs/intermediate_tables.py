@@ -44,8 +44,8 @@ def db_module(module):
         @return:
         """
 
-        moduleName = module.replace('-', '_minus_')
-        moduleName = moduleName.replace('+', '_plus_')
+        #moduleName = module.replace('-', '_minus_')
+        moduleName = module.replace('+', '_plus_')
         moduleName = moduleName.replace('@', '_at_')
         moduleName = moduleName.replace('.', '_dot_')
         moduleName = moduleName.replace(':', '_ddot_')
@@ -53,7 +53,46 @@ def db_module(module):
         moduleName = moduleName.replace('  ', '_doblespace_')
 
         return moduleName
- 
+
+def first_commit_commiter(db, commiter):
+        """
+        Returns the date of the first commit for a given commiter
+        @type dbtable:
+        @param dbtable:
+
+        @rtype: string
+        @return: Commiter name
+        """
+
+        result = db.querySQL('MIN(first_commit)', 'cvsanal_temp_commiters', "commiter_id='" + commiter + "'")
+        result_time = result[0][0]
+        if result_time == None:
+                #print "Server Date Error (db.py) - Table: " + dbtable
+                result_time = '2004-01-01 00:00:00'
+        return result_time
+
+def first_commit(db, table, where=""):
+        """
+        Returns the date of the first commit given the table that contains
+        all the commits
+
+        @type dbtable:
+        @param dbtable:
+
+        @rtype: string
+        @return:
+        """
+
+        if not where:
+                result = db.querySQL('MIN(date_log)', table)
+        else:
+                result = db.querySQL('MIN(date_log)', table, str(where))
+
+        result_time = result[0][0]
+        if result_time == None:
+                result_time = '2004-01-01 00:00:00'
+        return result_time
+
 def filesInAtticModules(db, where = ""):
     """
     Returns the number of files it has in the Attic for modules
@@ -123,7 +162,6 @@ def intermediate_table_commiters(db):
 
     moduleList = db.doubleIntStr2list(db.querySQL('module_id, module', 'modules'))
     for moduleRow in moduleList:
-        module = db_module(moduleRow[1])
 
         for fileType in cfmodule.config_files_names:
             inAtticFilesDict = filesInAtticCommiters(db, "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'")
@@ -185,7 +223,6 @@ def intermediate_table_modules(db):
         module = moduleRow[1]
         moduleDict[module_id] = module
 
-        module = db_module(module)
         db.insertData("INSERT INTO cvsanal_temp_inequality (module_id) VALUES ('" + str(module_id) + "');\n")
 
     for fileType in cfmodule.config_files_names:

@@ -5,17 +5,19 @@ TODO
 [X] use argv instead of annoying config file
 [X] Basic tables should be only three: files, log and commiter (jgb)
 [X] checkout?
-[ ] cvsanaly commiters/module bug
 [ ] implement cvsanaly --revision flag
 [ ] implement cvsanaly --branch bug
 
 23th January
 ============
-[ ] add graphs from graphs/ directory
-[ ] cvsanal_temp_commiters takes long time when high number of modules. Idea: make stats only for 20 first most active directories.
-[ ] Autodetect svn/cvs (better than --type flag)
-[ ] is --revision flag useful?
+[X] add graphs from graphs/ directory
+[X] Autodetect svn/cvs (better than --type flag)
+[X] Directory table contains fields without utility (left, right, father_id).
 [ ] there is no way to pass options flags from command line to plugins.
-[ ] Directory table contains fields without utility (left, right, father_id).
-[ ] Podemos tener problemas al acceder a una base de datos desde un plugins con un usuario sin privilegios. Posible solucion es incluir un add privileges en el SQL que 'escupe' cvsanaly.
+[ ] cvsanal_temp_commiters takes long time when high number of modules. Idea: make stats only for 20 first most active directories.
 
+24th January
+===========
+[ ] Extract min and max dates from graph_heatmaps. Create functions to get actual date.
+[ ] port polygini to python
+[ ] add commiters_module table

@@ -1,11 +1,22 @@
+2007-01-24  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+
+	* graph_utils.py: file removed, no longer needed.
+	* repository.py: removed initial & final slash in dir names.
+	* main.py: modified usage message with default values.
+	* cvsplugin/graphs/graph_activity.py: new graphs added
+	* cvsplugin/graphs/graph_heatmaps.py: new graphs added
+	* cvsplugin/graphs/graph_inequality.py: new graphs added
+	* cvsplugin/graphs/intermediate_tables.py: first_commit function
+	* cvsplugin/gluetheos: no needed.
+
 2007-01-23  Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
-	* pycvsanaly/repository.py
-	* cvsplugins/graphs/graph_gini.py
-	* cvsplugins/graphs/graph_global.py
-	* cvsplugins/graphs/graph_pie.py
-	* cvsplugins/graphs/tables_skeleton.py
-	
+	* pycvsanaly/repository.py:
+	* cvsplugins/graphs/graph_gini.py:
+	* cvsplugins/graphs/graph_global.py:
+	* cvsplugins/graphs/graph_pie.py:
+	* cvsplugins/graphs/tables_skeleton.py:
+
 	New grahps added and new way to store directories
 	replace '/' with '_' to avoid problems in graphs
 	creations.

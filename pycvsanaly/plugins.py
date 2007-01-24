@@ -68,7 +68,8 @@ class Loader:
         # For example: /usr/lib/python2.4/site-packages/cvsplugins
 
         for syspath in sys.path:
-            aux = syspath + '/' + main_module
+            aux = os.path.join (syspath, main_module)
+            print "Looking for plugins in " + aux
 
             # Only if we find a directory called 'cvsplugins'
             # in sys.path, we add subdirectories.

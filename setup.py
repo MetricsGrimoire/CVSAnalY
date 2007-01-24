@@ -35,5 +35,5 @@ setup(name = "cvsanaly",
       author_email = "anavarro@gsyc.es",
       description = "An analysis tool for your CVS and Subversion repository",
       url = "http://cvsanaly.tigris.org",
-      packages = ['pycvsanaly','cvsplugins'],
+      packages = ['pycvsanaly','cvsplugins/graphs'],
       scripts = ["cvsanaly"])

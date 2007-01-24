@@ -28,7 +28,6 @@
 """
 
 import os, time
-import graph_utils as utils
 
 # Directory where evolution graphs will be located
 config_graphsDirectory = 'activity/'
@@ -114,7 +113,6 @@ def plot(db):
 	modulesList = db.uniqueresult2list(db.querySQL('module', 'modules'))
 
 	for module in modulesList:
-                module = utils.db_module (module)
 		dateList = db.uniqueresult2list(db.querySQL('date_log', 'log'))
 		(hourList, weekdayList) = dateListSplit(dateList)
 		ploticus_hour_activity('hours_' + module, hourList)

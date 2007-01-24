@@ -17,7 +17,6 @@
 # 
 
 import os, time
-import graph_utils as utils
 
 # Directory where evolution graphs will be located
 config_graphsDirectory = 'gini/'
@@ -54,7 +53,7 @@ def file_plot(outputFile, listValues, title='title', xlabel ='xlabel', ylabel='y
 	output.close()
 
 	# Execute gnuplots' temporary file
-	os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot")
+	os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot 2> /dev/null")
 
 	# Delete temporary files
 	os.system('rm ' + config_graphsDirectory + outputFile + ".dat")
@@ -91,7 +90,7 @@ def file_plotAllInOne(outputFile, listValues, title='', xlabel ='', ylabel='', d
 	output.close()
 	
 	# Execute gnuplots' temporary file
-	os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot")
+	os.system('gnuplot ' + config_graphsDirectory + outputFile + ".gnuplot 2> /dev/null")
 
 	# Delete temporary files
 #	os.system('rm ' + config_graphsDirectory + outputFile + ".dat")
@@ -138,7 +137,7 @@ def file_plotAllInOneB(outputFile, listOfLists, title='', xlabel ='', ylabel='',
 	output.close()
 
 	# Write data into data file
-      
+ 
 	output = open(config_graphsDirectory + outputFile + ".dat", 'w')
 	max = 0
 	for list in listOfLists:
@@ -195,7 +194,6 @@ def giniInput(db, input):
 
 	result = db.doubleStrInt2list(db.querySQL('module,module_id', 'modules'))
 	for module in result:
-                moduleName = utils.db_module(module[0])
 		commitList = db.querySQL('COUNT(*) AS count', 'log', 'module_id=' + str(module[1]), 'count', 'commiter_id')
 		if commitList:
 			string =  module[0]
@@ -211,7 +209,7 @@ def giniOutput(input, output):
 	its output in output
 	"""
 
-	os.system("perl polygini.pl -precision 5 -lorenz -ntiles 4 -id -comment copy -zeromsg -count -sum < " + config_graphsDirectory + "gini.in > " + config_graphsDirectory + output)
+	os.system("/usr/bin/polygini.pl -precision 5 -lorenz -ntiles 4 -id -comment copy -zeromsg -count -sum < " + config_graphsDirectory + "gini.in > " + config_graphsDirectory + output)
 
 def lorenzAllInOne(input):
 	"""
@@ -226,11 +224,6 @@ def lorenzAllInOne(input):
 		if not line:
 			break
 		elementList = line.split(',')
-#		print "ID " + elementList[0]
-#		print "Gini coeff " + elementList[1]
-#		print "Number of dev " + elementList[2]
-#		print "Total commits " + elementList[3]
-
 		i = 0
 		values.append([0,0])
 		for element in range(4, int(elementList[2])+4):
@@ -252,10 +245,6 @@ def lorenzAllInOneB(input):
 		if not line:
 			break
 		elementList = line.split(',')
-#		print "ID " + elementList[0]
-#		print "Gini coeff " + elementList[1]
-#		print "Number of dev " + elementList[2]
-#		print "Total commits " + elementList[3]
 
 		i = 0
 		values = [[0,0]]
@@ -279,10 +268,6 @@ def lorenz(input):
 		if not line:
 			break
 		elementList = line.split(',')
-#		print "ID " + elementList[0]
-#		print "Gini coeff " + elementList[1]
-#		print "Number of dev " + elementList[2]
-#		print "Total commits " + elementList[3]
 		if int(elementList[2]) == 1:
 			giniNormalized = 1.0
 		else:
@@ -293,8 +278,7 @@ def lorenz(input):
 			i+=1
 			values.append([float(i)/int(elementList[2]), elementList[element]])
 
-                dirname = utils.db_module (elementList[0])
-		file_plot(dirname,
+		file_plot(elementList[0],
                         values,
                         elementList[0],
                         elementList[2],
@@ -314,10 +298,6 @@ def gini2db(db, input):
 		if not line:
 			break
 		elementList = line.split(',')
-#		print "ID " + elementList[0]
-#		print "Gini coeff " + elementList[1]
-#		print "Number of dev " + elementList[2]
-#		print "Total commits " + elementList[3]
 		if int(elementList[2]) == 1:
 			giniNormalized = 1.0
 		else:
@@ -327,7 +307,7 @@ def gini2db(db, input):
 
 		# Looking for the module id
 		result = db.querySQL ('module_id', 'modules', "module='" + elementList[0] + "'")
-                moduleName = utils.db_module (result[0][0])
+                moduleName = result[0][0]
 		db.insertData ("UPDATE cvsanal_temp_inequality SET gini ='" + str(elementList[1]) + "' WHERE module_id = '" + moduleName + "'")
 		db.insertData ("UPDATE cvsanal_temp_inequality SET concentration='" + str(giniNormalized) + "' WHERE module_id = '" + moduleName + "'")
 		db.insertData ("UPDATE cvsanal_temp_inequality SET eu='" + str(eu) + "' WHERE module_id = '" + moduleName + "'")

@@ -41,7 +41,7 @@ from tables import *
 
 # Some stuff about the project
 author = "(C) 2004,2007 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
-name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA4")
+name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0-BETA5")
 credits = "\n%s \n%s\n" % (name,author)
 
 
@@ -58,15 +58,15 @@ Options:
   --branch          Branch to be analyzed (default is trunk)
   --log-file        Parse a given log file instead of get it from repository
   --path            Set an alternative path for cvs/svn binary
-  --repodir         Set the repository dir
+  --repodir         Set the repository dir (default is '.')
   --driver          Output driver mysql or stdout (default is stdout)
 
 Database:
 
-  --user            Username for connect to database
-  --password        Password for connect to database
-  --database        Database which contains data previously analyzed
-  --hostname        Name of the host with a database server running
+  --user            Username for connect to database (default is operator)
+  --password        Password for connect to database (default is operator)
+  --database        Database which contains data previously analyzed (default is cvsanaly)
+  --hostname        Name of the host with a database server running (default is localhost)
 
 Plugins:
 
@@ -82,7 +82,7 @@ def main():
     short_opts = ""
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","database=","branch=","log-file=","path=","repodir=","driver=","scan","info=","run-plugin="]
+    long_opts = ["help","user=", "password=", "hostname=", "database=","branch=","log-file=","path=","repodir=","driver=","scan","info=","run-plugin="]
 
     # Prefix directory. cvs/svn binaries should be installed under this path
     prefixpath = '/usr/bin/'
@@ -94,7 +94,6 @@ def main():
     database = 'cvsanaly'
     logfile = ''
     branch = ''
-    type = 'cvs'
     driver = 'stdout'
     directory = '.'
     plugin = ''
@@ -112,12 +111,16 @@ def main():
         if opt in ("-h", "--help", "-help"):
             usage()
             sys.exit(0)
+        elif opt in ("--username"):
+            user = value
+        elif opt in ("--password"):
+            passwd = value
+        elif opt in ("--hostname"):
+            hostname = value
         elif opt in ("--log-file"):
             logfile = value
         elif opt in ("--database"):
             database = value
-        elif opt in ("--repo-type"):
-            type = value
         elif opt in ("--driver"):
             driver = value
         elif opt in ("--branch"):
