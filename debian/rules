@@ -52,7 +52,7 @@ binary-indep: install
 	dh_testroot -i
 	dh_install -i
 	dh_installchangelogs -i ChangeLog
-
+	dh_installdocs -i	
 	dh_compress -i
 	dh_fixperms -i
 	dh_installdeb -i
