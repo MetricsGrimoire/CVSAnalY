@@ -10,6 +10,7 @@ Optional dependencies for plugins:
     * python-2.x-MySQLdb
     * mysql-server
     * gnuplot
+    * ploticus
     * apache
     * mod_php
     * php5
