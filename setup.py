@@ -36,4 +36,4 @@ setup(name = "cvsanaly",
       description = "An analysis tool for your CVS and Subversion repository",
       url = "http://cvsanaly.tigris.org",
       packages = ['pycvsanaly','cvsplugins/graphs'],
-      scripts = ["cvsanaly"])
+      scripts = ["cvsanaly","polygini.pl"])
