@@ -30,7 +30,7 @@ Installer
 from distutils.core import setup
 
 setup(name = "cvsanaly",
-      version = "1.0",
+      version = "1.1beta",
       author =  "Libresoft",
       author_email = "anavarro@gsyc.es",
       description = "An analysis tool for your CVS and Subversion repository",

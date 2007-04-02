@@ -41,7 +41,7 @@ from tables import *
 
 # Some stuff about the project
 author = "(C) 2004,2007 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
-name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.0")
+name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.1beta")
 credits = "\n%s \n%s\n" % (name,author)
 
 
