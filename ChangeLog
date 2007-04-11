@@ -1,3 +1,9 @@
+2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>:
+
+	* pycvsanaly/main.py:
+
+	Do not use an absolute path for cvsanaly in usage message. 
+
 2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* cvsplugins/graphs/graph_gini.py:

@@ -47,7 +47,7 @@ credits = "\n%s \n%s\n" % (name,author)
 
 def usage ():
     print credits
-    print "Usage: %s [options]" % (sys.argv[0])
+    print "Usage: cvsanaly [options]"
     print """
 Run inside the checked out svn or cvs directory to analyze
 
