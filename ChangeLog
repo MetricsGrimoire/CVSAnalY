@@ -1,5 +1,11 @@
 2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+	* cvsplugins/graphs/graph_gini.py:
+
+	Do not use an absolute path for running polygini.pl. Fixes bug #255.
+
+2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/FindProgram.py:
 	* pycvsanaly/repository.py:
 	* pycvsanaly/main.py:

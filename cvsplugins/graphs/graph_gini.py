@@ -209,7 +209,7 @@ def giniOutput(input, output):
 	its output in output
 	"""
 
-	os.system("/usr/bin/polygini.pl -precision 5 -lorenz -ntiles 4 -id -comment copy -zeromsg -count -sum < " + config_graphsDirectory + "gini.in > " + config_graphsDirectory + output)
+	os.system("polygini.pl -precision 5 -lorenz -ntiles 4 -id -comment copy -zeromsg -count -sum < " + config_graphsDirectory + "gini.in > " + config_graphsDirectory + output)
 
 def lorenzAllInOne(input):
 	"""
