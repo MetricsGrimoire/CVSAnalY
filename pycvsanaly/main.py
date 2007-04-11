@@ -57,7 +57,6 @@ Options:
 
   --branch          Branch to be analyzed (default is trunk)
   --log-file        Parse a given log file instead of get it from repository
-  --path            Set an alternative path for cvs/svn binary
   --repodir         Set the repository dir (default is '.')
   --driver          Output driver mysql or stdout (default is stdout)
 
@@ -82,10 +81,7 @@ def main():
     short_opts = ""
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","user=", "password=", "hostname=", "database=","branch=","log-file=","path=","repodir=","driver=","scan","info=","run-plugin="]
-
-    # Prefix directory. cvs/svn binaries should be installed under this path
-    prefixpath = '/usr/bin/'
+    long_opts = ["help","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","scan","info=","run-plugin="]
 
     # Default options
     user = 'operator'
@@ -125,8 +121,6 @@ def main():
             driver = value
         elif opt in ("--branch"):
             branch = value
-        elif opt in ("--path"):
-            binarypath = value
         elif opt in ("--repodir"):
             directory = value
         elif opt in ("--scan"):
@@ -160,6 +154,6 @@ def main():
         db.create_table('modules', modules)
 
         # And finally we analyze log
-        repos.log (db, directory, prefixpath, logfile)
+        repos.log (db, directory, logfile)
 
     db.close()

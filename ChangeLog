@@ -1,14 +1,23 @@
-2007-04-02  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/FindProgram.py:
+	* pycvsanaly/repository.py:
+	* pycvsanaly/main.py:
+
+	Look for binaries in PATH instead of using /usr/bin. Path command line
+	option has been removed since it's no longer needed. Fixes bug #228.
+
+2007-04-02  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* Added polygini.pl as a dependency for all the packages (source, debian, etc)
 	* Changing version number, as some changes have been applied since release 1.0
 	
-2007-03-28  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+2007-03-28  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* Added ploticus as optional dependency in the README file
 	* Added ploticus as suggested package to be installed along with cvsanaly (Debian package version)
 	
-2007-03-22  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+2007-03-22  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* Release 1.0
 

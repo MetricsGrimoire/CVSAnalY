@@ -38,6 +38,7 @@ from directory import *
 from files import File
 from commit import Commit
 from config_files import *
+from FindProgram import find_program
 
 file_properties = {'file_id':'',
                    'name': '',
@@ -246,12 +247,12 @@ class RepositoryCVS(Repository):
     def __init__(self):
         pass
 
-    def log(self, db, checkout_directory='', path='', logfile=''):
+    def log(self, db, checkout_directory='', logfile=''):
 
-        cvsbinary = os.path.join (path, 'cvs')
+        cvsbinary = find_program ('cvs')
 
-        if not os.path.isfile (cvsbinary):
-            print ("Error: Can't find cvs binary in path %s\n") % (path)
+        if cvsbinary is None:
+            print ("Error: Can't find cvs binary in PATH\n")
             sys.exit (-1)
 
         if logfile:
@@ -499,10 +500,11 @@ class RepositorySVN(Repository):
         return line
 
 
-    def log(self, db, checkout_directory='', path='', logfile=''):
+    def log(self, db, checkout_directory='', logfile=''):
 
-        svnbinary = os.path.join (path, 'svn')
-        if not os.path.isfile (svnbinary):
+        svnbinary = find_program ('svn')
+
+        if svnbinary is None:
             print ("Error: Can't find svn binary in path %s\n") % (path)
             sys.exit (-1)
 
