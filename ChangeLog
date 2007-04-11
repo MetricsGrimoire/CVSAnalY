@@ -9,13 +9,16 @@
 
 2007-04-02  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
-	* Added polygini.pl as a dependency for all the packages (source, debian, etc)
-	* Changing version number, as some changes have been applied since release 1.0
+	* setup.py: Added polygini.pl as a dependency for all the packages
+	(source, debian, etc)
+	* pycvsanaly/main.py: Changing version number, as some changes have
+	been applied since release 1.0
 	
 2007-03-28  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
-	* Added ploticus as optional dependency in the README file
-	* Added ploticus as suggested package to be installed along with cvsanaly (Debian package version)
+	* README: Added ploticus as optional dependency in the README file
+	* debian/control: Added ploticus as suggested package to be installed
+	along with cvsanaly (Debian package version)
 	
 2007-03-22  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
