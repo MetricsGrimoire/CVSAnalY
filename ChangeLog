@@ -1,5 +1,11 @@
 2007-04-12  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/plugins/graphs/__init__.py:
+
+	s/Graphs/graphs. Fixes bug #262.
+
+2007-04-12  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
 	* setup.py:
 	* pycvsanaly/main.py:
 

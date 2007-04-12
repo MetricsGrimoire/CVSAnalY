@@ -22,7 +22,7 @@ class GraphsPlugin (Plugin):
     def __init__ (self, db = None):
         Plugin.__init__ (self, db)
 
-        self.name = "Graphs"
+        self.name = "graphs"
         self.author = "Alvaro Navarro and Alvaro del Castillo"
         self.description = "Graphs and intermediate tables for cvsanaly-web"
         self.date = "23/01/07"
