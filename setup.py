@@ -30,10 +30,10 @@ Installer
 from distutils.core import setup
 
 setup(name = "cvsanaly",
-      version = "1.1beta",
-      author =  "Libresoft",
+      version = "1.0.1",
+      author =  "LibreSoft",
       author_email = "anavarro@gsyc.es",
       description = "An analysis tool for your CVS and Subversion repository",
-      url = "http://cvsanaly.tigris.org",
+      url = "https://forge.morfeo-project.org/projects/libresoft-tools/",
       packages = ['pycvsanaly', 'pycvsanaly.plugins', 'pycvsanaly.plugins.graphs'],
       scripts = ["cvsanaly","polygini.pl"])

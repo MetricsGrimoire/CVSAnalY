@@ -1,6 +1,13 @@
 2007-04-12  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* setup.py:
+	* pycvsanaly/main.py:
+
+	Add --version command line option. Fix version number. Fixes bug #261.
+
+2007-04-12  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* setup.py:
 	* pycvsanaly/plugins/graphs/__init__.py:
 	* pycvsanaly/plugins/__init__.py:
 	* pycvsanaly/main.py:

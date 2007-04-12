@@ -41,9 +41,10 @@ from pycvsanaly.plugins import get_plugin, scan_plugins
 from tables import *
 
 # Some stuff about the project
+version = "1.0.1"
 author = "(C) 2004,2007 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
-name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % ("1.1beta")
-credits = "\n%s \n%s\n" % (name,author)
+name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % (version)
+credits = "\n%s \n%s\n" % (name, author)
 
 
 def usage ():
@@ -55,6 +56,7 @@ Run inside the checked out svn or cvs directory to analyze
 Options:
 
   --help            Print this usage message.
+  --version         Show version
 
   --branch          Branch to be analyzed (default is trunk)
   --log-file        Parse a given log file instead of get it from repository
@@ -82,7 +84,7 @@ def main():
     short_opts = ""
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","info=","run-plugin=","scan"]
+    long_opts = ["help","version","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","info=","run-plugin=","scan"]
 
     # Default options
     user = 'operator'
@@ -97,13 +99,17 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
-    except getopt.GetoptError:
-        usage()
+    except getopt.GetoptError, e:
+        print e
+        usage ()
         sys.exit(1)
 
     for opt, value in opts:
         if opt in ("-h", "--help", "-help"):
             usage()
+            sys.exit(0)
+        elif opt in ("--version"):
+            print version
             sys.exit(0)
         elif opt in ("--username"):
             user = value
@@ -139,8 +145,8 @@ def main():
 
             sys.exit(0)
         else:
-            print ('Unknown option ', opt)
-            usage()
+            print 'Unknown option %s' % opt
+            usage ()
 
     # Connect to the database
     conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
