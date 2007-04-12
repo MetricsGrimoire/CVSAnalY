@@ -35,7 +35,8 @@ import getopt
 
 import database as dbmodule
 import repository as rpmodule
-import plugins as plugmodule
+
+from pycvsanaly.plugins import get_plugin, scan_plugins
 
 from tables import *
 
@@ -69,9 +70,9 @@ Database:
 
 Plugins:
 
-  --scan            Scan for plugins
   --info            Retreives information from given plugin
   --run-plugin      Execute plugin
+  --scan            Scan for plugins
 """
 
 def main():
@@ -81,7 +82,7 @@ def main():
     short_opts = ""
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","scan","info=","run-plugin="]
+    long_opts = ["help","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","info=","run-plugin=","scan"]
 
     # Default options
     user = 'operator'
@@ -93,9 +94,6 @@ def main():
     driver = 'stdout'
     directory = '.'
     plugin = ''
-
-    # Scan for plugins
-    p = plugmodule.Loader ()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
@@ -123,14 +121,23 @@ def main():
             branch = value
         elif opt in ("--repodir"):
             directory = value
-        elif opt in ("--scan"):
-            p.scan ()
-            sys.exit(0)
         elif opt in ("--info"):
-            p.get_information (value)
+            p = get_plugin (value)
+            p.info ()
             sys.exit(0)
         elif opt in ("--run-plugin"):
             plugin = value
+        elif opt in ("--scan"):
+            plugins = scan_plugins ()
+            if len (plugins) == 0:
+                print "No plugins available"
+                sys.exit(0)
+
+            for p in plugins:
+                get_plugin (p).info ()
+                print "--------------------"
+
+            sys.exit(0)
         else:
             print ('Unknown option ', opt)
             usage()
@@ -141,7 +148,8 @@ def main():
 
     if plugin:
         # Run plugins if needed
-        p.run (plugin, db)
+        p = get_plugin (plugin, db)
+        p.run ()
     else:
         # CVS/SVN interactive
         repos = rpmodule.RepositoryFactory.create (directory)

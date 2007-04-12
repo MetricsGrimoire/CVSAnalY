@@ -1,4 +1,14 @@
-2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>:
+2007-04-12  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* setup.py:
+	* pycvsanaly/plugins/graphs/__init__.py:
+	* pycvsanaly/plugins/__init__.py:
+	* pycvsanaly/main.py:
+
+	Move cvsplugins to pycvsanaly/plugins. Rework plugin system. Fixes
+	bugs #232 and #240. 
+
+2007-04-11  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/main.py:
 
