@@ -63,6 +63,11 @@ class Plugin:
     def get_description (self):
         return self.description
 
+    def get_options (self):
+        return []
+
+    def usage (self):
+        pass
 
 _plugins = {}
 def register_plugin (plugin_name, plugin_class):
@@ -80,9 +85,9 @@ def _get_plugin_class (plugin_name):
 
     return _plugins[plugin_name]
 
-def get_plugin (plugin_name, db = None):
+def get_plugin (plugin_name, db = None, opts = []):
     plugin_class = _get_plugin_class (plugin_name)
-    return plugin_class (db)
+    return plugin_class (db, opts)
 
 def scan_plugins ():
     import sys, os

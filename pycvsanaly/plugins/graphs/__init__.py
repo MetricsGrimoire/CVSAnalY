@@ -15,17 +15,29 @@ import graph_activity as g_activity
 import graph_inequality as g_inequality
 import graph_heatmaps as g_heatmaps
 
-graphs_directory = 'graphs'
-
 class GraphsPlugin (Plugin):
 
-    def __init__ (self, db = None):
+    def __init__ (self, db = None, opts = []):
         Plugin.__init__ (self, db)
+
+        self.output_dir = None
+        for opt, value in opts:
+            if opt in ("--output-dir"):
+                self.output_dir = value
 
         self.name = "graphs"
         self.author = "Alvaro Navarro and Alvaro del Castillo"
         self.description = "Graphs and intermediate tables for cvsanaly-web"
         self.date = "23/01/07"
+
+    def get_options (self):
+        return ["output-dir="]
+
+    def usage (self):
+        print """Graphs:
+
+  --output-dir      Output directory [./graphs]
+"""
 
     def run (self):
         # Fun starts here. We received a database descriptor.
@@ -42,6 +54,11 @@ class GraphsPlugin (Plugin):
         intmodule.intermediate_table_modules(self.db)
 
         # Create and change
+        if self.output_dir is None:
+            graphs_directory = 'graphs'
+        else:
+            graphs_directory = self.output_dir
+
         if not os.path.isdir (graphs_directory):
             os.mkdir (graphs_directory)
 

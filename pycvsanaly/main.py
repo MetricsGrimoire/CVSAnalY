@@ -46,6 +46,7 @@ author = "(C) 2004,2007 %s <%s>" % ("Libresoft", "cvsanaly@libresoft.es")
 name = "cvsanaly %s - Libresoft Group http://www.libresoft.es" % (version)
 credits = "\n%s \n%s\n" % (name, author)
 
+plugins = scan_plugins ()
 
 def usage ():
     print credits
@@ -77,6 +78,9 @@ Plugins:
   --scan            Scan for plugins
 """
 
+    for p in plugins:
+        get_plugin (p).usage ()
+
 def main():
 
 
@@ -85,6 +89,9 @@ def main():
     #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help","version","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","info=","run-plugin=","scan"]
+
+    for p in plugins:
+        long_opts.extend (get_plugin (p).get_options ())
 
     # Default options
     user = 'operator'
@@ -95,7 +102,8 @@ def main():
     branch = ''
     driver = 'stdout'
     directory = '.'
-    plugin = ''
+    plugin = None
+    plugin_opts = []
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
@@ -134,7 +142,6 @@ def main():
         elif opt in ("--run-plugin"):
             plugin = value
         elif opt in ("--scan"):
-            plugins = scan_plugins ()
             if len (plugins) == 0:
                 print "No plugins available"
                 sys.exit(0)
@@ -145,16 +152,16 @@ def main():
 
             sys.exit(0)
         else:
-            print 'Unknown option %s' % opt
-            usage ()
+            if plugin is not None:
+                plugin_opts.append ((opt, value))
 
     # Connect to the database
     conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
     db = dbmodule.Database(conection)
 
-    if plugin:
+    if plugin is not None:
         # Run plugins if needed
-        p = get_plugin (plugin, db)
+        p = get_plugin (plugin, db, plugin_opts)
         p.run ()
     else:
         # CVS/SVN interactive
