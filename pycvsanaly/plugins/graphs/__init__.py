@@ -14,6 +14,7 @@ import graph_gini as g_gini
 import graph_activity as g_activity
 import graph_inequality as g_inequality
 import graph_heatmaps as g_heatmaps
+import graph_evolution as g_evolution
 
 class GraphsPlugin (Plugin):
 
@@ -52,6 +53,7 @@ class GraphsPlugin (Plugin):
         intmodule.intermediate_table_commiters(self.db)
         intmodule.intermediate_table_fileTypes(self.db)
         intmodule.intermediate_table_modules(self.db)
+        intmodule.intermediate_table_commiters_id(self.db)
 
         # Create and change
         if self.output_dir is None:
@@ -70,6 +72,7 @@ class GraphsPlugin (Plugin):
         # Print graphs
         print "Plotting globals grahps"
         g_global.plot (self.db)
+        g_evolution.plot (self.db)
         g_pie.plot (self.db)
         g_gini.plot (self.db)
         g_activity.plot (self.db)

@@ -1,3 +1,10 @@
+2007-04-15  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/plugins/graphs/__init__.py:
+	* pycvsanaly/plugins/graphs/graph_evolution.py:
+
+	Add evolution graphs.
+
 2007-04-13  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/plugins/graphs/__init__.py:
