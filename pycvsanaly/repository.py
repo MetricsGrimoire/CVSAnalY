@@ -258,7 +258,10 @@ class RepositoryCVS(Repository):
         if logfile:
             linelog = open(logfile,'r')
         else:
-            linelog = os.popen3 (cvsbinary + ' -z9 -Q log -N ' + checkout_directory)
+            cwd = os.getcwd ()
+            os.chdir (checkout_directory)
+            linelog = os.popen3 (cvsbinary + ' -z9 -Q log')
+            os.chdir (cwd)
 
         filename = ''
         dirname = ''
