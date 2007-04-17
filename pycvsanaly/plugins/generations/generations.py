@@ -1,4 +1,3 @@
-import database as dbmodule
 import os
 import Numeric
 import string

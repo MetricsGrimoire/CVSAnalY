@@ -35,5 +35,5 @@ setup(name = "cvsanaly",
       author_email = "anavarro@gsyc.es",
       description = "An analysis tool for your CVS and Subversion repository",
       url = "https://forge.morfeo-project.org/projects/libresoft-tools/",
-      packages = ['pycvsanaly', 'pycvsanaly.plugins', 'pycvsanaly.plugins.graphs'],
+      packages = ['pycvsanaly', 'pycvsanaly.plugins', 'pycvsanaly.plugins.graphs', 'pycvsanaly.plugins.generations'],
       scripts = ["cvsanaly","polygini.pl"])
