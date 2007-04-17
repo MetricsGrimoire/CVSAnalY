@@ -1,6 +1,9 @@
 import os
+import sys
 import Numeric
 import string
+import subprocess
+from pycvsanaly.FindProgram import find_program
 
 
 """
@@ -370,6 +373,8 @@ class generations:
 
         filehand.close()
 
+        self.plot (file)
+
         filehand = open(file + '-normal', 'w')
 
         for x in range(0, len(matrix)-1):
@@ -385,3 +390,46 @@ class generations:
             filehand.write ('\n')
 
         filehand.close()
+
+        self.plot (file + '-normal')
+
+    def plot (self, filename):
+        kws = { 'close_fds': True,
+                'stdin'    : subprocess.PIPE,
+                'stdout'   : subprocess.PIPE,
+                'stderr'   : None,
+                'env'      : os.environ.copy ()
+        }
+
+        cmd = find_program ("gnuplot")
+        if cmd is None:
+            sys.stderr.write ('Error: gnuplot was not found in PATH\n')
+            return
+
+        try:
+            p = subprocess.Popen (cmd, **kws)
+        except OSError, e:
+            sys.stderr.write ('Error running gnuplot: %s\n' % str (e))
+            return
+
+        iin = "unset contour\n" + \
+              "set pm3d\n" + \
+              "unset surface\n" + \
+              "set ticslevel 0\n" + \
+              "set xlabel \"Periods\"\n" + \
+              "set ylabel \"History (periods)\"\n" + \
+              "set zlabel \"Commits\"\n" + \
+              "set terminal png\n"
+
+        iin += "set output \"%s\"\n" % (filename + ".png") 
+        iin += "splot \"%s\" with lines\n" % (filename)
+
+        try:
+            out, err = p.communicate (iin)
+        except KeyboardInterrupt:
+            try:
+                os.kill (p.pid, signal.SIGINT)
+            except OSError:
+                pass
+
+

@@ -1,5 +1,19 @@
 2007-04-17  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/plugins/generations/generations.py:
+
+	Create graphs in generations plugin. 
+
+2007-04-17  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* setup.py:
+	* pycvsanaly/plugins/generations/generations.py:
+	* pycvsanaly/plugins/generations/__init__.py:
+
+	Add generations plugin. 
+
+2007-04-17  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/repository.py:
 
 	Make cvs work with absolute paths. 
