@@ -81,6 +81,20 @@ Plugins:
     for p in plugins:
         get_plugin (p).usage ()
 
+def create_and_fill_database (db, directory, logfile):
+    # CVS/SVN interactive
+    repos = rpmodule.RepositoryFactory.create (directory)
+
+    # Create database and tables
+    db.create_database()
+    db.create_table('files',files)
+    db.create_table('commiters',commiters)
+    db.create_table('log',log)
+    db.create_table('modules', modules)
+
+    # And finally we analyze log
+    repos.log (db, directory, logfile)
+
 def main():
 
 
@@ -161,20 +175,17 @@ def main():
 
     if plugin is not None:
         # Run plugins if needed
+        try:
+            db.executeSQLRaw ("SELECT commit_id from log where commit_id = 0")
+        except:
+            create_and_fill_database (db, directory, logfile)
+
         p = get_plugin (plugin, db, plugin_opts)
         p.run ()
-    else:
-        # CVS/SVN interactive
-        repos = rpmodule.RepositoryFactory.create (directory)
 
-        # Create database and tables
-        db.create_database()
-        db.create_table('files',files)
-        db.create_table('commiters',commiters)
-        db.create_table('log',log)
-        db.create_table('modules', modules)
+        db.close ()
 
-        # And finally we analyze log
-        repos.log (db, directory, logfile)
-
-    db.close()
+        return
+    
+    create_and_fill_database (db, directory, logfile)
+    db.close ()

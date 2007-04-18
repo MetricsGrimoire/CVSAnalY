@@ -1,9 +1,15 @@
+2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/main.py:
+
+	Create and fill database when it doesn't exists before running a
+	plugin. Fixes bug #256.
+
 2007-04-18  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* debian/control:
 
 	Added dependency cvs | subversion to the Debian package
-
 
 2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
