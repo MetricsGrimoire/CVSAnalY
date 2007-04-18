@@ -1,6 +1,7 @@
 import os,sys
 
 from pycvsanaly.plugins import Plugin, register_plugin
+from pycvsanaly.FindProgram import find_program
 
 import pycvsanaly.database as database
 
@@ -15,6 +16,7 @@ import graph_activity as g_activity
 import graph_inequality as g_inequality
 import graph_heatmaps as g_heatmaps
 import graph_evolution as g_evolution
+#import graph_generations as g_generations
 
 class GraphsPlugin (Plugin):
 
@@ -41,6 +43,9 @@ class GraphsPlugin (Plugin):
 """
 
     def run (self):
+        ploticus = find_program ("ploticus")
+        gnuplot = find_program ("gnuplot")
+
         # Fun starts here. We received a database descriptor.
         self.db.create_table('commiters_module', tables.commiters_module)
         #db.create_table('comments', tables.comments)
@@ -71,12 +76,42 @@ class GraphsPlugin (Plugin):
 
         # Print graphs
         print "Plotting globals grahps"
-        g_global.plot (self.db)
-        g_evolution.plot (self.db)
-        g_pie.plot (self.db)
-        g_gini.plot (self.db)
-        g_activity.plot (self.db)
-        g_inequality.plot (self.db)
-        g_heatmaps.plot (self.db)
+        if gnuplot is not None:
+            g_global.plot (self.db)
+        else:
+            print "gnuplot not found, skipping global graphs"
+
+        if gnuplot is not None:
+            g_evolution.plot (self.db)
+        else:
+            print "gnuplot not found, skipping evolution graphs"
+
+        if ploticus is not None:
+            g_pie.plot (self.db)
+        else:
+            print "ploticus not found, skipping pie graphs"
+
+        if gnuplot is not None:
+            if ploticus is not None:
+                g_gini.plot (self.db)
+            else:
+                print "ploticus not found, skipping gini graphs"
+        else:
+            print "gnuplot not found, skipping gini graphs"
+
+        if ploticus is not None:
+            g_activity.plot (self.db)
+        else:
+            print "ploticus not found, skipping activity graphs"
+
+        if gnuplot is not None:
+            g_inequality.plot (self.db)
+        else:
+            print "gnuplot not found, skipping inequality graphs"
+
+        if ploticus is not None:
+            g_heatmaps.plot (self.db)
+        else:
+            print "ploticus not found, skipping heatmaps graphs"
 
 register_plugin ('graphs', GraphsPlugin)
