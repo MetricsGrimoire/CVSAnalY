@@ -7,6 +7,6 @@ Standards-Version: 3.6.1.1
 
 Package: cvsanaly
 Architecture: all
-Depends: python (>= 2.3), python (<< 2.5)
+Depends: python (>= 2.3), python (<< 2.5), cvs|subversion
 Suggests: mysql-server, python2.4-mysqldb, gnuplot, ploticus
 Description: An analysis tool for your CVS and Subversion repository

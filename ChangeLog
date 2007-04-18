@@ -1,3 +1,8 @@
+2007-04-18  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
+
+	* Added dependency cvs | subversion to the Debian package
+
+
 2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/plugins/graphs/__init__.py:
