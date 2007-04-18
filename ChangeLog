@@ -3,7 +3,8 @@
 	* pycvsanaly/plugins/graphs/__init__.py:
 
 	Check whether ploticus and gnuplot are installed before using them. If
-	one of them is not present the graph that requires it is skipped. 
+	one of them is not present the graph that requires it is skipped.
+	Fixes bug #259. 
 
 2007-04-17  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
