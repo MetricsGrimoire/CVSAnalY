@@ -1,5 +1,12 @@
 2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+	* NEWS:
+	* README:
+
+	Release 1.0.1
+
+2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/main.py:
 
 	Allow running more than one plugin at the same cvsanaly invocation.  
@@ -66,6 +73,7 @@
 	* pycvsanaly/plugins/graphs/__init__.py:
 
 	s/Graphs/graphs. Fixes bug #262.
+
 
 2007-04-12  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 

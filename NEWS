@@ -1,0 +1,22 @@
+==============
+cvsanaly 1.0.1
+==============
+
+New plugins:
+
+    * Generations plugin written by Jesus M. Gonzalez-Barahona
+
+Bug Fixes:
+
+    * Create and fill database when it doesn't exist before running 
+      a plugin. Running cvsanaly twice is no longer needed (Carlos Garcia Campos)
+    * Generate evolution graphics in graphs plugin (Carlos Garcia Campos)
+    * Rework plugins system. Support for plugins specific command 
+      line options (Carlos Garcia Campos)
+    * Look for cvs/svn binaries in PATH instead of using /usr/bin. 
+      Option --path has been removed (Carlos Garcia Campos)
+
+Thanks:
+
+    Israel Herraiz
+
