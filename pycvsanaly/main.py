@@ -116,8 +116,8 @@ def main():
     branch = ''
     driver = 'stdout'
     directory = '.'
-    plugin = None
-    plugin_opts = []
+    plugin_list = []
+    plugin_opts = {}
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
@@ -154,7 +154,8 @@ def main():
             p.info ()
             sys.exit(0)
         elif opt in ("--run-plugin"):
-            plugin = value
+            plugin_list.append (value)
+            plugin_opts[value] = []
         elif opt in ("--scan"):
             if len (plugins) == 0:
                 print "No plugins available"
@@ -166,26 +167,31 @@ def main():
 
             sys.exit(0)
         else:
-            if plugin is not None:
-                plugin_opts.append ((opt, value))
+            try:
+                plugin = plugin_list[-1]
+            except IndexError:
+                continue
+
+            plugin_opts[plugin].append ((opt, value))
 
     # Connect to the database
     conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
     db = dbmodule.Database(conection)
 
-    if plugin is not None:
-        # Run plugins if needed
-        try:
-            db.executeSQLRaw ("SELECT commit_id from log where commit_id = 0")
-        except:
-            create_and_fill_database (db, directory, logfile)
-
-        p = get_plugin (plugin, db, plugin_opts)
-        p.run ()
-
+    if len (plugin_list) <= 0:
+        create_and_fill_database (db, directory, logfile)
         db.close ()
 
         return
     
-    create_and_fill_database (db, directory, logfile)
+    # Run plugins
+    try:
+        db.executeSQLRaw ("SELECT commit_id from log where commit_id = 0")
+    except:
+        create_and_fill_database (db, directory, logfile)
+
+    for plugin in plugin_list:
+        p = get_plugin (plugin, db, plugin_opts[plugin])
+        p.run ()
+
     db.close ()

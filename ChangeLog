@@ -2,6 +2,12 @@
 
 	* pycvsanaly/main.py:
 
+	Allow running more than one plugin at the same cvsanaly invocation.  
+
+2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/main.py:
+
 	Create and fill database when it doesn't exists before running a
 	plugin. Fixes bug #256.
 
