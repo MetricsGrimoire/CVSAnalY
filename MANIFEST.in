@@ -2,3 +2,4 @@ include ChangeLog
 include AUTHORS
 include COPYING
 include TODO
+include cvsanaly.1
