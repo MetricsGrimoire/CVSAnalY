@@ -83,7 +83,10 @@ Plugins:
 
 def create_and_fill_database (db, directory, logfile):
     # CVS/SVN interactive
-    repos = rpmodule.RepositoryFactory.create (directory)
+    if logfile:
+        repos = rpmodule.RepositoryFactory.create_from_logfile (logfile)
+    else:
+        repos = rpmodule.RepositoryFactory.create_from_path (directory)
 
     # Create database and tables
     db.create_database()

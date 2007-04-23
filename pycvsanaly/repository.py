@@ -75,7 +75,7 @@ class RepositoryFactory:
     """
     Basic Factory that abastracts the process to create new repositories
     """
-    def create(checkout_directory):
+    def create_from_path(checkout_directory):
         for type in work_area:
             binary_directory = os.path.join (checkout_directory, work_area[type])
             isvalid = os.path.isdir (binary_directory)
@@ -93,8 +93,66 @@ class RepositoryFactory:
         if type.upper() == "SVN":
             return RepositorySVN()
 
+    def _logfile_is_cvs (logfile):
+        retval = False
+
+        try:
+            f = open (logfile, 'r')
+        except IOError, e:
+            print e
+            return False
+        
+        patt = re.compile ("^RCS file:(.*)$")
+        
+        line = f.readline ()
+        while line:
+            if patt.match (line) is not None:
+                retval = True
+                break
+            line = f.readline ()
+
+        f.close ()
+
+        return retval
+
+    def _logfile_is_svn (logfile):
+        retval = False
+
+        try:
+            f = open (logfile, 'r')
+        except IOError, e:
+            print e
+            return False
+
+        patt = re.compile ("^r(.*) \| (.*) \| (.*) \| (.*)$")
+
+        line = f.readline ()
+        while line:
+            if patt.match (line) is not None:
+                retval = True
+                break
+            line = f.readline ()
+
+        f.close ()
+
+        return retval
+
+    def create_from_logfile(logfile):
+        if RepositoryFactory._logfile_is_cvs (logfile):
+            print "CVS"
+            return RepositoryCVS()
+        elif RepositoryFactory._logfile_is_svn (logfile):
+            print "SVN"
+            return RepositorySVN()
+
+        print "File %s doesn't look like a valid repository log file" % (logfile)
+        sys.exit (-1)
+
     # We make it static
-    create = staticmethod(create)
+    create_from_path = staticmethod(create_from_path)
+    create_from_logfile = staticmethod(create_from_logfile)
+    _logfile_is_cvs = staticmethod(_logfile_is_cvs)
+    _logfile_is_svn = staticmethod(_logfile_is_svn)
 
 
 class Repository:

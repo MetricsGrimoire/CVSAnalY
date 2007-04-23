@@ -1,9 +1,16 @@
+2007-04-23  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/repository.py:
+	* pycvsanaly/main.py:
+
+	Create repository objects based on logfile instead of checkout dir
+	when a logfile is provided. Fixes bug #247.
+
 2007-04-20  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* debian/changelog:
 
 	Fixed version number of Debian package
-
 
 2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
