@@ -27,6 +27,24 @@ Installer
 @contact:      anavarro@gsyc.escet.urjc.es
 """
 
+import commands
+import os
+
+def get_man_installation_directory():
+    """Find out where man pages are stored in the system"""
+    cmd = "man --where man"
+    location_of_man1 = commands.getoutput(cmd)
+
+    man1_dirname = os.path.dirname(location_of_man1)
+    #man_dirname = os.path.dirname(man1_dirname)
+    # It is /usr in some systems, /usr/share in other, ...
+    #top_dir_for_man = os.path.dirname(man_dirname)
+
+    print man1_dirname
+    return man1_dirname
+    
+    
+
 from distutils.core import setup
 
 setup(name = "cvsanaly",
@@ -34,6 +52,8 @@ setup(name = "cvsanaly",
       author =  "LibreSoft",
       author_email = "anavarro@gsyc.es",
       description = "An analysis tool for your CVS and Subversion repository",
-      url = "https://forge.morfeo-project.org/projects/libresoft-tools/",
+      url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
       packages = ['pycvsanaly', 'pycvsanaly.plugins', 'pycvsanaly.plugins.graphs', 'pycvsanaly.plugins.generations'],
+      data_files = [(get_man_installation_directory(),['cvsanaly.1'])],
       scripts = ["cvsanaly","polygini.pl"])
+

@@ -1,0 +1,115 @@
+.\" Process this file with
+.\" groff -man -Tascii cvsanaly.1
+.\" 
+.TH "CVSANALY" "1" "2007-04-12" "cvsanaly-1.0" "CVSAnalY"
+.SH "NAME"
+cvsanaly \- a tool that extracts statistical information out of CVS (and recently Subversion) repository logs and transforms it in database SQL formats.
+.SH "SYNOPSIS"
+.B cvsanaly 
+[options] 
+.PP 
+options:
+.PP 
+.IP \-\-help
+.IP \-\-usage
+.IP \-\-version
+.IP \-\-branch
+.IP \-\-log\-file LOGFILE 
+.IP \-\-path PATH
+.IP \-\-repodir DIR (default is current directory)
+.IP \-\-driver  mysql|stdout (default is stdout)
+.PP 
+Database:
+.PP 
+.IP \-\-user (default is operator)
+.IP \-\-password (default is operator)
+.IP \-\-database (default is cvsanaly)
+.IP \-\-hostname (default is localhost)
+.IP \-\-driver  mysql|stdout (default is stdout)
+.PP 
+Plugins:
+.PP 
+.IP \-\-scan
+.IP \-\-info
+.IP \-\-run\-plugin
+.SH "DESCRIPTION"
+.B CVSAnalY
+is a tool that extracts statistical information out of CVS (and recently Subversion) repository logs and transforms it in database SQL formats. It has a web interface \- called 
+.B CVSAnalYweb
+\- where the results can be retrieved and analized in an easy way. 
+.B CVSAnalY
+has been released under the terms of the GNU General Public License.
+.PP 
+We have been using this tool so far for analyzing large libre software projects like KDE, GNOME or Apache.
+.PP 
+We have started to include the analysis of Subversion repositories some time ago, but some features included for CVS are not included yet for Subversion.
+.PP 
+You can get more information about CVSAnalY in the old projects page in Tigris (http://cvsanaly.tigris.org/) and in https://forge.morfeo\-project.org/projects/libresoft\-tools/
+.PP 
+Important! CVSAnalY is now in its beta status. It has been a tool that has been used in a close environment at university for research purposes and we want to release it now to the public in order to let the community take advantage of the information and analyses it provides. Have a look at the in short\-time old webpage describing CVSAnalY.
+.PP 
+What is CVSAnalY for?
+.PP 
+We use CVSAnalY for researching libre software. Libre software offers Software Engineering scientists the possibility not only of having a closer look at the product that is being created, but also of studying in detail the whole development process and its technical, social and economic consequences.
+.PP 
+Have a look at our Libre Software Engineering website if you want further information about our research or about other tools we have built.
+.SH "OPTIONS"
+Run inside the checked out svn or cvs directory to analyze.
+.PP 
+.PD 0
+.TP 10
+.B \-\-help
+Print this usage message.
+.TP 
+.B \-\-brach
+Branch to be analyzed (default is trunk)
+.TP 
+.B \-\-log\-file
+Parse a given log file instead of get it from repository
+.TP 
+.B \-\-path
+Set an alternative path for cvs/svn binary
+.TP 
+.B \-\-repodir
+Set the repository dir (default is '.')
+.TP 
+.B \-\-driver
+Output driver mysql or stdout (default is stdout)
+.TP 
+.B \-\-user
+Username for connect to database (default is operator)
+.TP 
+.B \-\-password
+Password for connect to database (default is operator)
+.TP 
+.B \-\-database
+Database which contains data previously analyzed (default is cvsanaly)
+.TP 
+.B \-\-hostname
+Name of the host with a database server running (default is localhost)
+.TP 
+.B \-\-scan
+Scan for plugins
+.TP 
+.B \-\-info
+Retreives information from given plugin
+.TP 
+.B \-\-run\-plugin
+Execute plugin
+.SH "EXAMPLES"
+.PP
+.SH "BUGS"
+The best way to report a bug is to use the form at
+https://forge.morfeo\-project.org/tracker/?atid=229&group_id=33&func=browse.  
+The reason for this is that you will then be able to track progress in
+fixing the problem.   Other comments about \fBcvsanaly\fP(1)can be sent to the 
+.I Libresoft\-tools\-devel
+mailing list.  To join the list, subscribe to http://lists.morfeo\-project.org/mailman/listinfo/libresoft\-tools\-devel.
+.SH "AUTHORS"
+.PP
+.SH "HISTORY"
+.PP
+.SH "COPYRIGHT AND LICENSE"
+Copyright (C) 2004\-2007 by Libresoft Group http://www.libresoft.es <cvsanaly@libresoft.es>
+.PP 
+CVSAnalY is free software; you can redistribute it and/or modify it under the terms of the GPL.
