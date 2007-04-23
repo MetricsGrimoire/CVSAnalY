@@ -6,7 +6,6 @@
 
 	Added installation of the man page using Python distutils. A little hack in the setup.py file was needed.
 
-
 2007-04-23  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/repository.py:
