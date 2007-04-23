@@ -1,3 +1,12 @@
+2007-04-23  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
+
+	* setup.py:
+	* cvsanaly.1:
+	* MANIFEST.in:
+
+	Added installation of the man page using Python distutils. A little hack in the setup.py file was needed.
+
+
 2007-04-23  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/repository.py:
@@ -11,6 +20,7 @@
 	* debian/changelog:
 
 	Fixed version number of Debian package
+
 
 2007-04-18  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
