@@ -36,11 +36,6 @@ def get_man_installation_directory():
     location_of_man1 = commands.getoutput(cmd)
 
     man1_dirname = os.path.dirname(location_of_man1)
-    #man_dirname = os.path.dirname(man1_dirname)
-    # It is /usr in some systems, /usr/share in other, ...
-    #top_dir_for_man = os.path.dirname(man_dirname)
-
-    print man1_dirname
     return man1_dirname
     
     

@@ -47,7 +47,7 @@ file_properties = {'file_id':'',
                    'last_modification': '',
                    'module_id':'',
                    'size':'',
-                   'fileraw':''}
+                   'repopath':''}
 
 directory_properties = {'module_id':'',
                         'module':''}
@@ -58,13 +58,12 @@ commit_properties = {'commit_id':'',
                      'revision':'',
                      'plus':'',
                      'minus':'',
-                     'inattic':'',
                      'cvs_flag':'',
                      'external':'',
                      'date_log':'',
                      'filetype':'',
                      'module_id':'',
-                     'fileraw':'',
+                     'repopath':'',
                      'intrunk':'',
                      'state':''}
 
@@ -89,9 +88,9 @@ class RepositoryFactory:
             sys.exit (-1)
 
         if type.upper() == "CVS":
-            return RepositoryCVS()
+            return RepositoryCVS(checkout_directory)
         if type.upper() == "SVN":
-            return RepositorySVN()
+            return RepositorySVN(checkout_directory)
 
     def _logfile_is_cvs (logfile):
         retval = False
@@ -187,24 +186,6 @@ class Repository:
                 i+=1
         # if not found, specify it as unknown
         return config_files_names.index('unknown')
-
-    def isFileInAttic(self,file):
-        """
-        Looks if a given file is in the Attic
-        
-        In CVS a file is in the Attic if it has been removed from the
-        working copy
-       
-        @type  file: string
-        @param file: name of the file
-        
-        @rtype: int (boolean)
-        @return: 1 if file is in Attic, else 0
-        """
-        if re.compile('/Attic/').search(file):
-            return 1
-        else:
-            return 0
 
     def countLOCs(self,filename):
         """
@@ -302,11 +283,12 @@ class RepositoryCVS(Repository):
     Child Class that implements CVS Repository basic access
     """
 
-    def __init__(self):
-        pass
+    def __init__(self,checkout_directory=None):
+        self.checkout_directory = checkout_directory
 
-    def log(self, db, checkout_directory='', logfile=''):
+    def log(self, db, logfile=''):
 
+        checkout_directory = self.checkout_directory
         cvsbinary = find_program ('cvs')
 
         if cvsbinary is None:
@@ -330,7 +312,6 @@ class RepositoryCVS(Repository):
         minus = ''
         sum_plus = 0
         sum_minus = 0
-        inAttic = 0
         isbinary =0
         cvs_flag= 0
         newcommit = 0
@@ -366,7 +347,6 @@ class RepositoryCVS(Repository):
 
                 mobj0 = pattern0.match(line)
                 if mobj0:
-                    inAttic = self.isFileInAttic(mobj0.group(1))
                     isbinary = 0
                     cvs_flag = 0
                     revision = ''
@@ -384,24 +364,24 @@ class RepositoryCVS(Repository):
                 if mobj1:
 
                     # Directory and File
-                    fileraw = mobj1.group(1)
-                    fileraw = fileraw.replace("'","\\'")
+                    repopath = mobj1.group(1)
+                    repopath = repopath.replace("'","\\'")
+                    repopath = os.path.join(self.__getRootDirectory(), repopath)
 
-                    filename = fileraw.split('/')[-1]
-                    filepath = fileraw[:-len(filename)]
+                    filename = repopath.split('/')[-1]
+                    filepath = repopath[:-len(filename)]
                     filetype = self.analyseFile(filename)
 
                     if not filepath:
                         filepath = '/'
                     if not mdirectories.has_key(filepath):
                         mdirectories[filepath] = len(mdirectories)
-                    #print fileraw
 
                     file_properties['name'] = filename
                     file_properties['filetype'] = filetype
                     file_properties['module_id'] = mdirectories[filepath]
                     file_properties['filetype'] = filetype
-                    file_properties['fileraw'] = fileraw
+                    file_properties['repopath'] = repopath
 
                     f = File()
 
@@ -493,13 +473,12 @@ class RepositoryCVS(Repository):
                         commit_properties['revision'] = str(revision)
                         commit_properties['plus'] = str(plus)
                         commit_properties['minus'] = str(minus)
-                        commit_properties['inattic'] = str(inAttic)
                         commit_properties['cvs_flag'] = str(cvs_flag)
                         commit_properties['external'] = str(external)
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
                         commit_properties['module_id'] = mdirectories[filepath]
-                        commit_properties['fileraw'] = str(fileraw)
+                        commit_properties['repopath'] = str(repopath)
                         commit_properties['intrunk'] = str(intrunk)
                         commit_properties['state'] = str(state)
 
@@ -508,7 +487,7 @@ class RepositoryCVS(Repository):
 
                 if mobj9:
                     if newcommit:
-                        if not isbinary and not inAttic:
+                        if not isbinary:
                             checkin = self.countLOCs(os.path.join (filepath, filename))
                             checkin = checkin - sum_plus + sum_minus
 		            if checkin < 0: checkin = 0
@@ -533,13 +512,30 @@ class RepositoryCVS(Repository):
         if logfile:
             linelog.close ()
 
+    def __getRootDirectory(self):
+        """Reads the CVS directory and return the root directory of the working copy"""
+
+        # When reading information from a log dump, there is not checkout directory
+        if not self.checkout_directory:
+            return ""
+        
+        # Read the Repository file
+        repositoryFilename = os.path.join(self.checkout_directory,'CVS/Repository')
+
+        repositoryFileobj = open(repositoryFilename,'r')
+        repository = repositoryFileobj.readline().rstrip('\n')
+        repositoryFileobj.close()
+        
+        return repository
+
+
 class RepositorySVN(Repository):
     """
     Child Class that implements SVN Repository basic access
     """
 
-    def __init__(self):
-        pass
+    def  __init__(self, checkout_directory=None):
+        self.checkout_directory = checkout_directory
 
     def get_fileid(self, mfiles, filename):
         for f in mfiles:
@@ -561,8 +557,9 @@ class RepositorySVN(Repository):
         return line
 
 
-    def log(self, db, checkout_directory='', logfile=''):
+    def log(self, db, logfile=''):
 
+        checkout_directory = self.checkout_directory
         svnbinary = find_program ('svn')
 
         if svnbinary is None:
@@ -626,10 +623,9 @@ class RepositorySVN(Repository):
                         if line[:5] == '   M ' or line[:5] == '   A ' or line[:5] == '   D ':
                             line = line.split()
                             modification = line[0]
-                            fileraw      = line[1]
+                            repopath      = line[1]
                             moreFiles = True
-                            fileList.append((fileraw, modification))
-                            #print fileraw
+                            fileList.append((repopath, modification))
                         else:
                             moreFiles = False
 
@@ -650,13 +646,13 @@ class RepositorySVN(Repository):
 
                     # Directory and File
                     for fileTuple in fileList:
-                        fileraw = fileTuple[0]
+                        repopath = fileTuple[0]
                         type = fileTuple[1]
 
-                        fileraw = fileraw.replace("'","\\'")
+                        repopath = repopath.replace("'","\\'")
 
-                        filename = fileraw.split('/')[-1]
-                        filepath = fileraw[:-len(filename)]
+                        filename = repopath.split('/')[-1]
+                        filepath = repopath[:-len(filename)]
                         filetype = self.analyseFile(filename)
 
                         if not filepath:
@@ -674,16 +670,15 @@ class RepositorySVN(Repository):
                         file_properties['creation_date'] = str(creationdate)
                         file_properties['last_modification'] = str(modificationdate)
 
-                        if not mfiles.has_key(fileraw):
+                        if not mfiles.has_key(repopath):
                             properties = file_properties.copy()
-                            mfiles[fileraw] = (len(mfiles), properties)
+                            mfiles[repopath] = (len(mfiles), properties)
 
-                        commit_properties['file_id'] = str(self.get_fileid(mfiles, fileraw))
+                        commit_properties['file_id'] = str(self.get_fileid(mfiles, repopath))
                         commit_properties['commiter_id'] = str(authors[commitername])
                         commit_properties['revision'] = str(revision)
                         commit_properties['plus'] = 0           # No plus in SVN logs
                         commit_properties['minus'] = 0          # No plus in SVN logs
-                        commit_properties['inattic'] = ''       # TODO
                         commit_properties['cvs_flag'] = ''      # TODO
                         commit_properties['external'] = ''      # TODO
                         commit_properties['date_log'] = str(creationdate)

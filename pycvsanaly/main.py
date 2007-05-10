@@ -96,7 +96,7 @@ def create_and_fill_database (db, directory, logfile):
     db.create_table('modules', modules)
 
     # And finally we analyze log
-    repos.log (db, directory, logfile)
+    repos.log (db, logfile)
 
 def main():
 

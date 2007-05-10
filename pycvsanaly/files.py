@@ -82,7 +82,7 @@ class File:
         Add properties 
         """
 
-        query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype, fileraw) "
+        query = "INSERT INTO files (file_id, module_id, name, creation_date, last_modification, size, filetype, repopath) "
         query += " VALUES ('" + str(self.id) + "','"
         query += str(properties['module_id']) + "','"
         query += str(properties['name']) + "','"
@@ -90,7 +90,7 @@ class File:
         query += str(properties['last_modification']) + "','"
         query += str(properties['size']) + "','"
         query += str(properties['filetype']) + "','"
-        query += str(properties['fileraw']) + "');"
+        query += str(properties['repopath']) + "');"
 
         db.insertData(query)
 
