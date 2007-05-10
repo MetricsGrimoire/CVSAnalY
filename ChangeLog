@@ -1,3 +1,14 @@
+2007-05-10  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
+
+	* pycvsanaly/commit.py:
+	* pycvsanaly/files.py:
+	* pycvsanaly/main.py:
+	* pycvsanaly/repository.py:
+	* pycvsanaly/tables.py:
+	* setup.py:
+
+	Fixing bug #268. Some information in the database was incorrect.
+	
 2007-04-23  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* setup.py:
