@@ -30,16 +30,6 @@ Installer
 import commands
 import os
 
-def get_man_installation_directory():
-    """Find out where man pages are stored in the system"""
-    cmd = "man --where man"
-    location_of_man1 = commands.getoutput(cmd)
-
-    man1_dirname = os.path.dirname(location_of_man1)
-    return man1_dirname
-    
-    
-
 from distutils.core import setup
 
 setup(name = "cvsanaly",
@@ -49,6 +39,6 @@ setup(name = "cvsanaly",
       description = "An analysis tool for your CVS and Subversion repository",
       url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
       packages = ['pycvsanaly', 'pycvsanaly.plugins', 'pycvsanaly.plugins.graphs', 'pycvsanaly.plugins.generations'],
-      data_files = [(get_man_installation_directory(),['cvsanaly.1'])],
+      data_files = [('share/man/man1',['cvsanaly.1'])],
       scripts = ["cvsanaly","polygini.pl"])
 

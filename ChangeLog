@@ -1,3 +1,9 @@
+2007-06-05  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* setup.py: 
+
+	Install manpage under $prefix instead of /usr
+
 2007-05-10  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* pycvsanaly/commit.py:
