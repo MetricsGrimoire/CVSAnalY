@@ -1,5 +1,16 @@
 2007-06-05  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/repository.py:
+	* pycvsanaly/main.py:
+
+	Review command line options. Old options have been kept for backward
+	compatibility, but they are deprecated and not shown in usage message.
+	cvsanaly usage has changed, take a look at cvsanaly --help. Analyze
+	svn repositories by directly using the repo url is now supported. 
+	Fixes bugs #284 and #288.
+
+2007-06-05  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
 	* setup.py: 
 
 	Install manpage under $prefix instead of /usr

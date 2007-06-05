@@ -50,62 +50,68 @@ plugins = scan_plugins ()
 
 def usage ():
     print credits
-    print "Usage: cvsanaly [options]"
+    print "Usage: cvsanaly [options] [URI1] [URI2] ... [URIn]"
     print """
-Run inside the checked out svn or cvs directory to analyze
+Analyze the given set of URIs. An URI can be a checked out directory, 
+a remote URL pointing to a repository or a repository log file. If 
+URIs are omitted, the current working directory will be used as a 
+checked out directory.
 
 Options:
 
-  --help            Print this usage message.
-  --version         Show version
+  -h, --help        Print this usage message.
+  -V, --version     Show version
 
-  --branch          Branch to be analyzed (default is trunk)
-  --log-file        Parse a given log file instead of get it from repository
-  --repodir         Set the repository dir (default is '.')
-  --driver          Output driver mysql or stdout (default is stdout)
+      --branch      Repository branch to analyze (default is head/trunk)
 
 Database:
 
-  --user            Username for connect to database (default is operator)
-  --password        Password for connect to database (default is operator)
-  --database        Database which contains data previously analyzed (default is cvsanaly)
-  --hostname        Name of the host with a database server running (default is localhost)
+      --db-driver   Output database driver [stdout|mysql] (default is stdout)
+  -u, --db-user     Database user name (default is operator)
+  -p, --db-password Database user password (default is operator)
+  -d, --db-database Database name (default is cvsanaly)
+  -H, --db-hostname Name of the host where database server is running (default is localhost)
 
 Plugins:
 
-  --info            Retreives information from given plugin
-  --run-plugin      Execute plugin
-  --scan            Scan for plugins
+  --plugin-info     Retreives information from given plugin
+  --plugin-run      Execute plugin
+  --plugin-scan     Scan for plugins
 """
 
     for p in plugins:
         get_plugin (p).usage ()
 
-def create_and_fill_database (db, directory, logfile):
-    # CVS/SVN interactive
-    if logfile:
-        repos = rpmodule.RepositoryFactory.create_from_logfile (logfile)
-    else:
-        repos = rpmodule.RepositoryFactory.create_from_path (directory)
+_database_created = False
+def create_database (db):
+    global _database_created
+    if _database_created:
+        return
 
     # Create database and tables
-    db.create_database()
-    db.create_table('files',files)
-    db.create_table('commiters',commiters)
-    db.create_table('log',log)
-    db.create_table('modules', modules)
+    db.create_database ()
+    db.create_table ('files', files)
+    db.create_table ('commiters', commiters)
+    db.create_table ('log', log)
+    db.create_table ('modules', modules)
 
-    # And finally we analyze log
-    repos.log (db, logfile)
+    _database_created = True
+
+def run (db, args):
+    for uri in args:
+        repo = rpmodule.RepositoryFactory.create (uri)
+        if repo is None:
+            continue
+        create_database (db)
+        repo.log (db)
 
 def main():
-
-
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = ""
-    #short_opts = "h:t:b:r:l:n:p:d:s:i:r"
+    short_opts = "hVu:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","version","user=", "password=", "hostname=", "database=","branch=","log-file=","repodir=","driver=","info=","run-plugin=","scan"]
+    long_opts = ["help","version","branch=","db-user=", "db-password=", "db-hostname=", "db-database=","db-driver=","plugin-info=","plugin-run=","plugin-scan"]
+    # Deprecated options, added only for backward compatibility
+    long_opts.extend (("user=", "password=", "hostname=", "database=", "driver=", "run-plugin=", "scan", "info="))
 
     for p in plugins:
         long_opts.extend (get_plugin (p).get_options ())
@@ -115,51 +121,44 @@ def main():
     passwd = 'operator'
     hostname = 'localhost'
     database = 'cvsanaly'
-    logfile = ''
     branch = ''
     driver = 'stdout'
-    directory = '.'
     plugin_list = []
     plugin_opts = {}
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], short_opts, long_opts)
+        opts, args = getopt.getopt (sys.argv[1:], short_opts, long_opts)
     except getopt.GetoptError, e:
         print e
-        usage ()
         sys.exit(1)
 
     for opt, value in opts:
         if opt in ("-h", "--help", "-help"):
             usage()
             sys.exit(0)
-        elif opt in ("--version"):
+        elif opt in ("-V", "--version"):
             print version
             sys.exit(0)
-        elif opt in ("--username"):
+        elif opt in ("-u", "--db-user", "--user"):
             user = value
-        elif opt in ("--password"):
+        elif opt in ("-p", "--db-password", "--password"):
             passwd = value
-        elif opt in ("--hostname"):
+        elif opt in ("-H", "--db-hostname", "--hostname"):
             hostname = value
-        elif opt in ("--log-file"):
-            logfile = value
-        elif opt in ("--database"):
+        elif opt in ("-d", "--db-database", "--database"):
             database = value
-        elif opt in ("--driver"):
+        elif opt in ("--db-driver", "--driver"):
             driver = value
         elif opt in ("--branch"):
             branch = value
-        elif opt in ("--repodir"):
-            directory = value
-        elif opt in ("--info"):
+        elif opt in ("--plugin-info", "--info"):
             p = get_plugin (value)
             p.info ()
             sys.exit(0)
-        elif opt in ("--run-plugin"):
+        elif opt in ("--plugin-run", "--run-plugin"):
             plugin_list.append (value)
             plugin_opts[value] = []
-        elif opt in ("--scan"):
+        elif opt in ("--plugin-scan", "--scan"):
             if len (plugins) == 0:
                 print "No plugins available"
                 sys.exit(0)
@@ -177,12 +176,15 @@ def main():
 
             plugin_opts[plugin].append ((opt, value))
 
+    if len (args) <= 0:
+        args.append (os.getcwd ())
+
     # Connect to the database
     conection = driver + "://" + user + ":" + passwd + "@" + hostname + "/" + database
     db = dbmodule.Database(conection)
 
     if len (plugin_list) <= 0:
-        create_and_fill_database (db, directory, logfile)
+        run (db, args)
         db.close ()
 
         return
@@ -191,7 +193,8 @@ def main():
     try:
         db.executeSQLRaw ("SELECT commit_id from log where commit_id = 0")
     except:
-        create_and_fill_database (db, directory, logfile)
+        # If database doesn't exist, create and fill it now
+        run (db, args)
 
     for plugin in plugin_list:
         p = get_plugin (plugin, db, plugin_opts[plugin])

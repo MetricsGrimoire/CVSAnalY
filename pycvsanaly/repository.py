@@ -74,7 +74,7 @@ class RepositoryFactory:
     """
     Basic Factory that abastracts the process to create new repositories
     """
-    def create_from_path(checkout_directory):
+    def _create_from_path (checkout_directory):
         for type in work_area:
             binary_directory = os.path.join (checkout_directory, work_area[type])
             isvalid = os.path.isdir (binary_directory)
@@ -85,12 +85,15 @@ class RepositoryFactory:
             for type in work_area:
                 print ("The "+checkout_directory+" is not a valid %s work area. I can't find %s directory.") % (type, work_area[type])
             print ("\nSee --help for more details.\n")
-            sys.exit (-1)
+            return None
 
-        if type.upper() == "CVS":
-            return RepositoryCVS(checkout_directory)
-        if type.upper() == "SVN":
-            return RepositorySVN(checkout_directory)
+        if type.upper () == "CVS":
+            retval = RepositoryCVS ()
+        elif type.upper () == "SVN":
+            retval = RepositorySVN ()
+
+        retval.set_checkout_path (checkout_directory)
+        return retval
 
     def _logfile_is_cvs (logfile):
         retval = False
@@ -136,22 +139,45 @@ class RepositoryFactory:
 
         return retval
 
-    def create_from_logfile(logfile):
+    def _create_from_logfile (logfile):
+        retval = None
+
         if RepositoryFactory._logfile_is_cvs (logfile):
-            print "CVS"
-            return RepositoryCVS()
+            retval = RepositoryCVS ()
         elif RepositoryFactory._logfile_is_svn (logfile):
-            print "SVN"
-            return RepositorySVN()
+            retval = RepositorySVN ()
+        
+        if retval is not None:
+            retval.set_log_file (logfile)
+            return retval
 
         print "File %s doesn't look like a valid repository log file" % (logfile)
-        sys.exit (-1)
+        return None
+
+    def create (uri):
+        match = re.compile ("^.*://.*$").match (uri)
+        if match is None:
+            # Local uri
+            if os.path.isdir (uri):
+                return RepositoryFactory._create_from_path (uri)
+            elif os.path.isfile (uri):
+                return RepositoryFactory._create_from_logfile (uri)
+            else:
+                print "%s doesn't look like a valid work are or log file" % (uri)
+        else:
+            # Remote uri (Only supported by SVN
+            retval = RepositorySVN ()
+            retval.set_remote_uri (uri)
+            return retval
+
+        return None
 
     # We make it static
-    create_from_path = staticmethod(create_from_path)
-    create_from_logfile = staticmethod(create_from_logfile)
-    _logfile_is_cvs = staticmethod(_logfile_is_cvs)
-    _logfile_is_svn = staticmethod(_logfile_is_svn)
+    create = staticmethod (create)
+    _create_from_path = staticmethod (_create_from_path)
+    _create_from_logfile = staticmethod (_create_from_logfile)
+    _logfile_is_cvs = staticmethod (_logfile_is_cvs)
+    _logfile_is_svn = staticmethod (_logfile_is_svn)
 
 
 class Repository:
@@ -159,11 +185,20 @@ class Repository:
     Generic class with basic information
     """
 
-    def __init__(self):
-        pass
+    def __init__ (self):
+        self.checkout_path = None
+        self.log_file = None
+
+    def set_checkout_path (self, dir):
+        self.log_file = None
+        self.checkout_path = dir
+
+    def set_log_file (self, log):
+        self.checkout_path = None
+        self.log_file = log
 
     def log(self):
-        pass
+        raise NotImplementedError
 
     def analyseFile(self,file):
         """
@@ -278,30 +313,31 @@ class Repository:
             db.insertData(query)
 
 
-class RepositoryCVS(Repository):
+class RepositoryCVS (Repository):
     """
     Child Class that implements CVS Repository basic access
     """
 
-    def __init__(self,checkout_directory=None):
-        self.checkout_directory = checkout_directory
+    def __init__(self):
+        Repository.__init__ (self)
 
-    def log(self, db, logfile=''):
+    def log (self, db):
 
-        checkout_directory = self.checkout_directory
-        cvsbinary = find_program ('cvs')
+        if self.checkout_path is None and self.log_file is None:
+            return
+        elif self.checkout_path is not None:
+            cvsbinary = find_program ('cvs')
 
-        if cvsbinary is None:
-            print ("Error: Can't find cvs binary in PATH\n")
-            sys.exit (-1)
+            if cvsbinary is None:   
+                print ("Error: Can't find cvs binary in PATH\n")
+                sys.exit (-1)
 
-        if logfile:
-            linelog = open(logfile,'r')
-        else:
             cwd = os.getcwd ()
-            os.chdir (checkout_directory)
-            linelog = os.popen3 (cvsbinary + ' -z9 -Q log')
+            os.chdir (self.checkout_path)
+            linelog = os.popen3 (cvsbinary + ' -z9 -Q log')[1]
             os.chdir (cwd)
+        elif self.log_file is not None:
+            linelog = open (self.log_file, 'r')
 
         filename = ''
         dirname = ''
@@ -326,10 +362,7 @@ class RepositoryCVS(Repository):
         mdirectories = {}
 
         while 1:
-            if logfile:
-                line = linelog.readline()
-            else:
-                line = linelog[1].readline()
+            line = linelog.readline()
             if not line:
                 break
             else:
@@ -509,22 +542,22 @@ class RepositoryCVS(Repository):
         except:
             sys.exit("Cannot get log! Maybe this is not a CVS working directory or you are having problems with your connection\n")
 
-        if logfile:
+        if self.log_file is not None:
             linelog.close ()
 
-    def __getRootDirectory(self):
+    def __getRootDirectory (self):
         """Reads the CVS directory and return the root directory of the working copy"""
 
         # When reading information from a log dump, there is not checkout directory
-        if not self.checkout_directory:
+        if not self.checkout_path:
             return ""
         
         # Read the Repository file
-        repositoryFilename = os.path.join(self.checkout_directory,'CVS/Repository')
+        repositoryFilename = os.path.join (self.checkout_path, 'CVS/Repository')
 
-        repositoryFileobj = open(repositoryFilename,'r')
-        repository = repositoryFileobj.readline().rstrip('\n')
-        repositoryFileobj.close()
+        repositoryFileobj = open (repositoryFilename,'r')
+        repository = repositoryFileobj.readline ().rstrip ('\n')
+        repositoryFileobj.close ()
         
         return repository
 
@@ -534,8 +567,14 @@ class RepositorySVN(Repository):
     Child Class that implements SVN Repository basic access
     """
 
-    def  __init__(self, checkout_directory=None):
-        self.checkout_directory = checkout_directory
+    def  __init__(self):
+        Repository.__init__ (self)
+        self.remote_uri = None
+
+    def set_remote_uri (self, uri):
+        self.checkout_path = None
+        self.log_file = None
+        self.remote_uri = uri
 
     def get_fileid(self, mfiles, filename):
         for f in mfiles:
@@ -547,29 +586,27 @@ class RepositorySVN(Repository):
         for f in files:
             print str(files[f][0]) + "\t" + str(files[f][1])
 
-    def _getNextLine(self, logfile, linelog):
+    def log (self, db):
 
-        if logfile:
-            line = linelog.readline()
-        else:
-            line = linelog[1].readline()
-            #print "Line:", line[:-1]
-        return line
+        if self.checkout_path is None and \
+           self.log_file is None and \
+           self.remote_uri is None:
+            return
+        elif self.checkout_path is not None or self.remote_uri is not None:
+            svnbinary = find_program ('svn')
 
+            if svnbinary is None:
+                print ("Error: Can't find svn binary in path")
+                sys.exit (-1)
 
-    def log(self, db, logfile=''):
+            if self.checkout_path is not None:
+                target = self.checkout_path
+            else:
+                target = self.remote_uri
 
-        checkout_directory = self.checkout_directory
-        svnbinary = find_program ('svn')
-
-        if svnbinary is None:
-            print ("Error: Can't find svn binary in path %s\n") % (path)
-            sys.exit (-1)
-
-        if logfile:
-            linelog = open(logfile, 'r')
-        else:
-            linelog = os.popen3 (svnbinary + ' --verbose log ' + checkout_directory)
+            linelog = os.popen3 (svnbinary + ' --verbose log ' + target)[1]
+        elif self.log_file is not None:
+            linelog = open (self.log_file, 'r')
 
         fileList = []
         dirname = ''
@@ -587,7 +624,7 @@ class RepositorySVN(Repository):
         c = None
 
         while 1:
-            line = self._getNextLine(logfile, linelog)
+            line = linelog.readline ()
             if not line:
                 break
             else:
@@ -615,11 +652,11 @@ class RepositorySVN(Repository):
                     ######
                     # Let's look at affected files
                     # First line: throw it away
-                    line = self._getNextLine(logfile, linelog)
+                    line = linelog.readline ()
                     # But not the other lines
                     moreFiles = True
                     while moreFiles:
-                        line = self._getNextLine(logfile, linelog)
+                        line = linelog.readline ()
                         if line[:5] == '   M ' or line[:5] == '   A ' or line[:5] == '   D ':
                             line = line.split()
                             modification = line[0]
@@ -634,7 +671,7 @@ class RepositorySVN(Repository):
 
                     comment = ''
                     for index in range(int(linesComment)):
-                        comment += self._getNextLine(logfile, linelog).replace('\n', ' ')
+                        comment += linelog.readline ().replace('\n', ' ')
                     # Removing trailing and other spaces
                     comment = ' '.join(comment.split())
                     #print "Comment: '" + comment + "'"
@@ -699,6 +736,6 @@ class RepositorySVN(Repository):
             self.commiters2sql(db,authors)
         except:
             sys.exit("Cannot get log! maybe this is not a SVN working directory or you are having problems with your connection\n")
-        if logfile:
-            linelog.close()
+        if self.log_file is not None:
+            linelog.close ()
 
