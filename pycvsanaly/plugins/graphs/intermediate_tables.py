@@ -93,7 +93,7 @@ def first_commit(db, table, where=""):
                 result_time = '2004-01-01 00:00:00'
         return result_time
 
-def filesInAtticModules(db, where = ""):
+def filesRemovedModules(db, where = ""):
     """
     Returns the number of files it has in the Attic for modules
 
@@ -113,7 +113,7 @@ def filesInAtticModules(db, where = ""):
 
     resultRow = db.querySQL("COUNT(DISTINCT(file_id)), module_id",
                         "log",
-                        "inAttic='1'" + where,
+                        "removed='1'" + where,
                         "module_id", "module_id")
 
     for resultTuple in resultRow:
@@ -121,7 +121,7 @@ def filesInAtticModules(db, where = ""):
 
     return returnDict
 
-def filesInAtticCommiters(db,where = ""):
+def filesRemovedCommiters(db,where = ""):
     """
     Returns the number of files it has in the Attic by commiters
 
@@ -141,7 +141,7 @@ def filesInAtticCommiters(db,where = ""):
 
     resultRow = db.querySQL("COUNT(DISTINCT(file_id)), commiter_id",
                         "log",
-                        "inAttic='1'" + where,
+                        "removed='1'" + where,
                         "commiter_id", "commiter_id")
 
     for resultTuple in resultRow:
@@ -164,7 +164,7 @@ def intermediate_table_commiters(db):
     for moduleRow in moduleList:
 
         for fileType in cfmodule.config_files_names:
-            inAtticFilesDict = filesInAtticCommiters(db, "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'")
+            removedFilesDict = filesRemovedCommiters(db, "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'")
 
             if not config_serverDateError_where:
                 AND = ''
@@ -172,7 +172,7 @@ def intermediate_table_commiters(db):
                 AND = ' AND '
 
             query  = 'commiter_id, COUNT(*) AS commits, SUM(plus) AS plus, SUM(minus) AS minus, COUNT(DISTINCT(file_id)) '
-            query += 'AS sum_files, SUM(inAttic) AS inAtticCommits, SUM(external) AS external, SUM(cvs_flag) AS cvs_flag,'
+            query += 'AS sum_files, SUM(removed) AS removedCommits, SUM(external) AS external, SUM(cvs_flag) AS cvs_flag,'
             query += 'MIN(date_log) AS first, MAX(date_log) AS last'
 
             where  = "module_id='" + str(moduleRow[0]) + "' AND filetype='"
@@ -183,15 +183,15 @@ def intermediate_table_commiters(db):
             if resultRow:
                 for resultTuple in resultRow:
                     try:
-                        inAttic = inAtticFilesDict[resultTuple[0]]
+                        removed = removedFilesDict[resultTuple[0]]
                     except KeyError:
-                        inAttic = 0
+                        removed = 0
                     query  = "INSERT INTO cvsanal_temp_commiters (commiter_id, module_id, commits, plus, "
-                    query += "minus, files, filetype, inAtticFiles, inAtticCommits, external, cvs_flag, first_commit, last_commit) "
+                    query += "minus, files, filetype, removedFiles, removedCommits, external, cvs_flag, first_commit, last_commit) "
                     query += " VALUES ('" + str(resultTuple[0]) + "', '" + str(moduleRow[0]) + "','"
                     query += resultTuple[1] + "', '"
                     query += resultTuple[2] + "', '" + resultTuple[3] + "', '" + resultTuple[4] + "', '" + str(cfmodule.config_files_names.index(fileType))
-                    query += "', '" + str(inAttic) + "', '" + resultTuple[5] + "', '" + resultTuple[6] + "', '" + resultTuple[7] + "', '"
+                    query += "', '" + str(removed) + "', '" + resultTuple[5] + "', '" + resultTuple[6] + "', '" + resultTuple[7] + "', '"
                     query += resultTuple[8] + "', '" + resultTuple[9] + "');\n"
 
                     db.insertData(query)
@@ -231,21 +231,21 @@ def intermediate_table_modules(db):
         else:
             AND = ' AND '
 
-        resultRow = db.querySQL ('module_id, COUNT(DISTINCT(commiter_id)) AS commiters, COUNT(*) AS commits, SUM(plus) AS plus, SUM(minus) AS minus, COUNT(DISTINCT(file_id)) AS files, SUM(external) AS external, SUM(cvs_flag) AS flag, SUM(inattic) AS inAtticCommits, MIN(date_log) AS first_commit, MAX(date_log) AS last_commit','log', "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'" + AND + config_serverDateError_where, 'module_id', 'module_id')
+        resultRow = db.querySQL ('module_id, COUNT(DISTINCT(commiter_id)) AS commiters, COUNT(*) AS commits, SUM(plus) AS plus, SUM(minus) AS minus, COUNT(DISTINCT(file_id)) AS files, SUM(external) AS external, SUM(cvs_flag) AS flag, SUM(removed) AS removedCommits, MIN(date_log) AS first_commit, MAX(date_log) AS last_commit','log', "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'" + AND + config_serverDateError_where, 'module_id', 'module_id')
 
-        inAtticFilesDict = filesInAtticModules(db, "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'")
+        removedFilesDict = filesRemovedModules(db, "filetype='" + str(cfmodule.config_files_names.index(fileType)) + "'")
 
         if resultRow:
             for resultTuple in resultRow:
                 try:
-                    inAttic = inAtticFilesDict[resultTuple[0]]
+                    removed = removedFilesDict[resultTuple[0]]
                 except KeyError:
-                    inAttic = 0
+                    removed = 0
 
-                query = "INSERT INTO cvsanal_temp_modules (module_id, module, commiters, commits, plus, minus, files, external, cvs_flag, filetype, inAtticCommits, inAtticFiles, first_commit, last_commit) "
+                query = "INSERT INTO cvsanal_temp_modules (module_id, module, commiters, commits, plus, minus, files, external, cvs_flag, filetype, removedCommits, removedFiles, first_commit, last_commit) "
                 query += " VALUES ('" + resultTuple[0] + "', '" + moduleDict[resultTuple[0]] + "', '" + resultTuple[1] + "', '" + resultTuple[2] + "', '" + resultTuple[3] + "', '" + resultTuple[4]
                 query += "', '" + resultTuple[5] + "', '" + resultTuple[6] + "', '" + resultTuple[7] + "', '" + str(cfmodule.config_files_names.index(fileType)) + "', '" + resultTuple[8] + "', '"
-                query += str(inAttic) + "', '" + resultTuple[9] + "', '" + resultTuple[10] + "');\n"
+                query += str(removed) + "', '" + resultTuple[9] + "', '" + resultTuple[10] + "');\n"
 
                 db.insertData(query)
 

@@ -65,7 +65,7 @@ commit_properties = {'commit_id':'',
                      'module_id':'',
                      'repopath':'',
                      'intrunk':'',
-                     'state':''}
+                     'removed':''}
 
 work_area = { 'svn' : '.svn',
               'cvs' : 'CVS'}
@@ -352,7 +352,7 @@ class RepositoryCVS (Repository):
         cvs_flag= 0
         newcommit = 0
         external = 0
-        state = ''
+        removed = 0
         checkin= 0
 
         authors = {}
@@ -472,11 +472,17 @@ class RepositoryCVS (Repository):
                         plus = "0"
                         minus = "0"
 
-                    # State
+                    # File was removed in this revision?
                     if mobj4:
-                        state = mobj4.group(7)
+                        if 'Exp' in mobj4.group(7):
+                            removed = '0'
+                        else:
+                            removed = '1'
                     else:
-                        state = mobj5.group(7)
+                        if 'Exp' in mobj5.group(7):
+                            removed = '0'
+                        else:
+                            removed = '1'
 
                 mobj6 = pattern6.match(line)
                 if mobj6:
@@ -513,7 +519,7 @@ class RepositoryCVS (Repository):
                         commit_properties['module_id'] = mdirectories[filepath]
                         commit_properties['repopath'] = str(repopath)
                         commit_properties['intrunk'] = str(intrunk)
-                        commit_properties['state'] = str(state)
+                        commit_properties['removed'] = str(removed)
 
 			c = Commit ()
                         c.add_properties (db, commit_properties)

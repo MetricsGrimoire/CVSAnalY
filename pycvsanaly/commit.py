@@ -95,7 +95,7 @@ class Commit:
     def add_properties(self, db, properties):
 
         query  = "INSERT INTO log (commit_id, file_id, commiter_id, revision, "
-        query += "plus, minus, cvs_flag, external, date_log, filetype, module_id, repopath, intrunk, state) "
+        query += "plus, minus, cvs_flag, external, date_log, filetype, module_id, repopath, intrunk, removed) "
         query += " VALUES ('" + str(self.id) + "','"
         query += str(properties['file_id']) + "','"
         query += str(properties['commiter_id']) + "','"
@@ -109,7 +109,7 @@ class Commit:
         query += str(properties['module_id']) + "','"
         query += str(properties['repopath']) + "','"
         query += str(properties['intrunk']) + "','"
-        query += str(properties['state']) + "');"
+        query += str(properties['removed']) + "');"
 
         db.insertData(query)
         
