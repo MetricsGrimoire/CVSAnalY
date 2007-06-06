@@ -1,3 +1,19 @@
+2007-06-06  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+
+	* pycvsanaly/commit.py:
+	* pycvsanaly/repository.py:
+	* pycvsanaly/tables.py:
+	* pycvsanaly/plugins/graphs/intermediate_tables.py:
+	* pycvsanaly/plugins/graphs/tables_skeleton.py:
+
+	"state" field replaced by a bool field called "removed", which is
+	True if the file has been removed in that revision and False
+	otherwise. The "inAttic" field (removed some revisions ago) was
+	used by the graphs plugin, but was not longer present in the
+	database because it was replaced by "state". That plugin has been
+	updated to use the new "removed" plugin. All the plugins have been
+	tested to work with this new change.
+	
 2007-06-05  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/repository.py:

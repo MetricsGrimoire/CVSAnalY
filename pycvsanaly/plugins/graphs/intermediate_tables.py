@@ -95,15 +95,15 @@ def first_commit(db, table, where=""):
 
 def filesRemovedModules(db, where = ""):
     """
-    Returns the number of files it has in the Attic for modules
+    Returns the number of removed files for modules
 
     @type  where: string
     @param where: additional conditions to the SQL WHERE clause
                   (by default: empty)
 
     @rtype: dictionary
-    @return: number of files in the Attic for a module.
-             the key is the module_id, and the value the number of files in the Attic
+    @return: number of removed files for a module.
+             the key is the module_id, and the value the number of removed files
     """
 
     returnDict = {}
@@ -123,15 +123,15 @@ def filesRemovedModules(db, where = ""):
 
 def filesRemovedCommiters(db,where = ""):
     """
-    Returns the number of files it has in the Attic by commiters
+    Returns the number of removed files by commiters
 
     @type  where: string
     @param where: additional conditions to the SQL WHERE clause
                   (by default: empty)
 
     @rtype: dictionary
-    @return: number of files in the Attic for a commiter.
-             the key is the commiter_id, and the value the number of files in the Attic
+    @return: number of removed files for a commiter.
+             the key is the commiter_id, and the value the number of removed files
     """
 
     returnDict = {}
