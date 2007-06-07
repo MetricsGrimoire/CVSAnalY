@@ -1,3 +1,11 @@
+2007-06-05  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/repository.py:
+	* pycvsanaly/main.py:
+
+	Add an option --module-level to specify which directory level should
+	be considered as a module by cvsanaly. 
+
 2007-06-06  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
 
 	* pycvsanaly/commit.py:

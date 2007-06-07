@@ -59,24 +59,27 @@ checked out directory.
 
 Options:
 
-  -h, --help        Print this usage message.
-  -V, --version     Show version
+  -h, --help         Print this usage message.
+  -V, --version      Show version
 
-      --branch      Repository branch to analyze (default is head/trunk)
+  -b, --branch       Repository branch to analyze (default is head/trunk)
+  -l, --module-level The level of the source tree at which a directory is
+                     considered as a module by cvsanaly. -1 means every
+                     directory will be considered as a module (default is 0)
 
 Database:
 
-      --db-driver   Output database driver [stdout|mysql] (default is stdout)
-  -u, --db-user     Database user name (default is operator)
-  -p, --db-password Database user password (default is operator)
-  -d, --db-database Database name (default is cvsanaly)
-  -H, --db-hostname Name of the host where database server is running (default is localhost)
+      --db-driver    Output database driver [stdout|mysql] (default is stdout)
+  -u, --db-user      Database user name (default is operator)
+  -p, --db-password  Database user password (default is operator)
+  -d, --db-database  Database name (default is cvsanaly)
+  -H, --db-hostname  Name of the host where database server is running (default is localhost)
 
 Plugins:
 
-  --plugin-info     Retreives information from given plugin
-  --plugin-run      Execute plugin
-  --plugin-scan     Scan for plugins
+  --plugin-info      Retreives information from given plugin
+  --plugin-run       Execute plugin
+  --plugin-scan      Scan for plugins
 """
 
     for p in plugins:
@@ -97,19 +100,21 @@ def create_database (db):
 
     _database_created = True
 
-def run (db, args):
+def run (db, args, level = None):
     for uri in args:
         repo = rpmodule.RepositoryFactory.create (uri)
         if repo is None:
             continue
         create_database (db)
+        if level is not None:
+            repo.set_level (level)
         repo.log (db)
 
 def main():
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVu:p:d:H:"
+    short_opts = "hVb:l:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","version","branch=","db-user=", "db-password=", "db-hostname=", "db-database=","db-driver=","plugin-info=","plugin-run=","plugin-scan"]
+    long_opts = ["help","version","branch=","module-level=""db-user=", "db-password=", "db-hostname=", "db-database=","db-driver=","plugin-info=","plugin-run=","plugin-scan"]
     # Deprecated options, added only for backward compatibility
     long_opts.extend (("user=", "password=", "hostname=", "database=", "driver=", "run-plugin=", "scan", "info="))
 
@@ -125,6 +130,7 @@ def main():
     driver = 'stdout'
     plugin_list = []
     plugin_opts = {}
+    module_level = None
 
     try:
         opts, args = getopt.getopt (sys.argv[1:], short_opts, long_opts)
@@ -149,8 +155,10 @@ def main():
             database = value
         elif opt in ("--db-driver", "--driver"):
             driver = value
-        elif opt in ("--branch"):
+        elif opt in ("-b", "--branch"):
             branch = value
+        elif opt in ("-l", "--module-level"):
+            module_level = int (value)
         elif opt in ("--plugin-info", "--info"):
             p = get_plugin (value)
             p.info ()
@@ -184,7 +192,7 @@ def main():
     db = dbmodule.Database(conection)
 
     if len (plugin_list) <= 0:
-        run (db, args)
+        run (db, args, module_level)
         db.close ()
 
         return
@@ -194,7 +202,7 @@ def main():
         db.executeSQLRaw ("SELECT commit_id from log where commit_id = 0")
     except:
         # If database doesn't exist, create and fill it now
-        run (db, args)
+        run (db, args, module_level)
 
     for plugin in plugin_list:
         p = get_plugin (plugin, db, plugin_opts[plugin])

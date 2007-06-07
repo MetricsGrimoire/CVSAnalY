@@ -188,6 +188,7 @@ class Repository:
     def __init__ (self):
         self.checkout_path = None
         self.log_file = None
+        self.level = 0
 
     def set_checkout_path (self, dir):
         self.log_file = None
@@ -196,6 +197,9 @@ class Repository:
     def set_log_file (self, log):
         self.checkout_path = None
         self.log_file = log
+
+    def set_level (self, level):
+        self.level = level
 
     def log(self):
         raise NotImplementedError
@@ -254,25 +258,13 @@ class Repository:
         @type mdirs: dictionary
         @param mdirs: list of directories
         """
-        dir = ''
-        for co in mdirs:
-            dir = co
-            # ommit initial and final slash
-            try:
-                if dir != "/":
-                    if dir[0] == '/':
-                        dir = dir[1:]
-                    if dir[len(dir)-1] == '/':
-                        dir = dir[:len(dir)-1]
-            except:
-                dir = co
 
-            dir = dir.replace('/', '_')
+        for co in mdirs:
+            dir = co.replace('/', '_')
             query = "INSERT INTO modules (module_id, module) VALUES ('"
-            query += str(mdirs[co]) + "','" + str(dir) + "');"
+            query += str(mdirs.index (co)) + "','" + str(dir) + "');"
 
             db.insertData(query)
-
 
     def commiters2sql(self, db, mcommiters):
         """
@@ -311,6 +303,19 @@ class Repository:
             query += str(properties_dict['filetype']) + "');"
 
             db.insertData(query)
+
+    def moduleIdFromFilePath (self, filepath):
+        if filepath == '/':
+            return filepath
+        
+        filepath = filepath.strip ('/')
+        if self.level == -1:
+            return filepath
+        
+        l = filepath.split ('/')
+        level = len (l)
+        
+        return "/".join (l[:min (self.level, level)])
 
 
 class RepositoryCVS (Repository):
@@ -360,6 +365,7 @@ class RepositoryCVS (Repository):
         f = None
         c = None
         mdirectories = {}
+        modules = []
 
         while 1:
             line = linelog.readline()
@@ -408,8 +414,11 @@ class RepositoryCVS (Repository):
                     if not filepath:
                         filepath = '/'
                     if not mdirectories.has_key(filepath):
-                        mdirectories[filepath] = len(mdirectories)
-
+                        module = self.moduleIdFromFilePath (filepath)
+                        if module not in modules:
+                            modules.append (module)
+                        mdirectories[filepath] = modules.index (module)
+                    
                     file_properties['name'] = filename
                     file_properties['filetype'] = filetype
                     file_properties['module_id'] = mdirectories[filepath]
@@ -542,7 +551,7 @@ class RepositoryCVS (Repository):
 
         try:
             # Directories
-            self.directories2sql (db, mdirectories)
+            self.directories2sql (db, modules)
             # Commiters
             self.commiters2sql (db,authors)
         except:
@@ -625,6 +634,7 @@ class RepositorySVN(Repository):
         commits = []
         mfiles = {}
         mdirectories = {}
+        modules = []
 
         f = None
         c = None
@@ -692,6 +702,11 @@ class RepositorySVN(Repository):
                         repopath = fileTuple[0]
                         type = fileTuple[1]
 
+                        if type == 'D':
+                            removed = '1'
+                        else:
+                            removed = '0'
+                        
                         repopath = repopath.replace("'","\\'")
 
                         filename = repopath.split('/')[-1]
@@ -700,11 +715,12 @@ class RepositorySVN(Repository):
 
                         if not filepath:
                             filepath = '/'
-
                         if not mdirectories.has_key(filepath):
-                            mdirectories[filepath] = len(mdirectories)
-                        #d.add_directory(filepath)
-
+                            module = self.moduleIdFromFilePath (filepath)
+                            if module not in modules:
+                                modules.append (module)
+                            mdirectories[filepath] = modules.index (module)
+                        
                         file_properties['name'] = filename
                         file_properties['filetype'] = filetype
                         file_properties['module_id'] = mdirectories[filepath]
@@ -727,13 +743,14 @@ class RepositorySVN(Repository):
                         commit_properties['date_log'] = str(creationdate)
                         commit_properties['filetype'] = str(filetype)
                         commit_properties['module_id'] = mdirectories[filepath]
+                        commit_properties['removed'] = str(removed)
                         c = Commit ()
                         c.add_properties (db, commit_properties)
 
         # FIXME: modification and bug fixing on the way! grx
         #    SVN commits are not CVS commits, they are transactions!
         #    Files are considered differently!!
-        self.directories2sql (db, mdirectories)
+        self.directories2sql (db, modules)
         try:
             # Files
             self.files2sql(db, mfiles)
