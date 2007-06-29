@@ -114,7 +114,7 @@ def main():
     # Short (one letter) options. Those requiring argument followed by :
     short_opts = "hVb:l:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help","version","branch=","module-level=""db-user=", "db-password=", "db-hostname=", "db-database=","db-driver=","plugin-info=","plugin-run=","plugin-scan"]
+    long_opts = ["help","version","branch=","module-level=", "db-user=", "db-password=", "db-hostname=", "db-database=","db-driver=","plugin-info=","plugin-run=","plugin-scan"]
     # Deprecated options, added only for backward compatibility
     long_opts.extend (("user=", "password=", "hostname=", "database=", "driver=", "run-plugin=", "scan", "info="))
 
