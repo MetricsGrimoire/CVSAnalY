@@ -38,6 +38,9 @@ import repository as rpmodule
 
 from pycvsanaly.plugins import get_plugin, scan_plugins
 
+from Parser import create_parser
+from ContentHandlers import DBContentHandler
+
 from tables import *
 
 # Some stuff about the project
@@ -102,13 +105,25 @@ def create_database (db):
 
 def run (db, args, level = None):
     for uri in args:
-        repo = rpmodule.RepositoryFactory.create (uri)
-        if repo is None:
+        p = create_parser (uri)
+        if p is None:
             continue
+        
         create_database (db)
-        if level is not None:
-            repo.set_level (level)
-        repo.log (db)
+        print "Parsing log for %s" % (uri)
+        handler = DBContentHandler (db)
+        p.set_content_handler (handler)
+        p.run ()
+
+        #repo = rpmodule.RepositoryFactory.create (uri)
+        #if repo is None:
+        #    continue
+
+#        print "Filling database for %s" % (uri)
+#        create_database (db)
+        #if level is not None:
+        #    repo.set_level (level)
+        #repo.log (db, p)
 
 def main():
     # Short (one letter) options. Those requiring argument followed by :

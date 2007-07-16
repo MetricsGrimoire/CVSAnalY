@@ -33,10 +33,13 @@ import os
 import sys
 import re
 
+from repositoryhandler.backends import create_repository_from_path, RepositoryUnknownError
+
 from commiter import Commiter
 from directory import *
-from files import File
-from commit import Commit
+from files import SQLFile
+from commit import SQLCommit
+from Repository import *
 from config_files import *
 from FindProgram import find_program
 
@@ -425,7 +428,7 @@ class RepositoryCVS (Repository):
                     file_properties['filetype'] = filetype
                     file_properties['repopath'] = repopath
 
-                    f = File()
+                    f = SQLFile()
 
                     newcommit = 1
 
@@ -530,7 +533,7 @@ class RepositoryCVS (Repository):
                         commit_properties['intrunk'] = str(intrunk)
                         commit_properties['removed'] = str(removed)
 
-			c = Commit ()
+			c = SQLCommit ()
                         c.add_properties (db, commit_properties)
 
                 if mobj9:
@@ -601,37 +604,15 @@ class RepositorySVN(Repository):
         for f in files:
             print str(files[f][0]) + "\t" + str(files[f][1])
 
-    def log (self, db):
-
-        if self.checkout_path is None and \
-           self.log_file is None and \
-           self.remote_uri is None:
-            return
-        elif self.checkout_path is not None or self.remote_uri is not None:
-            svnbinary = find_program ('svn')
-
-            if svnbinary is None:
-                print ("Error: Can't find svn binary in path")
-                sys.exit (-1)
-
-            if self.checkout_path is not None:
-                target = self.checkout_path
-            else:
-                target = self.remote_uri
-
-            linelog = os.popen3 (svnbinary + ' --verbose log ' + target)[1]
-        elif self.log_file is not None:
-            linelog = open (self.log_file, 'r')
-
-        fileList = []
+    def log (self, db, parser):
+        fileList = parser.get_files ()
+        
         dirname = ''
-        commitername = ''
         modificationdate = ''
         revision = ''
         linesComment = ''
         authors = {}
 
-        commits = []
         mfiles = {}
         mdirectories = {}
         modules = []
@@ -639,113 +620,61 @@ class RepositorySVN(Repository):
         f = None
         c = None
 
-        while 1:
-            line = linelog.readline ()
-            if not line:
-                break
-            else:
-                line = line[:-1]
-                pattern0 = re.compile("^r(\d*) \| (.*) \| (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d:\d\d:\d\d) ([+-]\d\d\d\d) \(.*\) \| (.*) line")
+        # Parsing complete!
+        # Now feeding our objects with the data
 
-                mobj0 = pattern0.match(line)
-                if mobj0:
-                    fileList     = []
-                    revision     = mobj0.group(1)
-                    commitername = mobj0.group(2)
-                    year         = mobj0.group(3)
-                    month        = mobj0.group(4)
-                    day          = mobj0.group(5)
-                    rest_date    = mobj0.group(6)
-                    timezone     = mobj0.group(7)
-                    linesComment = mobj0.group(8)
+        # Directory and File
+        for commit in parser.get_commits ():
+            for fileTuple in commit.files:
+                repopath = fileTuple[1].path
+                type = fileTuple[0]
 
-                    #print revision, commitername, year, month, day, rest_date, timezone, linesComment
-
-                    creationdate = (year + "-" + month + "-" + day + " " + rest_date)
-                    if not authors.has_key(commitername):
-                        authors[commitername] = len(authors)
-
-                    ######
-                    # Let's look at affected files
-                    # First line: throw it away
-                    line = linelog.readline ()
-                    # But not the other lines
-                    moreFiles = True
-                    while moreFiles:
-                        line = linelog.readline ()
-                        if line[:5] == '   M ' or line[:5] == '   A ' or line[:5] == '   D ':
-                            line = line.split()
-                            modification = line[0]
-                            repopath      = line[1]
-                            moreFiles = True
-                            fileList.append((repopath, modification))
-                        else:
-                            moreFiles = False
-
-                    ######
-                    # Let's look at the attached comment
-
-                    comment = ''
-                    for index in range(int(linesComment)):
-                        comment += linelog.readline ().replace('\n', ' ')
-                    # Removing trailing and other spaces
-                    comment = ' '.join(comment.split())
-                    #print "Comment: '" + comment + "'"
-
-                    ######
-                    ######
-                    # Parsing complete!
-                    # Now feeding our objects with the data
-
-                    # Directory and File
-                    for fileTuple in fileList:
-                        repopath = fileTuple[0]
-                        type = fileTuple[1]
-
-                        if type == 'D':
-                            removed = '1'
-                        else:
-                            removed = '0'
+                if type == DELETE:
+                    removed = '1'
+                else:
+                    removed = '0'
                         
-                        repopath = repopath.replace("'","\\'")
+                repopath = repopath.replace("'","\\'")
 
-                        filename = repopath.split('/')[-1]
-                        filepath = repopath[:-len(filename)]
-                        filetype = self.analyseFile(filename)
+                filename = repopath.split('/')[-1]
+                filepath = repopath[:-len(filename)]
+                filetype = fileTuple[1].type
 
-                        if not filepath:
-                            filepath = '/'
-                        if not mdirectories.has_key(filepath):
-                            module = self.moduleIdFromFilePath (filepath)
-                            if module not in modules:
-                                modules.append (module)
-                            mdirectories[filepath] = modules.index (module)
+                if not filepath:
+                    filepath = '/'
+                if not mdirectories.has_key(filepath):
+                    module = self.moduleIdFromFilePath (filepath)
+                    if module not in modules:
+                        modules.append (module)
+                    mdirectories[filepath] = modules.index (module)
                         
-                        file_properties['name'] = filename
-                        file_properties['filetype'] = filetype
-                        file_properties['module_id'] = mdirectories[filepath]
-                        file_properties['filetype'] = filetype
-                        file_properties['size'] = '' # TODO
-                        file_properties['creation_date'] = str(creationdate)
-                        file_properties['last_modification'] = str(modificationdate)
+                file_properties['name'] = filename
+                file_properties['filetype'] = filetype
+                file_properties['module_id'] = mdirectories[filepath]
+                file_properties['size'] = '' # TODO
+                file_properties['creation_date'] = fileTuple[1].cdate
+                file_properties['last_modification'] = fileTuple[1].mdate
 
-                        if not mfiles.has_key(repopath):
-                            properties = file_properties.copy()
-                            mfiles[repopath] = (len(mfiles), properties)
+                if not mfiles.has_key(repopath):
+                    properties = file_properties.copy()
+                    mfiles[repopath] = (len(mfiles), properties)
 
-                        commit_properties['file_id'] = str(self.get_fileid(mfiles, repopath))
-                        commit_properties['commiter_id'] = str(authors[commitername])
-                        commit_properties['revision'] = str(revision)
-                        commit_properties['plus'] = 0           # No plus in SVN logs
-                        commit_properties['minus'] = 0          # No plus in SVN logs
-                        commit_properties['cvs_flag'] = ''      # TODO
-                        commit_properties['external'] = ''      # TODO
-                        commit_properties['date_log'] = str(creationdate)
-                        commit_properties['filetype'] = str(filetype)
-                        commit_properties['module_id'] = mdirectories[filepath]
-                        commit_properties['removed'] = str(removed)
-                        c = Commit ()
-                        c.add_properties (db, commit_properties)
+            if not authors.has_key(commit.commiter):
+                authors[commit.commiter] = len(authors)
+
+            commit_properties['file_id'] = str(self.get_fileid(mfiles, repopath))
+            commit_properties['commiter_id'] = str(authors[commit.commiter])
+            commit_properties['revision'] = commit.revision
+            commit_properties['plus'] = 0           # No plus in SVN logs
+            commit_properties['minus'] = 0          # No plus in SVN logs
+            commit_properties['cvs_flag'] = ''      # TODO
+            commit_properties['external'] = ''      # TODO
+            commit_properties['date_log'] = commit.date
+            commit_properties['filetype'] = filetype
+            commit_properties['module_id'] = mdirectories[filepath]
+            commit_properties['removed'] = str(removed)
+            c = SQLCommit ()
+            c.add_properties (db, commit_properties)
 
         # FIXME: modification and bug fixing on the way! grx
         #    SVN commits are not CVS commits, they are transactions!
@@ -759,6 +688,4 @@ class RepositorySVN(Repository):
             self.commiters2sql(db,authors)
         except:
             sys.exit("Cannot get log! maybe this is not a SVN working directory or you are having problems with your connection\n")
-        if self.log_file is not None:
-            linelog.close ()
 

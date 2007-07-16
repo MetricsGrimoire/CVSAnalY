@@ -28,7 +28,7 @@ Class that implements basic operations with files
 @contact:      anavarro,herraiz@gsyc.escet.urjc.es
 """
 
-class File:
+class SQLFile:
     """ This class represents a file in the repository."""
 
     # Static variables
@@ -44,7 +44,7 @@ class File:
 
         if properties_dict:
             self.properties_dict = properties_dict.copy()
-            self.properties_dict['file_id'] = File.counter
+            self.properties_dict['file_id'] = SQLFile.counter
         else:
             self.properties_dict = {}
 
@@ -54,16 +54,16 @@ class File:
             self.__commits_list = []
 
 
-        self.id = File.counter
+        self.id = SQLFile.counter
 
-        File.counter += 1
-        File.created_files.append(self)
+        SQLFile.counter += 1
+        SQLFile.created_files.append(self)
 
     def search_file(self,file_id):
         """Looks for a file with a given id. It returns a File object, or None if given id does not exist."""
 
         try:
-            file = File.created_files(file_id)
+            file = SQLFile.created_files(file_id)
         except:
             file = None
 

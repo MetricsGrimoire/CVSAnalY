@@ -28,7 +28,7 @@ This class implements basic operations with commits
 @contact:      anavarro,herraiz@gsyc.escet.urjc.es
 """
 
-class Commit:
+class SQLCommit:
     """ This class represents a commit made in the repository."""
 
     # Static variables
@@ -52,10 +52,10 @@ class Commit:
         else:
             self.__files_list = []
 
-        self.id = Commit.counter
+        self.id = SQLCommit.counter
 
-        Commit.counter += 1
-        Commit.created_commits.append(self)
+        SQLCommit.counter += 1
+        SQLCommit.created_commits.append(self)
 
     def search_commit(self,commit_id):
         """
@@ -63,7 +63,7 @@ class Commit:
         It returns a Commit object, or None if given id does not exist.
         """
         try:
-            commit = Commit.created_commits(commit_id)
+            commit = SQLCommit.created_commits(commit_id)
         except:
             commit = None
 
