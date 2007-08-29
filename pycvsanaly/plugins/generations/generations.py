@@ -193,6 +193,7 @@ class generations:
         self.largestCommiters()
         self.topFractionCommits(0.1)
         self.topFractionCommits(0.5)
+        self.topFractionCommits(0.9)
         self.topFractionCommits(1.0)
         self.topFractionCommiters(0.1)
         self.topFractionCommiters(0.2)
