@@ -549,13 +549,10 @@ class RepositoryCVS (Repository):
                         f.add_properties (db,file_properties)
                         newcommit = 0
 
-        try:
-            # Directories
-            self.directories2sql (db, modules)
-            # Commiters
-            self.commiters2sql (db,authors)
-        except:
-            sys.exit("Cannot get log! Maybe this is not a CVS working directory or you are having problems with your connection\n")
+        # Directories
+        self.directories2sql (db, modules)
+        # Commiters
+        self.commiters2sql (db,authors)
 
         if self.log_file is not None:
             linelog.close ()
@@ -639,6 +636,7 @@ class RepositorySVN(Repository):
         f = None
         c = None
 
+        
         while 1:
             line = linelog.readline ()
             if not line:
@@ -728,10 +726,15 @@ class RepositorySVN(Repository):
                         file_properties['size'] = '' # TODO
                         file_properties['creation_date'] = str(creationdate)
                         file_properties['last_modification'] = str(modificationdate)
+                        file_properties['repopath']  = str(repopath)
+
+                        f = File()
+                        f.add_properties(db,file_properties)
 
                         if not mfiles.has_key(repopath):
                             properties = file_properties.copy()
-                            mfiles[repopath] = (len(mfiles), properties)
+                            mfiles[repopath] = (len(mfiles),properties)
+                            
 
                         commit_properties['file_id'] = str(self.get_fileid(mfiles, repopath))
                         commit_properties['commiter_id'] = str(authors[commitername])
@@ -744,6 +747,7 @@ class RepositorySVN(Repository):
                         commit_properties['filetype'] = str(filetype)
                         commit_properties['module_id'] = mdirectories[filepath]
                         commit_properties['removed'] = str(removed)
+                        commit_properties['repopath'] = str(repopath)
                         c = Commit ()
                         c.add_properties (db, commit_properties)
 
@@ -751,14 +755,8 @@ class RepositorySVN(Repository):
         #    SVN commits are not CVS commits, they are transactions!
         #    Files are considered differently!!
         self.directories2sql (db, modules)
-        try:
-            # Files
-            self.files2sql(db, mfiles)
-            # Directories
-            # Commiters
-            self.commiters2sql(db,authors)
-        except:
-            sys.exit("Cannot get log! maybe this is not a SVN working directory or you are having problems with your connection\n")
+        self.commiters2sql(db,authors)
+
         if self.log_file is not None:
             linelog.close ()
 

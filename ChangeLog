@@ -1,3 +1,10 @@
+2007-09-07  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+
+	* pycvsanaly/repository.py:
+
+	The repopath value in the files and log tables is now correctly
+	filled for SVN repositories.
+	
 2007-08-29  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
 
 	* README:
