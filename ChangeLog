@@ -1,3 +1,18 @@
+2007-11-24  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+
+	* pycvsanaly/repository.py:
+
+	When checking the format of a logfile (CVS or SVN), CVS was
+	checked first. In some cases (when a SVN was imported from a CVS
+	repository), a SVN log file may contain CVS-like strings, being
+	identified then as it would be CVS.
+
+	This happens for instance with the logfile obtained from the SVN
+	repository of Evolution, that was imported from a CVS repository.
+
+	So now the SVN log file format is checked before the CVS, because
+	it is unlikely that a CVS log file may contain SVN-like strings.
+
 2007-09-07  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
 
 	* pycvsanaly/repository.py:

@@ -142,10 +142,18 @@ class RepositoryFactory:
     def _create_from_logfile (logfile):
         retval = None
 
-        if RepositoryFactory._logfile_is_cvs (logfile):
-            retval = RepositoryCVS ()
-        elif RepositoryFactory._logfile_is_svn (logfile):
+        # It is better to check first for a SVN log
+        # When importing from a CVS, a SVN log may contain CVS-like
+        # strings. In that case, if checking first for CVS, a SVN log
+        # file may be identified as CVS.
+        #
+        # This happens for instance, with Evolution.
+        
+        if RepositoryFactory._logfile_is_svn (logfile):
             retval = RepositorySVN ()
+        elif RepositoryFactory._logfile_is_cvs (logfile):
+            retval = RepositoryCVS ()
+
         
         if retval is not None:
             retval.set_log_file (logfile)
