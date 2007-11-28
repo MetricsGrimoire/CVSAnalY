@@ -1,4 +1,31 @@
-2007-07-16  Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+2007-11-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* TODO:
+	* cvsanaly:
+	* cvsanaly-plugins:
+	* pycvsanaly/main.py:
+	* pycvsanaly/CADatabase.py:
+	* pycvsanaly/Parser.py:
+	* pycvsanaly/CVSParser.py:
+	* pycvsanaly/SVNParser.py:
+	* pycvsanaly/GitParser.py:
+	* pycvsanaly/ContentHandler.py:
+	* pycvsanaly/DBContentHandler.py:
+	* pycvsanaly/utils.py:
+	* pycvsanaly/plugins/__init__.py:
+	* pycvsanaly/plugins/evolution.py:
+	* pycvsanaly/plugins/html.py:
+	* pycvsanaly/plugins/main.py:
+	* libcvsanaly/__init__.py:
+	* libcvsanaly/CVSAnaly.py:
+	* libcvsanaly/Command.py:
+	* libcvsanaly/Database.py:
+	* libcvsanaly/FindProgram.py:
+	* libcvsanaly/utils.py:
+
+	Merge cvsanaly2 work in progress. It's not stable yet. 
+	
+2007-07-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/commit.py:
 	* pycvsanaly/files.py:

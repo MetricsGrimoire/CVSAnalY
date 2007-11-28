@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Alvaro Navarro Clemente
+# Copyright (C) 2007 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,37 +14,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
-# Authors : Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+# Authors :
+#       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-"""
-Connection framework 
+class ContentHandler:
 
-@author:       Alvaro Navarro
-@organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
-@copyright:    Universidad Rey Juan Carlos (Madrid, Spain)
-@license:      GNU GPL version 2 or any later version
-@contact:      anavarro@gsyc.escet.urjc.es
-"""
-
-import os
-import time
-import sys
-
-
-class Connection:
-    """
-    Basic interface that defines which methods have to be
-    implemented
-    """
-
-    def connect(self, user=None, passwd=None, host=None, db=None):
+    def __init__ (self):
         pass
 
-    def close(self):
+    def repository (self, uri):
+        pass
+    
+    def commit (self, commit):
         pass
 
-    def execute(self,query):
+    def committer (self, committer):
         pass
 
+    def author (self, author):
+        pass
 
-
+    def file (self, file):
+        pass

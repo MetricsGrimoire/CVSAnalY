@@ -29,11 +29,15 @@ Point of entry to the main module of the program.
 @contact:      anavarro@gsyc.escet.urjc.es
 """
 
+import sys
 import pycvsanaly.main
 
 if __name__ == "__main__":
     try:
-        pycvsanaly.main.main()
+        retval = pycvsanaly.main.main (sys.argv[1:])
+        sys.exit (retval)
     except KeyboardInterrupt:
         print "\n\nReceived Ctrl-C or other break signal. Exiting."
+        sys.exit (0)
+        
 

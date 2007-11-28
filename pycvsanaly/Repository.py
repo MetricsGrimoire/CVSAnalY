@@ -15,19 +15,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
-(
-    ADD,
-    DELETE,
-    MODIFY
-) = range (3)
-
 class Commit:
     def __init__ (self):
-        self.__dict__ = { 'revision' : None,
-                          'commiter' : None,
-                          'date'     : None,
-                          'files'    : [],
-                          'message'  : "" }
+        self.__dict__ = { 'revision'     : None,
+                          'committer'    : None,
+                          'author'       : None,
+                          'date'         : None,
+                          'actions'      : [],
+                          'message'      : "",
+                          'composed_rev' : False }
         
     def __getattr__ (self, name):
         return self.__dict__[name]
@@ -35,6 +31,42 @@ class Commit:
     def __setattr__ (self, name, value):
         self.__dict__[name] = value
 
+    def __eq__ (self, other):
+        return self.revision == other.revision
+
+    def __ne__ (self, other):
+        return self.revision != other.revision
+
+# Action types
+# A Add
+# M Modified
+# D Deleted
+# V moVed (Renamed)
+# C Copied
+# R Replaced
+
+class Action:
+    def __init__ (self):
+        self.__dict__ = { 'type' : None,
+                          'f1'   : None,
+                          'f2'   : None }
+
+    def __getattr__ (self, name):
+        return self.__dict__[name]
+
+    def __setattr__ (self, name, value):
+        self.__dict__[name] = value
+
+    def __eq__ (self, other):
+        return self.type == other.type and \
+            self.f1 == other.f1 and \
+            self.f1 == other.f2
+    
+    def __ne__ (self, other):
+        return self.type != other.type or \
+            self.f1 != other.f1 or \
+            self.f1 != other.f2
+    
 class File:
     def __init__ (self):
         self.__dict__ = { 'path'  : None,
@@ -49,3 +81,8 @@ class File:
     def __setattr__ (self, name, value):
         self.__dict__[name] = value
 
+    def __eq__ (self, other):
+        return self.path == other.path
+
+    def __ne__ (self, other):
+        return self.path != other.path

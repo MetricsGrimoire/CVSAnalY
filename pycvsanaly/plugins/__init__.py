@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Libresoft
+# Copyright (C) 2007 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,60 +14,36 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
-# Authors : 
-#       Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+# Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-"""
-@author:       Alvaro Navarro
-@organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
-@copyright:    Universidad Rey Juan Carlos (Madrid, Spain)
-@license:      GNU GPL version 2 or any later version
-@contact:      anavarro@gsyc.escet.urjc.es
-"""
+
+from pycvsanaly.libcvsanaly import CVSAnaly
 
 __all__ = [
-        'Plugin', 
-        'register_plugin', 
-        'get_plugin',
-        'scan_plugins'
+    'CVSAnalyPlugin',
+    'register_plugin',
+    'create_plugin',
+    'scan_plugins'
 ]
 
 class PluginUnknownError (Exception):
     '''Unknown pugin'''
 
-"""
-All plugins should inheritate from this class
-"""
-class Plugin:
-
-    def __init__ (self, db = None):
-        self.author = None
-        self.name = None
-        self.description = None
-        self.date = None
-        self.db = db
-
-    def info (self):
-        print "Name: %s" % (self.name)
-        print "Author(s): %s" % (self.author)
-        print "Description: %s" % (self.description)
-        print "Last Updated: %s" % (self.date)
-
-    def run (self):
-        raise NotImplementedError
-
-    def get_author (self):
-        return self.author
-
-    def get_description (self):
-        return self.description
-
-    def get_options (self):
-        return []
+    def __init__ (self):
+        Exception.__init__ (self)
+    
+class CVSAnalyPlugin:
+    
+    def __init__ (self):
+        self.ca = None
 
     def usage (self):
-        pass
+        raise NotImplementedError
+        
+    def run (self, ca):
+        raise NotImplementedError
+
 
 _plugins = {}
 def register_plugin (plugin_name, plugin_class):
@@ -78,32 +54,18 @@ def _get_plugin_class (plugin_name):
         try:
             __import__ ('pycvsanaly.plugins.%s' % plugin_name)
         except ImportError:
-            pass
+            raise
 
     if plugin_name not in _plugins:
         raise PluginUnknownError ('Unknown plugin %s' % plugin_name)
 
     return _plugins[plugin_name]
 
-def get_plugin (plugin_name, db = None, opts = []):
+def create_plugin (plugin_name, opts = []):
     plugin_class = _get_plugin_class (plugin_name)
-    return plugin_class (db, opts)
+    return plugin_class (opts)
 
+_known_plugins = ['html', 'evolution']
 def scan_plugins ():
-    import sys, os
-
-    list = []
-
-    for path in sys.path:
-        dir = os.path.join (path, "pycvsanaly/plugins")
-        if os.path.exists (dir) and os.path.isdir (dir):
-            root, dirs, files = os.walk (dir).next ()
-            for plugin in dirs:
-                try:
-                    _get_plugin_class (plugin)
-                    list.append (plugin)
-                except:
-                    continue
-
-    return list
-
+    # TODO: scan path looking for plugins
+    return _known_plugins

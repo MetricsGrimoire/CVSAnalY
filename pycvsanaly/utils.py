@@ -20,6 +20,24 @@
 
 from pycvsanaly.config_files import *
 
+def uri_is_remote (uri):
+    import re
+
+    match = re.compile ("^.*://.*$").match (uri)
+    if match is None:
+        return False
+    else:
+        return not uri.startswith ("file://")
+
+def uri_to_filename (uri):
+    if uri_is_remote (uri):
+        return None
+
+    if uri.startswith ("file://"):
+        return uri[uri.find ("file://") + len ("file://"):]
+
+    return uri
+
 def get_file_type (path):
     """
     Given a filename, returns what type of file it is.
