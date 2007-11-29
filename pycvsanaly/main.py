@@ -35,6 +35,7 @@ from ParserFactory import *
 from libcvsanaly.Database import *
 from DBContentHandler import DBContentHandler
 from CADatabase import *
+from Config import Config
 from utils import *
 
 #from storm import database
@@ -58,6 +59,7 @@ Options:
 
   -h, --help         Print this usage message.
   -V, --version      Show version
+  -f, --config-file  Use a custom configuration file
 
   -b, --branch       Repository branch to analyze (head/trunk/master)
   -l, --repo-logfile Logfile to use instead of getting log from the repository
@@ -73,17 +75,18 @@ Database:
 
 def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVb:l:u:p:d:H:"
+    short_opts = "hVf:b:l:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "branch=", "repo-logfile=", "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver="]
+    long_opts = ["help", "version", "config-file=", "branch=", "repo-logfile=", "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver="]
 
     # Default options
-    user = 'operator'
+    configfile = None
+    user = None
     passwd = None
-    hostname = 'localhost'
-    database = 'cvsanaly'
+    hostname = None
+    database = None
     branch = None
-    driver = 'sqlite'
+    driver = None
     logfile = None
 
     try:
@@ -99,6 +102,8 @@ def main (argv):
         elif opt in ("-V", "--version"):
             print version
             return 0
+        elif opt in ("-f", "--config-file"):
+            configfile = value
         elif opt in ("-u", "--db-user"):
             user = value
         elif opt in ("-p", "--db-password"):
@@ -119,16 +124,36 @@ def main (argv):
     else:
         uri = args[0]
 
+    config = Config ()
+    if configfile is not None:
+        config.load_from_file (configfile)
+    else:
+        config.load ()
+
+    if branch is not None:
+        config.branch = branch
+    if logfile is not None:
+        config.repo_logfile = logfile
+    if driver is not None:
+        config.db_driver = driver
+    if user is not  None:
+        config.db_user = user
+    if passwd is not None:
+        config.db_password = passwd
+    if hostname is not None:
+        config.db_hostname = hostname
+    if database is not None:
+        config.db_database = database
+
     path = uri_to_filename (uri)
     if path is not None:
         repo = create_repository_from_path (path)
     else:
         repo = create_repository ('svn', uri)
 
-    if logfile is not None:
-        parser = create_parser_from_logfile (logfile)
+    if config.repo_logfile is not None:
+        parser = create_parser_from_logfile (config.repo_logfile)
         parser.set_repository (repo)
-        print "DBG: logfile: %s" % (logfile)
     else:
         parser = create_parser_from_repository (repo)
         if path is not None:
@@ -144,7 +169,11 @@ def main (argv):
 
     db_exists = False
     
-    db = get_database (driver, database, user, passwd, hostname)
+    db = get_database (config.db_driver,
+                       config.db_database,
+                       config.db_user,
+                       config.db_password,
+                       config.db_hostname)
     db.connect ()
     try:
         db.create_tables ()

@@ -1,3 +1,10 @@
+2007-11-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/Config.py:
+	* pycvsanaly/main.py:
+
+	Add configuration file. Fixes bug #362.
+	
 2007-11-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* TODO:
