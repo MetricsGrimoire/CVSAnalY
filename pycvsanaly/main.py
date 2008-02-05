@@ -59,7 +59,10 @@ Options:
 
   -h, --help         Print this usage message.
   -V, --version      Show version
+      --profile      Enable profiling mode
   -f, --config-file  Use a custom configuration file
+      --with-lines   Get lines added/removed per commit. Only disabled by default
+                     for SVN repositories because of performance reasons
 
   -b, --branch       Repository branch to analyze (head/trunk/master)
   -l, --repo-logfile Logfile to use instead of getting log from the repository
@@ -77,9 +80,11 @@ def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
     short_opts = "hVf:b:l:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "config-file=", "branch=", "repo-logfile=", "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver="]
+    long_opts = ["help", "version", "profile", "config-file=", "branch=", "repo-logfile=", "with-lines",
+                 "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver="]
 
     # Default options
+    profile = None
     configfile = None
     user = None
     passwd = None
@@ -88,6 +93,7 @@ def main (argv):
     branch = None
     driver = None
     logfile = None
+    lines = None
 
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
@@ -102,8 +108,12 @@ def main (argv):
         elif opt in ("-V", "--version"):
             print version
             return 0
+        elif opt in ("--profile", ):
+            profile = True
         elif opt in ("-f", "--config-file"):
             configfile = value
+        elif opt in ("--with-lines", ):
+            lines = True
         elif opt in ("-u", "--db-user"):
             user = value
         elif opt in ("-p", "--db-password"):
@@ -130,6 +140,8 @@ def main (argv):
     else:
         config.load ()
 
+    if profile is not None:
+        config.profile = profile
     if branch is not None:
         config.branch = branch
     if logfile is not None:
@@ -150,6 +162,12 @@ def main (argv):
         repo = create_repository_from_path (path)
     else:
         repo = create_repository ('svn', uri)
+
+    if lines is not None:
+        config.lines = lines
+    else:
+        if repo.get_type () == 'svn':
+            config.lines = False
 
     if config.repo_logfile is not None:
         parser = create_parser_from_logfile (config.repo_logfile)
@@ -188,8 +206,8 @@ def main (argv):
     if not db_exists or rep_id is None:
         # We consider the name of the repo as the last item of the root path
         name = repo.get_uri ().split ("/")[-1].strip ()
-        rep = store.add (DBRepository (repo.get_uri (), name))
-        store.flush ()
+        rep = store.add (DBRepository (repo.get_uri (), name, repo.get_type ()))
+        store.commit ()
     
     print "Parsing log for %s" % (uri)
     parser.set_content_handler (DBContentHandler (db))

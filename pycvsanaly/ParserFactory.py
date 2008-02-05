@@ -94,10 +94,10 @@ def create_parser_from_logfile (uri):
         return retval
     
     if os.path.isfile (uri):
-        if logfile_is_cvs (uri):
-            p = CVSParser ()
-        elif logfile_is_svn (uri):
+        if logfile_is_svn (uri):
             p = SVNParser ()
+        elif logfile_is_cvs (uri):
+            p = CVSParser ()
         elif log_file_is_git (uri):
             p = GitParser ()
 

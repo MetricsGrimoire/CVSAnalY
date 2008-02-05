@@ -21,6 +21,7 @@ class Commit:
                           'committer'    : None,
                           'author'       : None,
                           'date'         : None,
+                          'lines'        : None, 
                           'actions'      : [],
                           'message'      : "",
                           'composed_rev' : False }

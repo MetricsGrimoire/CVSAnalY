@@ -25,11 +25,13 @@ import re
 from repositoryhandler.backends.watchers import *
 
 from ContentHandler import ContentHandler
+from Config import Config
 
 class Parser:
 
     def __init__ (self):
         self.handler = ContentHandler ()
+        self.config = Config ()
         self.repo = None
         self.logfile = None
         self.uri = None
@@ -89,6 +91,8 @@ if __name__ == '__main__':
             print "rev: %s, committer: %s, date: %s" % (commit.revision, commit.committer, commit.date)
             if commit.author is not None:
                 print "Author: %s" % (commit.author)
+            if commit.lines is not None:
+                print "Lines: %d+, %d-" % (commit.lines[0], commit.lines[1])
             print "files: ",
             for action in commit.actions:
                 print "%s %s " % (action.type, action.f1.path),

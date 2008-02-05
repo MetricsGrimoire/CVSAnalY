@@ -1,3 +1,70 @@
+2008-02-05  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/Config.py:
+	* pycvsanaly/DBContentHandler.py:
+	* pycvsanaly/main.py:
+
+	Add --profile command line option
+	
+2008-02-05  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/libcvsanaly/Database.py:
+	* pycvsanaly/main.py:
+
+	Fix some issues with mysql.
+	
+2008-01-17  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/GitParser.py:
+
+	Python2.4 doesn't support datetime.datetime.strptime, use some
+	cryptic stuff instead.
+	
+2008-01-17  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/SVNParser.py:
+
+	Fix FindProgram module search.
+	
+2007-12-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* cvsanaly-plugins:
+	* polygini.pl:
+	* setup.py:
+
+	Remove plugins stuff.
+	
+2007-12-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/ParserFactory.py:
+
+	Fix detection of repository type from logfile. Patch by
+	Israel Herraiz.
+	
+2007-12-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/CADatabase.py:
+	* pycvsanaly/libcvsanaly/Database.py:
+	* pycvsanaly/main.py:
+
+	Add type field to repositories table. Fixes bug #370.
+	
+2007-12-05  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/libcvsanaly/Database.py:
+	* pycvsanaly/Repository.py:
+	* pycvsanaly/CADatabase.py:
+	* pycvsanaly/Parser.py:
+	* pycvsanaly/CVSParser.py:
+	* pycvsanaly/SVNParser.py:
+	* pycvsanaly/GitParser.py:
+	* pycvsanaly/FindProgram.py:
+	* pycvsanaly/Config.py:
+	* pycvsanaly/main.py:
+
+	Add lines added/removed per commit. Disabled by default only for
+	SVN. Fixes bug #363.
+	
 2007-11-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/Config.py:

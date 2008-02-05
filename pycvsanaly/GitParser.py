@@ -17,8 +17,12 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+import os
 import re
+import time
 import datetime
+
+from subprocess import *
 
 from Parser import Parser
 from Repository import *
@@ -33,12 +37,37 @@ class GitParser (Parser):
     patterns['file'] = re.compile ("^([MAD])[ \t]+(.*)$")
     patterns['file-moved'] = re.compile ("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
     patterns['ignore'] = [re.compile ("^AuthorDate: .*$")]
+    patterns['diffstat'] = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
 
     def __init__ (self):
         Parser.__init__ (self)
 
         # Parser context
         self.commit = None
+
+    def __get_added_removed_lines (self, revision):
+        cmd = ['git', 'show', '--shortstat', revision]
+        env = os.environ.copy ().update ({'LC_ALL' : 'C'})
+        pipe = Popen (cmd, shell=False, stdin=PIPE, stdout=PIPE, close_fds=True, env=env, cwd=self.uri)
+        out = pipe.communicate ()[0]
+
+        lines = out.split ('\n')
+        lines.reverse ()
+        for line in lines:
+            m = self.patterns['diffstat'].match (line)
+            if m is None:
+                continue
+
+            added = removed = 0
+            if m.group (1) is not None:
+                added = int (m.group (2))
+
+            if m.group (3) is not None:
+                removed = int (m.group (4))
+
+            return (added, removed)
+            
+        return None        
 
     def flush (self):
         if self.commit is None:
@@ -62,6 +91,8 @@ class GitParser (Parser):
             self.flush ()
             self.commit = Commit ()
             self.commit.revision = match.group (1)
+            if self.config.lines:
+                self.commit.lines = self.__get_added_removed_lines (self.commit.revision)
 
             return
 
@@ -84,7 +115,9 @@ class GitParser (Parser):
         # Date
         match = self.patterns['date'].match (line)
         if match:
-            self.commit.date = datetime.datetime.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")
+            self.commit.date = datetime.datetime (* (time.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")[0:6]))
+            # datetime.datetime.strptime not supported by Python2.4
+            #self.commit.date = datetime.datetime.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")
             
             return
 

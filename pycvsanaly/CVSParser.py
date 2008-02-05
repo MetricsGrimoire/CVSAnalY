@@ -30,8 +30,7 @@ class CVSParser (Parser):
     patterns = {}
     patterns['file'] = re.compile ("^RCS file: (.*)$")
     patterns['revision'] = re.compile ("^revision ([\d\.]*)$")
-    patterns['info'] = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: (.*);(  lines: \+(\d*) -(\d*\
-))?")
+    patterns['info'] = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: (.*);(  lines: \+(\d*) -(\d*))?")
     patterns['separator'] = re.compile ("^[=]+$")
     
     def __init__ (self):
@@ -87,6 +86,9 @@ class CVSParser (Parser):
             commit.date = datetime.datetime (int (match.group (1)), int (match.group (2)), int (match.group (3)),
                                              int (match.group (4)), int (match.group (5)), int (match.group (6)))
 
+            if self.config.lines and match.group (10) is not None:
+                commit.lines = (int (match.group (11)), int (match.group (12)))
+
             action = Action ()
             act = match.group (9)
             if act == 'dead':
@@ -98,7 +100,6 @@ class CVSParser (Parser):
 
             commit.actions.append (action)
 
-            # FIXME: plus, minus
             # FIXME: do we really need intrunk, cvs_flag and external?, WTF are they?
 
             return

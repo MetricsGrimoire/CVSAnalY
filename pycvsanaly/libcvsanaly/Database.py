@@ -28,6 +28,7 @@ class DBRepository (object):
     id = Int (primary = True)
     uri = Unicode ()
     name = Unicode ()
+    type = Unicode ()
 
 class DBLog (object):
 
@@ -38,6 +39,8 @@ class DBLog (object):
     committer = Unicode ()
     author = Unicode ()
     date = DateTime ()
+    lines_added = Int ()
+    lines_removed = Int ()
     message = Unicode ()
     composed_rev = Bool ()
     repository_id = Int ()
@@ -135,7 +138,8 @@ class CASqliteDatabase (CADatabase):
             self.store.execute ("CREATE TABLE repositories (" +
                                 "id integer primary key," +
                                 "uri varchar," +
-                                "name varchar" + 
+                                "name varchar," +
+                                "type varchar" + 
                                 ")")
             self.store.execute ("CREATE TABLE scmlog (" +
                                 "id integer primary key," +
@@ -143,6 +147,8 @@ class CASqliteDatabase (CADatabase):
                                 "committer varchar," +
                                 "author varchar," +
                                 "date timestamp," +
+                                "lines_added integer," +
+                                "lines_removed integer," +
                                 "message varchar," +
                                 "composed_rev bool," + 
                                 "repository_id integer" +
@@ -179,16 +185,20 @@ class CAMysqlDatabase (CADatabase):
             self.store.execute ("CREATE TABLE repositories (" +
                                 "id INT AUTO_INCREMENT primary key," +
                                 "uri varchar(255)," +
-                                "name varchar(255)" +
-                                ")")
+                                "name varchar(255)," +
+                                "type varchar(30)" + 
+                                ") ENGINE = INNODB")
             self.store.execute ("CREATE TABLE scmlog (" +
                                 "id INT AUTO_INCREMENT primary key," +
                                 "rev varchar(255)," +
                                 "committer varchar(255)," +
                                 "author varchar(255)," +
                                 "date timestamp," +
+                                "lines_added int," +
+                                "lines_removed int," +
                                 "message varchar(255)," +
                                 "composed_rev bool," +
+                                "repository_id INT," + 
                                 "FOREIGN KEY (repository_id) REFERENCES repositories(id)" + 
                                 ") ENGINE = INNODB")
             self.store.execute ("CREATE TABLE tree (" +

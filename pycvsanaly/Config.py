@@ -18,8 +18,10 @@
 
 class Config:
 
-    __shared_state = { 'branch'       : None,
+    __shared_state = { 'profile'      : False,
+                       'branch'       : None,
                        'repo_logfile' : None,
+                       'lines'        : True,
                        'db_driver'    : 'sqlite',
                        'db_user'      : 'operator',
                        'db_password'  : None, 
@@ -47,11 +49,19 @@ class Config:
             return
 
         try:
+            self.profile = config.profile
+        except:
+            pass
+        try:
             self.branch = config.branch
         except:
             pass
         try:
             self.repo_logfile = config.repo_logfile
+        except:
+            pass
+        try:
+            self.lines = config.lines
         except:
             pass
         try:

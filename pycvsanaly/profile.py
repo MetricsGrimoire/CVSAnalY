@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# Copyright (C) 2007 LibreSoft
+# Copyright (C) 2008 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,18 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-#
-# Authors :
-#       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-import sys
-from pycvsanaly.plugins import main
+import os
 
-if __name__ == "__main__":
-    try:
-        retval = main.main (sys.argv[1:])
-        sys.exit (retval)
-    except KeyboardInterrupt:
-        print "\n\nReceived Ctrl-C or other break signal. Exiting."
-        sys.exit (0)
+from Config import Config
 
+def plog (data):
+    if not Config ().profile:
+        return
+    
+    str = "MARK: %s: %s" % ('foo', data)
+    os.access (str, os.F_OK)

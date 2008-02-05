@@ -22,9 +22,10 @@ import libcvsanaly.Database as db
 
 class DBRepository (db.DBRepository):
 
-    def __init__ (self, uri, name):
+    def __init__ (self, uri, name, type):
         self.uri = unicode (uri)
         self.name = unicode (name)
+        self.type = unicode (type)
 
 class DBLog (db.DBLog):
 
@@ -33,6 +34,12 @@ class DBLog (db.DBLog):
         self.committer = unicode (commit.committer, 'utf-8', 'replace')
         if commit.author is not None:
             self.author = unicode (commit.author, 'utf-8', 'replace')
+
+        if commit.lines is not None:
+            self.lines_added = commit.lines[0]
+            self.lines_removed = commit.lines[1]
+        else:
+            self.lines_added = self.lines_removed = 0
             
         self.date = commit.date
         self.message = unicode (commit.message, 'utf-8', 'replace')

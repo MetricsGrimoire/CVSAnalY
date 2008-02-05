@@ -20,6 +20,8 @@
 from ContentHandler import ContentHandler
 from CADatabase import *
 
+from profile import plog
+
 class DBContentHandler (ContentHandler):
 
     def __init__ (self, db):
@@ -62,7 +64,7 @@ class DBContentHandler (ContentHandler):
                 i += 1
 
                 continue
-            
+
             node = self.store.find (DBFile,
                                     DBFile.file_name == unicode (token),
                                     DBFile.parent == parent).order_by (DBFile.id).last ()
