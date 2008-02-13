@@ -55,6 +55,8 @@ class Parser:
         raise NotImplementedError
 
     def run (self):
+        self.handler.begin ()
+        
         def new_line (data, user_data = None):
             self.parse_line (data.strip ('\n'))
 
@@ -78,6 +80,8 @@ class Parser:
             self.repo.log (self.uri)
 
         self.flush ()
+
+        self.handler.end ()
 
 if __name__ == '__main__':
     import sys

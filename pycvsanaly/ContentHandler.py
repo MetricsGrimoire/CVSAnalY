@@ -22,6 +22,9 @@ class ContentHandler:
     def __init__ (self):
         pass
 
+    def begin (self):
+        pass
+    
     def repository (self, uri):
         pass
     
@@ -35,4 +38,7 @@ class ContentHandler:
         pass
 
     def file (self, file):
+        pass
+
+    def end (self):
         pass

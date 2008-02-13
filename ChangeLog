@@ -1,5 +1,14 @@
 2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/ContentHandler.py:
+	* pycvsanaly/DBContentHandler.py:
+	* pycvsanaly/Parser.py:
+
+	Use executemany also for commits and call it for both actions and
+	commits every 100 actions.
+	
+2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/DBContentHandler.py:
 
 	Use executemany instead of execute to insert actions

@@ -23,17 +23,26 @@ from profile import plog
 
 class DBContentHandler (ContentHandler):
 
+    MAX_ACTIONS = 100
+
     def __init__ (self, db):
         ContentHandler.__init__ (self)
 
         self.db = db
-        self.cnn = db.connect ()
+        self.cnn = None
         
         self.file_cache = {}
         self.commit_cache = None
 
     def __del__ (self):
-        self.cnn.close ()
+        if self.cnn is not None:
+            self.cnn.close ()
+
+    def begin (self):
+        self.cnn = self.db.connect ()
+
+        self.commits = []
+        self.actions = []
 
     def repository (self, uri):
         cursor = self.cnn.cursor ()
@@ -52,6 +61,19 @@ class DBContentHandler (ContentHandler):
         cursor.close ()
 
         return self.commit_cache
+
+    def __insert_many (self):
+        cursor = self.cnn.cursor ()
+
+        if self.actions:
+            cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), self.actions)
+            self.actions = []
+        if self.commits:
+            cursor.executemany (statement (DBLog.__insert__, self.db.place_holder), self.commits)
+            self.commits = []
+
+        cursor.close ()
+        self.cnn.commit ()        
         
     def __ensure_path (self, path):
 #        print "DBG: ensure_path %s" % (path)
@@ -99,13 +121,13 @@ class DBContentHandler (ContentHandler):
 
         log = DBLog (None, commit)
         log.repository_id = self.repo_id
-        cursor = self.cnn.cursor ()
-        cursor.execute (statement (DBLog.__insert__, self.db.place_holder), (log.id, log.rev, log.committer, log.author, log.date, log.lines_added, log.lines_removed, log.message, log.composed_rev, log.repository_id))
+        self.commits.append ((log.id, log.rev, log.committer, log.author, log.date, log.lines_added, log.lines_removed, log.message, log.composed_rev, log.repository_id))
+#        cursor = self.cnn.cursor ()
+#        cursor.execute (statement (DBLog.__insert__, self.db.place_holder), (log.id, log.rev, log.committer, log.author, log.date, log.lines_added, log.lines_removed, log.message, log.composed_rev, log.repository_id))
 
 #        print "DBG: commit: %d rev: %s" % (log.id, log.rev)
         renamed_from = None
 
-        dbactions = []
         for action in commit.actions:
 #            print "DBG: Action: %s" % (action.type)
             if action.f2 is not None:
@@ -138,13 +160,16 @@ class DBContentHandler (ContentHandler):
             dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
             dbaction.file_id = file.id
-            dbactions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
+            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
 
-        if dbactions:
-            cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), dbactions)
+        if len (self.actions) >= self.MAX_ACTIONS:
+            self.__insert_many ()
             
-        cursor.close ()
-        self.cnn.commit ()
+    def end (self):
+        # flush pending inserts
+        self.__insert_many ()
+        self.cnn.close ()
+        self.cnn = None
             
         
 if __name__ == '__main__':
