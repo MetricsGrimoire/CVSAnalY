@@ -1,5 +1,11 @@
 2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/DBContentHandler.py:
+
+	Use executemany instead of execute to insert actions
+	
+2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/CVSParser.py:
 	* pycvsanaly/DBContentHandler.py:
 	* pycvsanaly/Database.py:

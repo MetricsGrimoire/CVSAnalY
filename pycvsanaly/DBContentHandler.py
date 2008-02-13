@@ -105,6 +105,7 @@ class DBContentHandler (ContentHandler):
 #        print "DBG: commit: %d rev: %s" % (log.id, log.rev)
         renamed_from = None
 
+        dbactions = []
         for action in commit.actions:
 #            print "DBG: Action: %s" % (action.type)
             if action.f2 is not None:
@@ -137,8 +138,11 @@ class DBContentHandler (ContentHandler):
             dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
             dbaction.file_id = file.id
-            cursor.execute (statement (DBAction.__insert__, self.db.place_holder), (dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
+            dbactions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
 
+        if dbactions:
+            cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), dbactions)
+            
         cursor.close ()
         self.cnn.commit ()
             
