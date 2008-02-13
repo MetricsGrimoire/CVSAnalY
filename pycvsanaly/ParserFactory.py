@@ -20,8 +20,6 @@
 import os
 import re
 
-from repositoryhandler.backends import create_repository, create_repository_from_path
-
 from CVSParser import CVSParser
 from SVNParser import SVNParser
 from GitParser import GitParser

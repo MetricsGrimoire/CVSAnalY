@@ -1,3 +1,14 @@
+2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/CVSParser.py:
+	* pycvsanaly/DBContentHandler.py:
+	* pycvsanaly/Database.py:
+	* pycvsanaly/ParserFactory.py:
+	* pycvsanaly/main.py:
+
+	Several performance improvements. CVSAnaly core doesn't use storm
+	anymore.
+	
 2008-02-05  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/Config.py:

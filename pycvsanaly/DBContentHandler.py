@@ -18,8 +18,7 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from ContentHandler import ContentHandler
-from CADatabase import *
-
+from Database import DBRepository, DBLog, DBFile, DBAction, statement
 from profile import plog
 
 class DBContentHandler (ContentHandler):
@@ -27,22 +26,30 @@ class DBContentHandler (ContentHandler):
     def __init__ (self, db):
         ContentHandler.__init__ (self)
 
-        self.store = db.get_store ()
+        self.db = db
+        self.cnn = db.connect ()
         
         self.file_cache = {}
         self.commit_cache = None
 
+    def __del__ (self):
+        self.cnn.close ()
+
     def repository (self, uri):
-        repo = self.store.find (DBRepository, DBRepository.uri == unicode (uri)).one ()
-        self.repo_id = repo.id
+        cursor = self.cnn.cursor ()
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", self.db.place_holder), (uri,))
+        self.repo_id = cursor.fetchone ()[0]
+        cursor.close ()
 
     def __get_repository_commits (self):
-        # FIXME: this doesn't work for cvs
         if self.commit_cache is not None:
             return self.commit_cache
 
-        res = self.store.find (DBLog, DBLog.repository_id == self.repo_id)
-        self.commit_cache = [commit.rev for commit in res]
+        cursor = self.cnn.cursor ()
+        cursor.execute (statement ("SELECT rev from scmlog where repository_id = ?", self.db.place_holder), (self.repo_id,))
+        res = cursor.fetchall ()
+        self.commit_cache = [rev[0] for rev in res]
+        cursor.close ()
 
         return self.commit_cache
         
@@ -50,6 +57,8 @@ class DBContentHandler (ContentHandler):
 #        print "DBG: ensure_path %s" % (path)
         tokens = path.strip ('/').split ('/')
 
+        cursor = self.cnn.cursor ()
+        
         parent = -1
         node = None
         i = 1
@@ -65,18 +74,21 @@ class DBContentHandler (ContentHandler):
 
                 continue
 
-            node = self.store.find (DBFile,
-                                    DBFile.file_name == unicode (token),
-                                    DBFile.parent == parent).order_by (DBFile.id).last ()
-            if node is None:
-                node = self.store.add (DBFile (token, parent))
-                self.store.flush ()
-                
-            parent = node.id
+            cursor.execute (statement ("SELECT * from tree where file_name = ? AND parent = ? order by id", self.db.place_holder), (token, parent))
+            rs = cursor.fetchall ()
+            if not rs:
+                node = DBFile (None, token, parent)
+                cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (node.id, node.parent, node.file_name, node.deleted))
+                self.file_cache[rpath] = node
+            else:
+                node = DBFile (rs[-1][0], rs[-1][2], rs[-1][1], rs[-1][3]) 
+
+            parent = node.id 
             i += 1
 
         assert node is not None
 
+        cursor.close ()
 #        print "DBG: path ensured %s = %d (%s)" % (path, node.id, node.file_name)
         
         return node
@@ -84,10 +96,11 @@ class DBContentHandler (ContentHandler):
     def commit (self, commit):
         if commit.revision in self.__get_repository_commits ():
             return
-        
-        log = self.store.add (DBLog (commit))
+
+        log = DBLog (None, commit)
         log.repository_id = self.repo_id
-        self.store.flush ()
+        cursor = self.cnn.cursor ()
+        cursor.execute (statement (DBLog.__insert__, self.db.place_holder), (log.id, log.rev, log.committer, log.author, log.date, log.lines_added, log.lines_removed, log.message, log.composed_rev, log.repository_id))
 
 #        print "DBG: commit: %d rev: %s" % (log.id, log.rev)
         renamed_from = None
@@ -120,24 +133,27 @@ class DBContentHandler (ContentHandler):
 
             if action.type == 'D':
                 file.deleted = True
-                
-            dbaction = self.store.add (DBAction (action.type))
+
+            dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
             dbaction.file_id = file.id
-            self.store.flush ()
+            cursor.execute (statement (DBAction.__insert__, self.db.place_holder), (dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
 
-        self.store.commit ()
+        cursor.close ()
+        self.cnn.commit ()
             
         
 if __name__ == '__main__':
     import sys
     from ParserFactory import create_parser
-    from libcvsanaly.Database import get_database
+    from Database import create_database
 
     p = create_parser (sys.argv[1])
-    db = get_database ('sqlite', '/tmp/cvsanaly')
-    db.connect ()
-    db.create_tables ()
-    p.set_content_handler (DBContentHandler (db))
+    db = create_database ('sqlite', '/tmp/cvsanaly')
+    cnn = db.connect ()
+    cursor = cnn.cursor ()
+    db.create_tables (cursor)
+    cursor.close ()
+    p.set_content_handler (DBContentHandler (cnn))
     p.run ()
-    db.close ()
+    cnn.close ()

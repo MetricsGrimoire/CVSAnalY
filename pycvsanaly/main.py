@@ -31,10 +31,10 @@ Main funcion of cvsanaly. Fun starts here!
 import os
 import getopt
 
-from ParserFactory import *
-from libcvsanaly.Database import *
+from repositoryhandler.backends import create_repository, create_repository_from_path
+from ParserFactory import create_parser_from_logfile, create_parser_from_repository
+from Database import create_database, TableAlreadyExists, DBRepository, statement
 from DBContentHandler import DBContentHandler
-from CADatabase import *
 from Config import Config
 from utils import *
 
@@ -187,31 +187,38 @@ def main (argv):
 
     db_exists = False
     
-    db = get_database (config.db_driver,
-                       config.db_database,
-                       config.db_user,
-                       config.db_password,
-                       config.db_hostname)
-    db.connect ()
+    db = create_database (config.db_driver,
+                          config.db_database,
+                          config.db_user,
+                          config.db_password,
+                          config.db_hostname)
+    cnn = db.connect ()
+    cursor = cnn.cursor ()
     try:
-        db.create_tables ()
-    except CATableAlreadyExists:
+        db.create_tables (cursor)
+        cnn.commit ()
+    except TableAlreadyExists:
         db_exists = True
 
     # Add repository to Database
-    store = db.get_store ()
     if db_exists:
-        rep_id = store.find (DBRepository, DBRepository.uri == unicode (repo.get_uri ())).one ()
+        cursor.execute ("SELECT id from repositories where uri = ?", (repo.get_uri (),))
+        rep = cursor.fetchone ()
+        cursor.close ()
         
-    if not db_exists or rep_id is None:
+    if not db_exists or rep is None:
         # We consider the name of the repo as the last item of the root path
         name = repo.get_uri ().split ("/")[-1].strip ()
-        rep = store.add (DBRepository (repo.get_uri (), name, repo.get_type ()))
-        store.commit ()
-    
+        cursor = cnn.cursor ()
+        rep = DBRepository (None, repo.get_uri (), name, repo.get_type ())
+        cursor.execute (statement (DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
+        cursor.close ()
+        cnn.commit ()
+
+    cnn.close ()
+        
     print "Parsing log for %s" % (uri)
     parser.set_content_handler (DBContentHandler (db))
     parser.run ()
 
-    db.close ()
 

@@ -38,7 +38,7 @@ class CVSParser (Parser):
 
         # Parser context
         self.file = None
-        self.commits = []
+        self.commit = None
 
     def parse_line (self, line):
         if line is None or line == '':
@@ -47,10 +47,6 @@ class CVSParser (Parser):
         # File separator
         if self.patterns['separator'].match (line):
             self.handler.file (self.file)
-            for commit in self.commits:
-                self.handler.commit (commit)
-
-            self.commits = []
         
         # File 
         match = self.patterns['file'].match (line)
@@ -72,14 +68,14 @@ class CVSParser (Parser):
             # to make sure revision is unique
             commit.composed_rev = True
             commit.revision = "%s|%s" % (match.group (1), self.file.path)
-            self.commits.append (commit)
+            self.commit = commit
 
             return
 
         # Commit info (date, author, etc.)
         match = self.patterns['info'].match (line)
         if match:
-            commit = self.commits[-1]
+            commit = self.commit
             commit.committer = match.group (8)
             self.handler.committer (commit.committer)
             
@@ -99,6 +95,7 @@ class CVSParser (Parser):
             # FIXME: is it possible to know when file was added? revision 1.1.1.1 or something?
 
             commit.actions.append (action)
+            self.handler.commit (commit)
 
             # FIXME: do we really need intrunk, cvs_flag and external?, WTF are they?
 
