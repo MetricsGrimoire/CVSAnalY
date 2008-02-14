@@ -230,13 +230,13 @@ class MysqlDatabase (Database):
                             ")")
             cursor.execute ("CREATE TABLE scmlog (" +
                             "id INT primary key," +
-                            "rev varchar(255)," +
+                            "rev mediumtext," +
                             "committer varchar(255)," +
                             "author varchar(255)," +
                             "date timestamp," +
                             "lines_added int," +
                             "lines_removed int," +
-                            "message varchar(255)," +
+                            "message text," +
                             "composed_rev bool," +
                             "repository_id INT," + 
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" + 

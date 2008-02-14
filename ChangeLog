@@ -1,5 +1,11 @@
 2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/Database.py:
+
+	Update some field sizes.
+	
+2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/ContentHandler.py:
 	* pycvsanaly/DBContentHandler.py:
 	* pycvsanaly/Parser.py:
