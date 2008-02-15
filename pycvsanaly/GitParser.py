@@ -23,7 +23,7 @@ import time
 import datetime
 
 from subprocess import *
-
+from FindProgram import find_program
 from Parser import Parser
 from Repository import *
 
@@ -42,11 +42,16 @@ class GitParser (Parser):
     def __init__ (self):
         Parser.__init__ (self)
 
+        self.git = None
+        
         # Parser context
         self.commit = None
 
     def __get_added_removed_lines (self, revision):
-        cmd = ['git', 'show', '--shortstat', revision]
+        if self.git is None:
+            self.git = find_program ('git')
+            
+        cmd = [self.git, 'show', '--shortstat', revision]
         env = os.environ.copy ().update ({'LC_ALL' : 'C'})
         pipe = Popen (cmd, shell=False, stdin=PIPE, stdout=PIPE, close_fds=True, env=env, cwd=self.uri)
         out = pipe.communicate ()[0]

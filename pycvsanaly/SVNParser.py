@@ -27,7 +27,7 @@ import repositoryhandler
 from repositoryhandler.backends.watchers import *
 from subprocess import *
 
-from libcvsanaly.FindProgram import find_program
+from FindProgram import find_program
 
 from Parser import Parser
 from Repository import *
@@ -50,7 +50,7 @@ class SVNParser (Parser):
     def __init__ (self):
         Parser.__init__ (self)
 
-        self.diffstat = find_program ('diffstat')
+        self.diffstat = None
         
         # Parser context
         self.state = SVNParser.COMMIT
@@ -58,6 +58,9 @@ class SVNParser (Parser):
 
     def __get_added_removed_lines (self, revision):
         global _diff
+
+        if self.siffstat is None:
+            self.diffstat = find_program ('diffstat')
 
         _diff = ""
         def diff_line (data, user_data):
