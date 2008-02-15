@@ -1,3 +1,17 @@
+2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/Database.py:
+
+	Use utf8 as character set in mysql databases.
+	
+2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/FindProgram.py:
+	* pycvsanaly/GitParser.py:
+	* pycvsanaly/SVNParser.py:
+
+	Add FindProgram from misc and use it in both git and svn backends.
+	
 2008-02-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/Database.py:

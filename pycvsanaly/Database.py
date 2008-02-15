@@ -205,9 +205,9 @@ class MysqlDatabase (Database):
 
         try:
             if self.password is not None:
-                return MySQLdb.connect (self.hostname, self.username, self.password, self.database)
+                return MySQLdb.connect (self.hostname, self.username, self.password, self.database, use_unicode = True)
             else:
-                return MySQLdb.connect (self.hostname, self.username, db = self.database)
+                return MySQLdb.connect (self.hostname, self.username, db = self.database, use_unicode = True)
         except _mysql_exceptions.OperationalError, e:
             if e.args[0] == 1049:
                 raise DatabaseNotFound
@@ -227,7 +227,7 @@ class MysqlDatabase (Database):
                             "uri varchar(255)," +
                             "name varchar(255)," +
                             "type varchar(30)" + 
-                            ")")
+                            ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE scmlog (" +
                             "id INT primary key," +
                             "rev mediumtext," +
@@ -240,13 +240,13 @@ class MysqlDatabase (Database):
                             "composed_rev bool," +
                             "repository_id INT," + 
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" + 
-                            ")")
+                            ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE tree (" +
                             "id INT primary key," +
                             "parent integer," +
                             "file_name varchar(255)," +
                             "deleted bool" +
-                            ")")
+                            ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE actions (" +
                             "id INT primary key," +
                             "type varchar(1)," +
@@ -254,7 +254,7 @@ class MysqlDatabase (Database):
                             "commit_id integer," +
                             "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" + 
-                            ")")
+                            ") CHARACTER SET=utf8")
         except _mysql_exceptions.OperationalError, e:
             raise
             if e.args[0] == 1050:
