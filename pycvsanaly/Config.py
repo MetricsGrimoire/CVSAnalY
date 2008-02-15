@@ -16,9 +16,18 @@
 #
 # Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+class ErrorLoadingConfig (Exception):
+
+    def __init__ (self, message = None):
+        Exception.__init__ (self)
+        
+        self.message = message
+
 class Config:
 
-    __shared_state = { 'profile'      : False,
+    __shared_state = { 'debug'        : False,
+                       'quiet'        : False,
+                       'profile'      : False,
                        'branch'       : None,
                        'repo_logfile' : None,
                        'lines'        : True,
@@ -45,9 +54,16 @@ class Config:
             exec f in config.__dict__
             f.close ()
         except Exception, e:
-            print "Error reading config file %s (%s)" % (config_file, str (e))
-            return
+            raise ErrorLoadingConfig ("Error reading config file %s (%s)" % (config_file, str (e)))
 
+        try:
+            self.debug = config.debug
+        except:
+            pass
+        try:
+            self.quiet = config.quiet
+        except:
+            pass        
         try:
             self.profile = config.profile
         except:

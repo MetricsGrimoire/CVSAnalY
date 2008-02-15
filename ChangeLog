@@ -1,5 +1,17 @@
 2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/Config.py:
+	* pycvsanaly/Parser.py:
+	* pycvsanaly/ParserFactory.py:
+	* pycvsanaly/SVNParser.py:
+	* pycvsanaly/main.py:
+	* pycvsanaly/utils.py:
+
+	Add debug and quiet modes. Add functions to send output to stdout
+	and errors to stderr. Fix some error handling issues.
+	
+2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/config_files.py: Removed
 	* pycvsanaly/repository.py: Removed
 	* pycvsanaly/tables.py: Removed

@@ -1,4 +1,4 @@
-# Copyright (C) 2006 Libresoft
+# Copyright (C) 2008 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,11 +14,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
-# Authors :
-#       Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
-#       Gregorio Robles <grex@gsyc.escet.urjc.es>
+# Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-from pycvsanaly.config_files import *
+import sys
+
+from Config import Config
+
+config = Config ()
 
 def uri_is_remote (uri):
     import re
@@ -38,4 +40,23 @@ def uri_to_filename (uri):
 
     return uri
 
+def printout (str = '\n'):
+    if config.quiet:
+        return
+    
+    if str != '\n':
+        str += '\n'
+    sys.stdout.write (str)
+    sys.stdout.flush ()
 
+def printerr (str = '\n'):
+    if str != '\n':
+        str += '\n'
+    sys.stderr.write (str)
+    sys.stderr.flush ()
+
+def printdbg (str = '\n'):
+    if not config.debug:
+        return
+
+    printout ("DBG: " + str)

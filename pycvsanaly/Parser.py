@@ -22,10 +22,11 @@
 import os
 import re
 
-from repositoryhandler.backends.watchers import *
+from repositoryhandler.backends.watchers import LOG
 
 from ContentHandler import ContentHandler
 from Config import Config
+from utils import printerr
 
 class Parser:
 
@@ -67,8 +68,9 @@ class Parser:
             try:
                 f = open (self.logfile, 'r')
             except IOError, e:
-                print e
+                printerr (str (e))
                 return
+            
             line = f.readline ()
             while line:
                 new_line (line)

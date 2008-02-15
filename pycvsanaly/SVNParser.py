@@ -24,13 +24,14 @@ import re
 import datetime
 
 import repositoryhandler
-from repositoryhandler.backends.watchers import *
+from repositoryhandler.backends.watchers import DIFF
 from subprocess import *
 
 from FindProgram import find_program
 
 from Parser import Parser
 from Repository import *
+from utils import printout
 
 class SVNParser (Parser):
 
@@ -150,8 +151,7 @@ class SVNParser (Parser):
                 self.handler.commit (self.commit)
                 self.state = SVNParser.COMMIT
             else:
-                # FIXME: parser exception
-                print "Error parsing svn log, unexpected separator"
+                printout ("Warning: parsing svn log, unexpected separator")
                 
             return
 
@@ -171,8 +171,7 @@ class SVNParser (Parser):
             
             return
         elif match and self.state != SVNParser.COMMIT:
-            # FIXME: parser exception
-            print "Error parsing svn log, unexpected line %s" % (line)
+            printout ("Warning: parsing svn log, unexpected line %s" % (line))
             return
 
         # File moved/copied/replaced
@@ -195,8 +194,7 @@ class SVNParser (Parser):
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES
             elif self.state != SVNParser.FILES:
-                # FIXME: parser exception
-                print "Error parsing svn log, unexpected line %s" % (line)
+                printout ("Warning: parsing svn log, unexpected line %s" % (line))
                 return
 
             return
@@ -217,8 +215,7 @@ class SVNParser (Parser):
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES
             elif self.state != SVNParser.FILES:
-                # FIXME: parser exception
-                print "Error parsing svn log, unexpected line %s" % (line)
+                printout ("Warning: parsing svn log, unexpected line %s" % (line))
                 return
 
             return

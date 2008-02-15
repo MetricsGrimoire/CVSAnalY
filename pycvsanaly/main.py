@@ -35,8 +35,8 @@ from repositoryhandler.backends import create_repository, create_repository_from
 from ParserFactory import create_parser_from_logfile, create_parser_from_repository
 from Database import create_database, TableAlreadyExists, DBRepository, statement
 from DBContentHandler import DBContentHandler
-from Config import Config
-from utils import *
+from Config import Config, ErrorLoadingConfig
+from utils import printerr, printout, uri_to_filename
 
 # Some stuff about the project
 version = "2.0"
@@ -56,6 +56,8 @@ Options:
 
   -h, --help         Print this usage message.
   -V, --version      Show version
+  -g, --debug        Enable debug mode
+  -q, --quiet        Run silently, only print error messages
       --profile      Enable profiling mode
   -f, --config-file  Use a custom configuration file
       --with-lines   Get lines added/removed per commit. Only disabled by default
@@ -75,12 +77,15 @@ Database:
 
 def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVf:b:l:u:p:d:H:"
+    short_opts = "hVgqf:b:l:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "profile", "config-file=", "branch=", "repo-logfile=", "with-lines",
-                 "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver="]
+    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", "branch=",
+                 "repo-logfile=", "with-lines", "db-user=", "db-password=", "db-hostname=",
+                 "db-database=", "db-driver="]
 
     # Default options
+    debug = None
+    quiet = None
     profile = None
     configfile = None
     user = None
@@ -95,7 +100,7 @@ def main (argv):
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
     except getopt.GetoptError, e:
-        print e
+        printerr (str (e))
         return 1
 
     for opt, value in opts:
@@ -105,6 +110,10 @@ def main (argv):
         elif opt in ("-V", "--version"):
             print version
             return 0
+        elif opt in ("--debug", "-g"):
+            debug = True
+        elif opt in ("--quiet", "-q"):
+            quiet = True
         elif opt in ("--profile", ):
             profile = True
         elif opt in ("-f", "--config-file"):
@@ -132,11 +141,19 @@ def main (argv):
         uri = args[0]
 
     config = Config ()
-    if configfile is not None:
-        config.load_from_file (configfile)
-    else:
-        config.load ()
+    try:
+        if configfile is not None:
+            config.load_from_file (configfile)
+        else:
+            config.load ()
+    except ErrorLoadingConfig, e:
+        printerr (e.message)
+        return 1
 
+    if debug is not None:
+        config.debug = debug
+    if quiet is not None:
+        config.quiet = quiet
     if profile is not None:
         config.profile = profile
     if branch is not None:
@@ -177,7 +194,7 @@ def main (argv):
             parser.set_uri (uri)
 
     if parser is None:
-        print "Failed to create parser"
+        printerr ("Failed to create parser")
         return 1
 
     # TODO: check parser type == logfile type
@@ -199,7 +216,7 @@ def main (argv):
 
     # Add repository to Database
     if db_exists:
-        cursor.execute ("SELECT id from repositories where uri = ?", (repo.get_uri (),))
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
         rep = cursor.fetchone ()
         cursor.close ()
         
@@ -214,7 +231,7 @@ def main (argv):
 
     cnn.close ()
         
-    print "Parsing log for %s" % (uri)
+    printout ("Parsing log for %s" % (uri))
     parser.set_content_handler (DBContentHandler (db))
     parser.run ()
 
