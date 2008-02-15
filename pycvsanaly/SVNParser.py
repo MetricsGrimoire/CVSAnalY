@@ -31,7 +31,7 @@ from FindProgram import find_program
 
 from Parser import Parser
 from Repository import *
-from utils import printout
+from utils import printout, printdbg
 
 class SVNParser (Parser):
 
@@ -123,19 +123,19 @@ class SVNParser (Parser):
                     del_action = find_action (commit.actions, 'D', action.f2.path)
                     if del_action is not None and del_action not in remove_actions:
                         # FIXME: See http://research.libresoft.es/cgi-bin/trac.cgi/wiki/Tools/CvsanalyRevamped#Filesmovedandcopiedinthesamerevision
-#                        print "DBG: File %s has been renamed to %s" % (action.f2.path, action.f1.path)
+                        printdbg ("SVN Parser: File %s has been renamed to %s" % (action.f2.path, action.f1.path))
                         action.type = 'V'
                         remove_actions.append (del_action)
                     else:
                         action.type = 'C'
-#                        print "DBG: File %s has been copied to %s" % (action.f2.path, action.f1.path)
+                        printdbg ("SVN Parser: File %s has been copied to %s" % (action.f2.path, action.f1.path))
                 elif action.type == 'R':
                     # TODO
+                    printdbg ("SVN Parser: File %s replaced to %s" % (action.f2.path, action.f1.path))
                     pass
-#                    print "DBG: File %s replaced to %s" % (action.f2.path, action.f1.path)
 
         for action in remove_actions:
-#            print "Removing action %s %s" % (action.type, action.f1.path)
+            printout ("SVN Parser: Removing action %s %s" % (action.type, action.f1.path))
             commit.actions.remove (action)
         
     def parse_line (self, line):

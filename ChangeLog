@@ -1,5 +1,12 @@
 2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/DBContentHandler.py:
+	* pycvsanaly/SVNParser.py:
+
+	Add some debug messages
+	
+2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/Config.py:
 	* pycvsanaly/Parser.py:
 	* pycvsanaly/ParserFactory.py:
