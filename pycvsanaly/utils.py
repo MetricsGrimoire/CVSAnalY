@@ -38,26 +38,4 @@ def uri_to_filename (uri):
 
     return uri
 
-def get_file_type (path):
-    """
-    Given a filename, returns what type of file it is.
-    The file type is set in the config_files configuration file
-    and usually this depends on the extension, although other
-    simple heuristics are used.
-
-    @type  file: string
-    @param file: filename
-    
-    @rtype: string
-    @return: file type id (see config_files_names for transformation into their names: documentation => 0, etc.)
-    """
-    i = 0
-    for fileTypeSearch_list in config_files_list:
-        for searchItem in fileTypeSearch_list:
-            if searchItem.search (path.lower ()):
-                return i
-        i += 1
-
-    # if not found, specify it as unknown
-    return config_files_names.index ('unknown')
 

@@ -38,12 +38,9 @@ from DBContentHandler import DBContentHandler
 from Config import Config
 from utils import *
 
-#from storm import database
-#database.DEBUG = True
-
 # Some stuff about the project
 version = "2.0"
-author = "(C) 2004,2007 %s <%s>" % ("LibreSoft", "libresoft-tools-devel@lists.morfeo-project.org")
+author = "(C) 2004,2008 %s <%s>" % ("LibreSoft", "libresoft-tools-devel@lists.morfeo-project.org")
 name = "cvsanaly %s - LibreSoft Group http://www.libresoft.es" % (version)
 credits = "%s \n%s\n" % (name, author)
 
