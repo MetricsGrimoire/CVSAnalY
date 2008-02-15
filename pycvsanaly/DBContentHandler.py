@@ -162,10 +162,12 @@ class DBContentHandler (ContentHandler):
             self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
 
         if len (self.actions) >= self.MAX_ACTIONS:
+            printdbg ("DBContentHandler: %d actions inserting" % (len (self.actions)))
             self.__insert_many ()
             
     def end (self):
         # flush pending inserts
+        printdbg ("DBContentHandler: flushing pensing inserts")
         self.__insert_many ()
         self.cnn.close ()
         self.cnn = None

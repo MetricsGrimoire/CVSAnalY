@@ -1,6 +1,14 @@
 2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/DBContentHandler.py:
+	* pycvsanaly/Database.py:
+	* pycvsanaly/main.py:
+
+	Show SQL commands in debug mode
+	
+2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/DBContentHandler.py:
 	* pycvsanaly/SVNParser.py:
 
 	Add some debug messages

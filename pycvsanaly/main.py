@@ -231,7 +231,7 @@ def main (argv):
 
     cnn.close ()
         
-    printout ("Parsing log for %s" % (uri))
+    printout ("Parsing log for %s (%s)" % (uri, repo.get_type ()))
     parser.set_content_handler (DBContentHandler (db))
     parser.run ()
 

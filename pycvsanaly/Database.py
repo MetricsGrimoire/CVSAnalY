@@ -18,7 +18,9 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from Repository import *
-import datetime 
+import datetime
+
+from utils import printdbg
 
 class DBRepository:
 
@@ -117,13 +119,17 @@ class TableAlreadyExists (DatabaseException):
 
 def statement (str, ph_mark):
     if "?" == ph_mark or "?" not in str:
+        printdbg (str)
         return str
 
     tokens = str.split("'")
     for i in range(0, len (tokens), 2):
         tokens[i] = tokens[i].replace("?", ph_mark)
-        
-    return "'".join (tokens)
+
+    retval = "'".join (tokens)
+    printdbg (retval)
+    
+    return retval
     
 class Database:
     '''CVSAnaly Database'''
