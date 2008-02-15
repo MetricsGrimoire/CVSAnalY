@@ -106,8 +106,6 @@ class DatabaseException (Exception):
 
         self.message = message
         
-class DatabaseDriverNotAvailable (DatabaseException):
-    '''Database driver is not available'''
 class DatabaseDriverNotSupported (DatabaseException):
     '''Database driver is not supported'''
 class DatabaseNotFound (DatabaseException):
@@ -218,7 +216,7 @@ class MysqlDatabase (Database):
             if e.args[0] == 1049:
                 raise DatabaseNotFound
             elif e.args[0] == 1045:
-                raise AccessDenied
+                raise AccessDenied (str (e))
             else:
                 raise DatabaseException (str (e))
         except:
@@ -262,7 +260,6 @@ class MysqlDatabase (Database):
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" + 
                             ") CHARACTER SET=utf8")
         except _mysql_exceptions.OperationalError, e:
-            raise
             if e.args[0] == 1050:
                 raise TableAlreadyExists
             else:
@@ -289,7 +286,7 @@ def create_database (driver, database, username = None, password = None, hostnam
     try:
         db.connect ().close ()
         return db
-    except AccessDenied:
+    except AccessDenied, e:
         if password is None:
             import sys, getpass
 
@@ -302,7 +299,7 @@ def create_database (driver, database, username = None, password = None, hostnam
             sys.stdout, sys.stdin = oldout, oldin
             
             return create_database (driver, database, username, password, hostname)
-        raise AccessDenied
+        raise e
     
     return db
 

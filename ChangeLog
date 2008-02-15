@@ -1,5 +1,12 @@
 2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/Database.py:
+	* pycvsanaly/main.py:
+
+	Fix database errors handling.
+	
+2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/DBContentHandler.py:
 	* pycvsanaly/Database.py:
 	* pycvsanaly/main.py:

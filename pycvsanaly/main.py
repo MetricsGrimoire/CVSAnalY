@@ -33,7 +33,8 @@ import getopt
 
 from repositoryhandler.backends import create_repository, create_repository_from_path
 from ParserFactory import create_parser_from_logfile, create_parser_from_repository
-from Database import create_database, TableAlreadyExists, DBRepository, statement
+from Database import (create_database, TableAlreadyExists, AccessDenied, DatabaseNotFound,
+                      DatabaseDriverNotSupported, DBRepository, statement)
 from DBContentHandler import DBContentHandler
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
@@ -200,12 +201,23 @@ def main (argv):
     # TODO: check parser type == logfile type
 
     db_exists = False
+
+    try:
+        db = create_database (config.db_driver,
+                              config.db_database,
+                              config.db_user,
+                              config.db_password,
+                              config.db_hostname)
+    except AccessDenied, e:
+        printerr ("Error creating database: %s" % (e.message))
+        return 1
+    except DatabaseNotFound:
+        printerr ("Database %s doesn't exist. It must be created before running cvsanaly" % (config.db_database))
+        return 1
+    except DatabaseDriverNotSupported:
+        printerr ("Database driver %s is not supported by cvsanaly" % (config.db_driver))
+        return 1
     
-    db = create_database (config.db_driver,
-                          config.db_database,
-                          config.db_user,
-                          config.db_password,
-                          config.db_hostname)
     cnn = db.connect ()
     cursor = cnn.cursor ()
     try:
@@ -213,6 +225,9 @@ def main (argv):
         cnn.commit ()
     except TableAlreadyExists:
         db_exists = True
+    except DatabaseException, e:
+        printerr ("Database error: %s" % (e.message))
+        return 1
 
     # Add repository to Database
     if db_exists:
