@@ -22,10 +22,10 @@ import re
 import time
 import datetime
 
-from subprocess import *
+from subprocess import Popen, PIPE
 from FindProgram import find_program
 from Parser import Parser
-from Repository import *
+from Repository import Commit, Action, File
 
 class GitParser (Parser):
 

@@ -4,3 +4,9 @@
 [W] Extensions system (file types)
 [X] Configuration file
 [ ] Incremental log
+
+CVS Backend
+-----------
+
+[ ] Register new files as Add action
+[ ] Commit message

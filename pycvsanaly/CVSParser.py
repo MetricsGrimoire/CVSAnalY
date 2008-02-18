@@ -23,7 +23,7 @@ import re
 import datetime
 
 from Parser import Parser
-from Repository import *
+from Repository import Commit, Action, File
 
 class CVSParser (Parser):
 

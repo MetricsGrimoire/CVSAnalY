@@ -1,6 +1,15 @@
 2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* TODO: Updated
+	* pycvsanaly/CVSParser.py:
+	* pycvsanaly/GitParser.py:
+	* pycvsanaly/SVNParser.py:
+
+	Remove some 'from foo import *' to improve code readability
+	
+2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* TODO: Updated
 	* pycvsanaly/Database.py:
 	* pycvsanaly/main.py:
 

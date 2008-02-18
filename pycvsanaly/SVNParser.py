@@ -25,12 +25,12 @@ import datetime
 
 import repositoryhandler
 from repositoryhandler.backends.watchers import DIFF
-from subprocess import *
+from subprocess import Popen, PIPE
 
 from FindProgram import find_program
 
 from Parser import Parser
-from Repository import *
+from Repository import Commit, Action, File
 from utils import printout, printdbg
 
 class SVNParser (Parser):
