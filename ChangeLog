@@ -1,3 +1,12 @@
+2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* TODO: Updated
+	* pycvsanaly/Database.py:
+	* pycvsanaly/main.py:
+
+	Initialize id counters for database objects when database already
+	exists.
+	
 2008-02-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly/Database.py:

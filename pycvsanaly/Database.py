@@ -17,7 +17,6 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-from Repository import *
 import datetime
 
 from utils import printdbg
@@ -98,6 +97,32 @@ class DBAction:
             self.id = id
         self.type = type
 
+def initialize_ids (db, cursor):
+    # Respositories
+    cursor.execute (statement ("SELECT max(id) from repositories", db.place_holder))
+    id = cursor.fetchone ()[0]
+    if id is not None:
+        DBRepository.id_counter = id + 1
+
+    # Log
+    cursor.execute (statement ("SELECT max(id) from scmlog", db.place_holder))
+    id = cursor.fetchone ()[0]
+    if id is not None:
+        DBLog.id_counter = id + 1
+
+    # Actions
+    cursor.execute (statement ("SELECT max(id) from actions", db.place_holder))
+    id = cursor.fetchone ()[0]
+    if id is not None:
+        DBAction.id_counter = id + 1
+
+    # Tree
+    cursor.execute (statement ("SELECT max(id) from tree", db.place_holder))
+    id = cursor.fetchone ()[0]
+    if id is not None:
+        DBFile.id_counter = id + 1
+    
+        
 class DatabaseException (Exception):
     '''Generic Database Exception'''
 

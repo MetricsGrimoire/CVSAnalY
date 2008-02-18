@@ -1,6 +1,6 @@
 [ ] Log files cache
-[ ] Lines added/removed per commit
-[ ] Move plugins to another module
-[ ] Extensions system (file types)
-[ ] Configuration file
+[X] Lines added/removed per commit
+[X] Move plugins to another module
+[W] Extensions system (file types)
+[X] Configuration file
 [ ] Incremental log
