@@ -1,4 +1,4 @@
-# Copyright (C) 2007 LibreSoft
+ Copyright (C) 2007 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ class SVNParser (Parser):
                     pass
 
         for action in remove_actions:
-            printout ("SVN Parser: Removing action %s %s" % (action.type, action.f1.path))
+            printdbg ("SVN Parser: Removing action %s %s" % (action.type, action.f1.path))
             commit.actions.remove (action)
         
     def parse_line (self, line):

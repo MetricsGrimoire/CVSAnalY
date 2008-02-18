@@ -1,5 +1,11 @@
 2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+        * pycvsanaly/SVNParser.py
+	
+	Call to printout changed to printdbg
+
+2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/main.py:
 
 	The command line option --with-lines requires now a value
