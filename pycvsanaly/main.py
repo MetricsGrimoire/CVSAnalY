@@ -56,25 +56,25 @@ the current working directory will be used as a checked out directory.
 
 Options:
 
-  -h, --help         Print this usage message.
-  -V, --version      Show version
-  -g, --debug        Enable debug mode
-  -q, --quiet        Run silently, only print error messages
-      --profile      Enable profiling mode
-  -f, --config-file  Use a custom configuration file
-      --with-lines   Get lines added/removed per commit. Only disabled by default
-                     for SVN repositories because of performance reasons
+  -h, --help                     Print this usage message.
+  -V, --version                  Show version
+  -g, --debug                    Enable debug mode
+  -q, --quiet                    Run silently, only print error messages
+      --profile                  Enable profiling mode
+  -f, --config-file              Use a custom configuration file
+      --with-lines=yes/no/auto   Get lines added/removed per commit (auto). Disabled by default 
+                                 only for SVN repositories because of performance reasons.
 
-  -b, --branch       Repository branch to analyze (head/trunk/master)
-  -l, --repo-logfile Logfile to use instead of getting log from the repository
+  -b, --branch                   Repository branch to analyze (head/trunk/master)
+  -l, --repo-logfile             Logfile to use instead of getting log from the repository
 
 Database:
 
-      --db-driver    Output database driver [sqlite|mysql|postgres] (sqlite)
-  -u, --db-user      Database user name (operator)
-  -p, --db-password  Database user password
-  -d, --db-database  Database name (cvsanaly)
-  -H, --db-hostname  Name of the host where database server is running (localhost)
+      --db-driver                Output database driver [sqlite|mysql|postgres] (sqlite)
+  -u, --db-user                  Database user name (operator)
+  -p, --db-password              Database user password
+  -d, --db-database              Database name (cvsanaly)
+  -H, --db-hostname              Name of the host where database server is running (localhost)
 """
 
 def main (argv):
@@ -82,7 +82,7 @@ def main (argv):
     short_opts = "hVgqf:b:l:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", "branch=",
-                 "repo-logfile=", "with-lines", "db-user=", "db-password=", "db-hostname=",
+                 "repo-logfile=", "with-lines=", "db-user=", "db-password=", "db-hostname=",
                  "db-database=", "db-driver="]
 
     # Default options
@@ -121,7 +121,10 @@ def main (argv):
         elif opt in ("-f", "--config-file"):
             configfile = value
         elif opt in ("--with-lines", ):
-            lines = True
+            if value == 'yes' or value == 'Yes':
+                lines = True
+            elif value == 'no' or value == 'No':
+                lines = False
         elif opt in ("-u", "--db-user"):
             user = value
         elif opt in ("-p", "--db-password"):

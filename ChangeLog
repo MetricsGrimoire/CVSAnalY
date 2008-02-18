@@ -1,5 +1,12 @@
 2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/main.py:
+
+	The command line option --with-lines requires now a value
+	(yes/no/auto).
+	
+2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* TODO: Updated
 	* pycvsanaly/CVSParser.py:
 	* pycvsanaly/GitParser.py:
