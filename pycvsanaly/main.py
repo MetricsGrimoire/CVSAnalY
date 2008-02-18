@@ -34,7 +34,8 @@ import getopt
 from repositoryhandler.backends import create_repository, create_repository_from_path
 from ParserFactory import create_parser_from_logfile, create_parser_from_repository
 from Database import (create_database, TableAlreadyExists, AccessDenied, DatabaseNotFound,
-                      DatabaseDriverNotSupported, DBRepository, statement, initialize_ids)
+                      DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
+		      DatabaseException)
 from DBContentHandler import DBContentHandler
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
