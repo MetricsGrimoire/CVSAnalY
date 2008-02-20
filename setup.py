@@ -32,13 +32,12 @@ import os
 
 from distutils.core import setup
 
-setup(name = "cvsanaly",
-      version = "1.0.1",
+setup(name = "cvsanaly2",
+      version = "2.0.0",
       author =  "LibreSoft",
-      author_email = "anavarro@gsyc.es",
-      description = "An analysis tool for your CVS and Subversion repository",
+      author_email = "libresoft-tools-devel@lists.morfeo-project.org",
+      description = "An analysis tool for your source code repository",
       url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
-      packages = ['pycvsanaly', 'pycvsanaly.libcvsanaly'],
-      data_files = [('share/man/man1',['cvsanaly.1'])],
-      scripts = ["cvsanaly"])
+      packages = ['pycvsanaly2'],
+      scripts = ["cvsanaly2"])
 
