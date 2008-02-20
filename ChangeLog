@@ -1,5 +1,11 @@
 2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* cvsanaly2:
+
+	s/pycvsanaly/pycvsanaly2/g
+	
+2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/main.py:
 
 	Show a warning when --with-lines option is used and diffstat command
