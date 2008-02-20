@@ -1,4 +1,11 @@
 2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* Database.py:
+
+	Use charset instead of use_unicode in the mysql connection
+	constructor.
+	
+2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 	
 	* AUTHORS:
 	* MANIFEST.in:
