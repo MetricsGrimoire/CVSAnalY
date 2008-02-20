@@ -1,13 +1,19 @@
+2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly/SVNParser.py:
+
+	Fix lines added/removed in svn backend. Fixes bug #395.
+
 2008-02-19  Luis Cañas Díaz  <lcanas@gsyc.es>
 
-	* pycvsanaly/SVNParser.py
+	* pycvsanaly/SVNParser.py:
 
 	Comment token # restored in first line
 
-2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+2008-02-18  Luis Cañas Díaz  <lcanas@gsyc.es>
 
-        * pycvsanaly/SVNParser.py
-	
+        * pycvsanaly/SVNParser.py:
+
 	Call to printout changed to printdbg
 
 2008-02-18  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>

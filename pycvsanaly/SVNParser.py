@@ -60,7 +60,7 @@ class SVNParser (Parser):
     def __get_added_removed_lines (self, revision):
         global _diff
 
-        if self.siffstat is None:
+        if self.diffstat is None:
             self.diffstat = find_program ('diffstat')
 
         _diff = ""
@@ -76,7 +76,8 @@ class SVNParser (Parser):
         wid = self.repo.add_watch (DIFF, diff_line)
         try:
             self.repo.diff (self.repo.get_uri (), revs = revs)
-        except repositoryhandler.Command.CommandError:
+        except repositoryhandler.Command.CommandError, e:
+            printerr ("Error running svn diff command: %s" % (str (e)))
             self.repo.remove_watch (DIFF, wid)
             return None
 
@@ -85,6 +86,7 @@ class SVNParser (Parser):
 
         lines = out.split ('\n')
         lines.reverse ()
+        print lines
         for line in lines:
             m = self.patterns['diffstat'].match (line)
             if m is None:
@@ -163,7 +165,7 @@ class SVNParser (Parser):
             commit.committer = match.group (2)
             commit.date = datetime.datetime (int (match.group (3)), int (match.group (4)), int (match.group (5)),
                                              int (match.group (6)), int (match.group (7)), int (match.group (8)))
-            if self.config.lines and self.diffstat is not None:
+            if self.config.lines:
                 commit.lines = self.__get_added_removed_lines (int (commit.revision))
                 
             self.commit = commit
