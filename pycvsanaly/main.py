@@ -39,6 +39,7 @@ from Database import (create_database, TableAlreadyExists, AccessDenied, Databas
 from DBContentHandler import DBContentHandler
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
+from FindProgram import find_program
 
 # Some stuff about the project
 version = "2.0"
@@ -187,6 +188,12 @@ def main (argv):
     else:
         if repo.get_type () == 'svn':
             config.lines = False
+
+    if config.lines and repo.get_type () == 'svn':
+        if find_program ("diffstat") is None:
+            config.lines = False
+            printout ("Warning: lines added/removed will be disabled since "
+                      "diffstat command was not found in path")
 
     if config.repo_logfile is not None:
         parser = create_parser_from_logfile (config.repo_logfile)

@@ -1,5 +1,12 @@
 2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly/main.py:
+
+	Show a warning when --with-lines option is used and diffstat command
+	is not found in path for the svn backend.
+	
+2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly/SVNParser.py:
 
 	Fix lines added/removed in svn backend. Fixes bug #395.
