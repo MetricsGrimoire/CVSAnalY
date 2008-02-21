@@ -148,12 +148,14 @@ class SVNParser (Parser):
         if self.patterns['separator'].match (line):
             if self.state == SVNParser.COMMIT:
                 return
-            elif self.state == SVNParser.MESSAGE:
+            elif self.state == SVNParser.MESSAGE or self.state == SVNParser.FILES:
+                # We can go directly from FILES to COMMIT
+                # when there is an empty log message
                 self.__convert_commit_actions (self.commit)
                 self.handler.commit (self.commit)
                 self.state = SVNParser.COMMIT
             else:
-                printout ("Warning: parsing svn log, unexpected separator")
+                printout ("Warning (%d): parsing svn log, unexpected separator" % (self.n_line))
                 
             return
 
@@ -173,7 +175,7 @@ class SVNParser (Parser):
             
             return
         elif match and self.state != SVNParser.COMMIT:
-            printout ("Warning: parsing svn log, unexpected line %s" % (line))
+            printout ("Warning (%d): parsing svn log, unexpected line %s" % (self.n_line, line))
             return
 
         # File moved/copied/replaced
@@ -196,7 +198,7 @@ class SVNParser (Parser):
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES
             elif self.state != SVNParser.FILES:
-                printout ("Warning: parsing svn log, unexpected line %s" % (line))
+                printout ("Warning (%d): parsing svn log, unexpected line %s" % (self.n_line, line))
                 return
 
             return
@@ -217,7 +219,7 @@ class SVNParser (Parser):
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES
             elif self.state != SVNParser.FILES:
-                printout ("Warning: parsing svn log, unexpected line %s" % (line))
+                printout ("Warning (%d): parsing svn log, unexpected line %s" % (self.n_line, line))
                 return
 
             return

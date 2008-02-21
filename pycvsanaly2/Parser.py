@@ -37,6 +37,8 @@ class Parser:
         self.logfile = None
         self.uri = None
 
+        self.n_line = 0
+
     def set_content_handler (self, handler):
         self.handler = handler
 
@@ -59,6 +61,7 @@ class Parser:
         self.handler.begin ()
         
         def new_line (data, user_data = None):
+            self.n_line += 1
             self.parse_line (data.strip ('\n'))
 
         if self.repo is not None:

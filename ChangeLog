@@ -1,3 +1,13 @@
+2008-02-21  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/Parser.py:
+
+	Add a line counter to help when debugging
+	
+	* pycvsanaly2/SVNParser.py:
+
+	Handle empty log messages correctly.
+	
 2008-02-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* Database.py:
