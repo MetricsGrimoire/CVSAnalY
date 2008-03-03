@@ -1,3 +1,13 @@
+2008-03-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/ExtensionsManager.py:
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/extensions/__init__.py:
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Extensions system.
+	
 2008-02-21  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/Parser.py:

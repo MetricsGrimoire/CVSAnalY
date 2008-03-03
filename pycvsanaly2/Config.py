@@ -35,7 +35,8 @@ class Config:
                        'db_user'      : 'operator',
                        'db_password'  : None, 
                        'db_database'  : 'cvsanaly',
-                       'db_hostname'  : 'localhost' }
+                       'db_hostname'  : 'localhost',
+                       'extensions'   : []}
     
     def __init__ (self):
         self.__dict__ = self.__shared_state
@@ -98,6 +99,10 @@ class Config:
             pass
         try:
             self.db_hostname = config.db_hostname
+        except:
+            pass
+        try:
+            self.extensions.extend ([item for item in config.extensions if item not in self.extensions])
         except:
             pass
 

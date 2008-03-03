@@ -37,6 +37,7 @@ from Database import (create_database, TableAlreadyExists, AccessDenied, Databas
                       DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
 		      DatabaseException)
 from DBContentHandler import DBContentHandler
+from ExtensionsManager import ExtensionsManager, InvalidExtension
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
 from FindProgram import find_program
@@ -44,12 +45,12 @@ from FindProgram import find_program
 # Some stuff about the project
 version = "2.0"
 author = "(C) 2004,2008 %s <%s>" % ("LibreSoft", "libresoft-tools-devel@lists.morfeo-project.org")
-name = "cvsanaly %s - LibreSoft Group http://www.libresoft.es" % (version)
+name = "cvsanaly2 %s - LibreSoft Group http://www.libresoft.es" % (version)
 credits = "%s \n%s\n" % (name, author)
 
 def usage ():
     print credits
-    print "Usage: cvsanaly [options] [URI]"
+    print "Usage: cvsanaly2 [options] [URI]"
     print """
 Analyze the given URI. An URI can be a checked out directory, 
 or a remote URL pointing to a repository. If URI is omitted,
@@ -68,6 +69,7 @@ Options:
 
   -b, --branch                   Repository branch to analyze (head/trunk/master)
   -l, --repo-logfile             Logfile to use instead of getting log from the repository
+      --extensions=ext1,ext2,    List of extensions to run        
 
 Database:
 
@@ -84,7 +86,7 @@ def main (argv):
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", "branch=",
                  "repo-logfile=", "with-lines=", "db-user=", "db-password=", "db-hostname=",
-                 "db-database=", "db-driver="]
+                 "db-database=", "db-driver=", "extensions="]
 
     # Default options
     debug = None
@@ -99,6 +101,7 @@ def main (argv):
     driver = None
     logfile = None
     lines = None
+    extensions = None
 
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
@@ -140,6 +143,8 @@ def main (argv):
             branch = value
         elif opt in ("-l", "--repo-logfile"):
             logfile = value
+        elif opt in ("--extensions", ):
+            extensions = value.split (',')
 
     if len (args) <= 0:
         uri = os.getcwd ()
@@ -176,6 +181,8 @@ def main (argv):
         config.db_hostname = hostname
     if database is not None:
         config.db_database = database
+    if extensions is not None:
+        config.extensions.extend ([item for item in extensions if item not in config.extensions])
 
     path = uri_to_filename (uri)
     if path is not None:
@@ -211,6 +218,15 @@ def main (argv):
 
     # TODO: check parser type == logfile type
 
+    try:
+        emg = ExtensionsManager (config.extensions)
+    except InvalidExtension, e:
+        printerr ("Invalid extension %s" % (e.name))
+        return 1
+    except Exception, e:
+        printerr ("Unknown extensions error: %s" % (str (e)))
+        return 1
+    
     db_exists = False
 
     try:
@@ -257,9 +273,12 @@ def main (argv):
         cnn.commit ()
 
     cnn.close ()
-        
+
     printout ("Parsing log for %s (%s)" % (uri, repo.get_type ()))
     parser.set_content_handler (DBContentHandler (db))
     parser.run ()
 
+    # Run extensions
+    printout ("Executing extensions")
+    emg.run_extensions (repo, db)
 
