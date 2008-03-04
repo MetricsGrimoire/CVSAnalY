@@ -38,6 +38,6 @@ setup(name = "cvsanaly2",
       author_email = "libresoft-tools-devel@lists.morfeo-project.org",
       description = "An analysis tool for your source code repository",
       url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
-      packages = ['pycvsanaly2'],
+      packages = ['pycvsanaly2', 'pycvsanaly2.extensions'],
       scripts = ["cvsanaly2"])
 

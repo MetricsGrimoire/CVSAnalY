@@ -1,3 +1,9 @@
+2008-03-04  Santiago DueÃ±as DomÃ­nguez  <sduenas@gsyc.escet.urjc.es>
+
+	* setup.py:
+	
+	Added missed 'extensions' package into the setup file.
+
 2008-03-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/Config.py:
@@ -52,13 +58,13 @@
 
 	Fix lines added/removed in svn backend. Fixes bug #395.
 
-2008-02-19  Luis Cañas Díaz  <lcanas@gsyc.es>
+2008-02-19  Luis Caï¿½as Dï¿½az  <lcanas@gsyc.es>
 
 	* pycvsanaly/SVNParser.py:
 
 	Comment token # restored in first line
 
-2008-02-18  Luis Cañas Díaz  <lcanas@gsyc.es>
+2008-02-18  Luis Caï¿½as Dï¿½az  <lcanas@gsyc.es>
 
         * pycvsanaly/SVNParser.py:
 
