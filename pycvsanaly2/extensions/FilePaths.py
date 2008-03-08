@@ -58,7 +58,7 @@ class FilePaths (Extension):
                 raise TableAlreadyExists
             except:
                 raise
-        elif isintance (self.db, MysqlDatabase):
+        elif isinstance (self.db, MysqlDatabase):
             import _mysql_exceptions
 
             try:
@@ -121,6 +121,10 @@ class FilePaths (Extension):
         self.db = db
 
         cnn = self.db.connect ()
+
+        # If table does not exist, the list of paths is empty,
+        # otherwise it will be filled within the except block below
+        paths = []
         
         try:
             self.__create_table (cnn)

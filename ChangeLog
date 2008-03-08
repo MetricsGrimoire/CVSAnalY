@@ -1,5 +1,14 @@
 2008-03-07  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Fixing two bugs.
+	isinstance was millspelled when checking for MySQL.
+	A local variable was not initialized if the table file_paths does
+	not exist.
+
+2008-03-07  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+
 	* README:
 
 	Fixing email address in README file.
