@@ -40,9 +40,9 @@ class ExtensionsManager:
     def run_extensions (self, repo, db):
         # TODO: sort the list taking deps into account
         for name, extension in [(ext, self.exts[ext] ()) for ext in self.exts]:
-            printout ("Executing extension %s" % (name))
+            printout ("Executing extension %s", (name))
             try:
                 extension.run (repo, db)
             except ExtensionRunError, e:
-                printerr ("Error running extension %s: %s" % (name, e.message))
+                printerr ("Error running extension %s: %s", (name, e.message))
     

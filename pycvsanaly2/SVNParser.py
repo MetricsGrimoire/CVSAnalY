@@ -77,7 +77,7 @@ class SVNParser (Parser):
         try:
             self.repo.diff (self.repo.get_uri (), revs = revs)
         except repositoryhandler.Command.CommandError, e:
-            printerr ("Error running svn diff command: %s" % (str (e)))
+            printerr ("Error running svn diff command: %s", (str (e)))
             self.repo.remove_watch (DIFF, wid)
             return None
 
@@ -86,7 +86,7 @@ class SVNParser (Parser):
 
         lines = out.split ('\n')
         lines.reverse ()
-        print lines
+
         for line in lines:
             m = self.patterns['diffstat'].match (line)
             if m is None:
@@ -125,19 +125,19 @@ class SVNParser (Parser):
                     del_action = find_action (commit.actions, 'D', action.f2.path)
                     if del_action is not None and del_action not in remove_actions:
                         # FIXME: See http://research.libresoft.es/cgi-bin/trac.cgi/wiki/Tools/CvsanalyRevamped#Filesmovedandcopiedinthesamerevision
-                        printdbg ("SVN Parser: File %s has been renamed to %s" % (action.f2.path, action.f1.path))
+                        printdbg ("SVN Parser: File %s has been renamed to %s", (action.f2.path, action.f1.path))
                         action.type = 'V'
                         remove_actions.append (del_action)
                     else:
                         action.type = 'C'
-                        printdbg ("SVN Parser: File %s has been copied to %s" % (action.f2.path, action.f1.path))
+                        printdbg ("SVN Parser: File %s has been copied to %s", (action.f2.path, action.f1.path))
                 elif action.type == 'R':
                     # TODO
-                    printdbg ("SVN Parser: File %s replaced to %s" % (action.f2.path, action.f1.path))
+                    printdbg ("SVN Parser: File %s replaced to %s", (action.f2.path, action.f1.path))
                     pass
 
         for action in remove_actions:
-            printdbg ("SVN Parser: Removing action %s %s" % (action.type, action.f1.path))
+            printdbg ("SVN Parser: Removing action %s %s", (action.type, action.f1.path))
             commit.actions.remove (action)
         
     def parse_line (self, line):
@@ -155,7 +155,7 @@ class SVNParser (Parser):
                 self.handler.commit (self.commit)
                 self.state = SVNParser.COMMIT
             else:
-                printout ("Warning (%d): parsing svn log, unexpected separator" % (self.n_line))
+                printout ("Warning (%d): parsing svn log, unexpected separator", (self.n_line))
                 
             return
 
@@ -175,7 +175,7 @@ class SVNParser (Parser):
             
             return
         elif match and self.state != SVNParser.COMMIT:
-            printout ("Warning (%d): parsing svn log, unexpected line %s" % (self.n_line, line))
+            printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
             return
 
         # File moved/copied/replaced
@@ -198,7 +198,7 @@ class SVNParser (Parser):
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES
             elif self.state != SVNParser.FILES:
-                printout ("Warning (%d): parsing svn log, unexpected line %s" % (self.n_line, line))
+                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
                 return
 
             return
@@ -219,7 +219,7 @@ class SVNParser (Parser):
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES
             elif self.state != SVNParser.FILES:
-                printout ("Warning (%d): parsing svn log, unexpected line %s" % (self.n_line, line))
+                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
                 return
 
             return

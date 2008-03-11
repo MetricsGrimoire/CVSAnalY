@@ -107,7 +107,7 @@ def create_parser_from_logfile (uri):
 
         return p
 
-    printerr ("Error: path %s doesn't look like a valid log file" % (uri))
+    printerr ("Error: path %s doesn't look like a valid log file", (uri))
     return None
 
 def create_parser_from_repository (repo):
@@ -118,7 +118,7 @@ def create_parser_from_repository (repo):
     elif repo.get_type () == 'git':
         p = GitParser ()
     else:
-        printerr ("Error: Unsupported repository type: %s" % (repo.get_type ()))
+        printerr ("Error: Unsupported repository type: %s", (repo.get_type ()))
         return None
 
     p.set_repository (repo)

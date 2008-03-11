@@ -1,5 +1,16 @@
 2008-03-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/ExtensionsManager.py:
+	* pycvsanaly2/ParserFactory.py:
+	* pycvsanaly2/SVNParser.py:
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/utils.py:
+
+	Avoid unneeded string concatenations.
+	
+2008-03-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/Database.py:
 	* pycvsanaly2/utils.py:
 

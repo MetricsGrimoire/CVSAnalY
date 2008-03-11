@@ -77,7 +77,7 @@ class DBContentHandler (ContentHandler):
         self.cnn.commit ()        
         
     def __ensure_path (self, path):
-        printdbg ("DBContentHandler: ensure_path %s" % (path))
+        printdbg ("DBContentHandler: ensure_path %s", (path))
         tokens = path.strip ('/').split ('/')
 
         cursor = self.cnn.cursor ()
@@ -87,11 +87,11 @@ class DBContentHandler (ContentHandler):
         i = 1
         for token in tokens:
             rpath = '/' + '/'.join (tokens[:i])
-            printdbg ("DBContentHandler: rpath: %s" % (rpath))
+            printdbg ("DBContentHandler: rpath: %s", (rpath))
             if self.file_cache.has_key (rpath):
                 node = self.file_cache[rpath]
-                printdbg ("DBContentHandler: found %s in cache file_id = %d (%s)" % (rpath, node.id, node.file_name))
-                printdbg ("DBContentHandler: parent = %d" % (node.id))
+                printdbg ("DBContentHandler: found %s in cache file_id = %d (%s)", (rpath, node.id, node.file_name))
+                printdbg ("DBContentHandler: parent = %d", (node.id))
                 parent = node.id
                 i += 1
 
@@ -112,7 +112,7 @@ class DBContentHandler (ContentHandler):
         assert node is not None
 
         cursor.close ()
-        printdbg ("DBContentHandler: path ensured %s = %d (%s)" % (path, node.id, node.file_name))
+        printdbg ("DBContentHandler: path ensured %s = %d (%s)", (path, node.id, node.file_name))
         
         return node
 
@@ -124,15 +124,15 @@ class DBContentHandler (ContentHandler):
         log.repository_id = self.repo_id
         self.commits.append ((log.id, log.rev, log.committer, log.author, log.date, log.lines_added, log.lines_removed, log.message, log.composed_rev, log.repository_id))
 
-        printdbg ("DBContentHandler: commit: %d rev: %s" % (log.id, log.rev))
+        printdbg ("DBContentHandler: commit: %d rev: %s", (log.id, log.rev))
         renamed_from = None
 
         for action in commit.actions:
-            printdbg ("DBContentHandler: Action: %s" % (action.type))
+            printdbg ("DBContentHandler: Action: %s", (action.type))
             if action.f2 is not None:
                 if self.file_cache.has_key (action.f1.path):
                     file = self.file_cache[action.f1.path]
-                    printdbg ("DBContentHandler: found %s in cache file_id = %d (%s)" % (action.f1.path, file.id, file.file_name))
+                    printdbg ("DBContentHandler: found %s in cache file_id = %d (%s)", (action.f1.path, file.id, file.file_name))
                 else:
                     file = self.__ensure_path (action.f1.path)
 
@@ -140,18 +140,18 @@ class DBContentHandler (ContentHandler):
                 if action.type == 'V':
                     # Rename the node
                     self.file_cache[action.f2.path] = file
-                    printdbg ("DBContentHandler: update cache %s = %d (%s)" % (action.f2.path, file.id, file.file_name))
+                    printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f2.path, file.id, file.file_name))
                 else:
                     self.file_cache[action.f1.path] = file
-                    printdbg ("DBContentHandler: update cache %s = %d (%s)" % (action.f1.path, file.id, file.file_name))
+                    printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f1.path, file.id, file.file_name))
             else:
                 if self.file_cache.has_key (action.f1.path):
                     file = self.file_cache[action.f1.path]
-                    printdbg ("DBContentHandler: found %s in cache file_id = %d" % (action.f1.path, file.id))
+                    printdbg ("DBContentHandler: found %s in cache file_id = %d", (action.f1.path, file.id))
                 else:
                     file = self.__ensure_path (action.f1.path)
                     self.file_cache[action.f1.path] = file
-                    printdbg ("DBContentHandler: update cache %s = %d (%s)" % (action.f1.path, file.id, file.file_name))
+                    printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f1.path, file.id, file.file_name))
 
             if action.type == 'D':
                 file.deleted = True
@@ -162,7 +162,7 @@ class DBContentHandler (ContentHandler):
             self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
 
         if len (self.actions) >= self.MAX_ACTIONS:
-            printdbg ("DBContentHandler: %d actions inserting" % (len (self.actions)))
+            printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
             self.__insert_many ()
             
     def end (self):

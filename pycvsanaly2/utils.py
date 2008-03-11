@@ -53,23 +53,29 @@ def uri_to_filename (uri):
 
     return uri
 
-def printout (str = '\n'):
+def printout (str = '\n', args = None):
     if config.quiet:
         return
+
+    if args is not None:
+        str = str % args
     
     if str != '\n':
         str += '\n'
     sys.stdout.write (str)
     sys.stdout.flush ()
 
-def printerr (str = '\n'):
+def printerr (str = '\n', args = None):
+    if args is not None:
+        str = str % args
+    
     if str != '\n':
         str += '\n'
     sys.stderr.write (str)
     sys.stderr.flush ()
 
-def printdbg (str = '\n'):
+def printdbg (str = '\n', args = None):
     if not config.debug:
         return
 
-    printout ("DBG: " + str)
+    printout ("DBG: " + str, args)
