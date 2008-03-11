@@ -22,6 +22,19 @@ from Config import Config
 
 config = Config ()
 
+def to_utf8 (string):
+    if isinstance (string, unicode):
+        return string.encode ('utf-8')
+
+    for encoding in ['ascii', 'utf-8', 'iso-8859-15']:
+        try:
+            s = unicode (string, encoding)
+        except:
+            continue
+        break
+        
+    return s.encode ('utf-8')
+
 def uri_is_remote (uri):
     import re
 

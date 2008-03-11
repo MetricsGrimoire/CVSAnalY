@@ -19,7 +19,7 @@
 
 import datetime
 
-from utils import printdbg
+from utils import to_utf8, printdbg
 
 class DBRepository:
 
@@ -34,9 +34,9 @@ class DBRepository:
         else:
             self.id = id
 
-        self.uri = unicode (uri)
-        self.name = unicode (name)
-        self.type = unicode (type)
+        self.uri = to_utf8 (uri)
+        self.name = to_utf8 (name)
+        self.type = to_utf8 (type)
 
 class DBLog:
 
@@ -50,10 +50,11 @@ class DBLog:
             DBLog.id_counter += 1
         else:
             self.id = id
-        self.rev = unicode (commit.revision)
-        self.committer = unicode (commit.committer, 'utf-8', 'replace')
+            
+        self.rev = to_utf8 (commit.revision)
+        self.committer = to_utf8 (commit.committer)
         if commit.author is not None:
-            self.author = unicode (commit.author, 'utf-8', 'replace')
+            self.author = to_utf8 (commit.author)
         else:
             self.author = None
 
@@ -64,7 +65,7 @@ class DBLog:
             self.lines_added = self.lines_removed = 0
             
         self.date = commit.date
-        self.message = unicode (commit.message, 'utf-8', 'replace')
+        self.message = to_utf8 (commit.message)
         self.composed_rev = commit.composed_rev
 
 class DBFile:
@@ -79,7 +80,7 @@ class DBFile:
             DBFile.id_counter += 1
         else:
             self.id = id
-        self.file_name = unicode (file_name)
+        self.file_name = to_utf8 (file_name)
         self.parent = parent
         self.deleted = deleted
 
