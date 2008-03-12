@@ -192,7 +192,7 @@ class SqliteDatabase (Database):
                             "rev varchar," +
                             "committer varchar," +
                             "author varchar," +
-                            "date timestamp," +
+                            "date datetime," +
                             "lines_added integer," +
                             "lines_removed integer," +
                             "message varchar," +
@@ -263,7 +263,7 @@ class MysqlDatabase (Database):
                             "rev mediumtext," +
                             "committer varchar(255)," +
                             "author varchar(255)," +
-                            "date timestamp," +
+                            "date datetime," +
                             "lines_added int," +
                             "lines_removed int," +
                             "message text," +
