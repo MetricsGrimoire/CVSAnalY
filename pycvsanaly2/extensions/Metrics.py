@@ -1,0 +1,200 @@
+# Copyright (C) 2008 LibreSoft
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Library General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+# Authors :
+#       Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+
+# Description
+# -----------
+# This extension calculates some metrics for all the different
+# versions of all the files stored in the control version system.
+#
+# It needs the FilePaths extension to be called first.
+
+from repositoryhandler.backends import create_repository
+from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
+                                  statement, DBFile)
+from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
+
+DEBUG = True
+
+def debug(text):
+    if DEBUG:
+        print text
+
+class Metrics (Extension):
+
+
+    def __init__ (self):
+        self.db = None
+        self.__reposlist = []
+    
+    def __create_table (self, cnn):
+        cursor = cnn.cursor ()
+
+        if isinstance (self.db, SqliteDatabase):
+            import pysqlite2.dbapi2
+            
+            try:
+                cursor.execute ("CREATE TABLE metrics (" +
+                                "id integer primary key," +
+                                "file_id integer," +
+                                "commit_id integer," +
+                                "lang text," +
+                                "sloc integer," +
+                                "loc integer," +
+                                "ncomment integer," +
+                                "lcomment integer," +
+                                "lblank integer," +
+                                "nfunctions integer," +
+                                "mccabe_max integer," +
+                                "mccabe_min integer," +
+                                "mccabe_sum integer," +
+                                "mccabe_mean integer," +
+                                "mccabe_median integer," +
+                                "halstead_length integer,"+
+                                "halstead_vol integer," +
+                                "halstead_level double,"+
+                                "halstead_md integer" +
+                                ")")
+            except pysqlite2.dbapi2.OperationalError:
+                raise TableAlreadyExists
+            except:
+                raise
+        elif isinstance (self.db, MysqlDatabase):
+            import _mysql_exceptions
+
+            try:
+                cursor.execute ("CREATE TABLE metrics (" +
+                                "id integer primary key," +
+                                "file_id integer," +
+                                "commit_id integer," +
+                                "lang tinytext," +
+                                "sloc integer," +
+                                "loc integer," +
+                                "ncomment integer," +
+                                "lcomment integer," +
+                                "lblank integer," +
+                                "nfunctions integer," +
+                                "mccabe_max integer," +
+                                "mccabe_min integer," +
+                                "mccabe_sum integer," +
+                                "mccabe_mean integer," +
+                                "mccabe_median integer," +
+                                "halstead_length integer,"+
+                                "halstead_vol integer," +
+                                "halstead_level double,"+
+                                "halstead_md integer," +
+                                "FOREIGN KEY (file_id) REFERENCES tree(id)," +
+                                "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
+                                ") CHARACTER SET=utf8")
+            except _mysql_exceptions.OperationalError, e:
+                if e.args[0] == 1050:
+                    raise TableAlreadyExists
+                raise
+            except:
+                raise
+            
+        cnn.commit ()
+        cursor.close ()
+
+    def run (self, repo, db):
+
+        self.db = db
+
+        cnn = self.db.connect()
+
+        try:
+            self.__create_table (cnn)
+        except TableAlreadyExists:
+            # Do something
+            pass
+        except Exception, e:
+            raise ExtensionRunError (str(e))
+
+        read_cursor = cnn.cursor()
+        write_cursor = cnn.cursor()
+        
+        # Obtain repository data and create repo object
+        query = 'select id, uri, type from repositories;'
+        read_cursor.execute(query)
+        rs = read_cursor.fetchone()
+        while rs:
+            self.__populateRepoList(rs)
+            rs = read_cursor.fetchone()
+
+        repobj = None
+        repoid = -1
+        uri = None
+        # Analyze all the repos contained in the db
+        for repodata in self.__reposlist:
+            repoid, uri, type = repodata
+            repobj = create_repository(type,uri)        
+
+            # Obtain files and revisions
+            query = 'select rev, path, a.commit_id, a.file_id, composed_rev from scmlog s, actions a, file_paths f where (a.type="M" or a.type="A") and a.commit_id=s.id and a.file_id=f.id and s.repository_id="'+str(repoid)+'";'
+            read_cursor.execute (statement (query, db.place_holder))
+            rs = read_cursor.fetchone()
+            while rs:
+                # Obtain file and revision from row
+                filepath, revision, file_id, commit_id = self.__extractFileRev(rs)
+
+                # Remove repository url from filepath
+                # (all the filepaths begin with the repo URL)
+                relative_path = filepath.split(uri)[1]
+                
+            
+                # Measure files
+                loc, sloc, lang = self.__measureFile(relative_path,revision,repobj)
+
+                # Write everything
+                #write_cursor.execute(QUERY_WRITE)
+
+                rs = read_cursor.fetchone()
+
+            # Write everything related to this repo
+            cnn.commit()
+
+        cnn.close()
+
+    def __populateRepoList(self,rs):
+        repo_id, uri, type = rs
+        repodata = (repo_id,uri,type)        
+        self.__reposlist.append(repodata)
+        
+
+    def __extractFileRev(self,rs):
+        revision, filepath, commit_id, file_id, composed = rs
+
+        if 1 == composed:
+            revision = revision.split("|")[0]
+
+        return filepath, revision, file_id, commit_id
+            
+    def __measureFile(self,filepath,revision,repository):
+
+        debug("Obtaining "+filepath+" @ "+revision)
+
+        loc = -1
+        sloc = -1
+        lang = "NULL"
+        
+        # Download file from repository
+        #repository.checkout(filepath)
+        return loc,sloc,lang
+    
+register_extension("Metrics",Metrics)
+        

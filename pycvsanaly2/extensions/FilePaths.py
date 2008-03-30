@@ -103,7 +103,7 @@ class FilePaths (Extension):
 
         if build_path (cursor, node):
             cursor.close ()
-            return '/'.join (retval)
+            return '/'+'/'.join (retval)
 
         cursor.close ()
         

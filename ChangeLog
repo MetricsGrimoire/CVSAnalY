@@ -1,3 +1,11 @@
+2008-03-31  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/FilePaths.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	All the paths begin now with a /
+	Metrics extension in progress
+
 2008-03-12  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/Database.py:
@@ -21,9 +29,7 @@
 	* pycvsanaly2/Database.py:
 	* pycvsanaly2/utils.py:
 
-	Fix utf-8 issues. Fixes bug #402.
-	
-2008-03-07  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
+2008-03-07  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/FilePaths.py:
 
@@ -32,7 +38,7 @@
 	A local variable was not initialized if the table file_paths does
 	not exist.
 
-2008-03-07  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
+2008-03-07  Israel Herraiz <herraiz@gsyc.escet.urjc.es>
 
 	* README:
 
