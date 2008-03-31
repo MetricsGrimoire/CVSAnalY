@@ -4,7 +4,8 @@
 	* pycvsanaly2/extensions/Metrics.py:
 
 	All the paths begin now with a /
-	Metrics extension in progress
+	Metrics calculated so far: LOC, SLOC.
+	Programming language also identified.
 
 2008-03-12  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
