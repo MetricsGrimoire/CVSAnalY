@@ -156,7 +156,29 @@ class Metrics (Extension):
 
                 # Remove repository url from filepath
                 # (all the filepaths begin with the repo URL)
-                relative_path = filepath.split(uri)[1]
+
+                # Heuristics, depending on the repository
+                relative_path = ""
+                
+                if 'svn' == type:
+                    try:
+                        relative_path = filepath.split(uri)[1]
+                    except IndexError:
+                        relative_path = filepath
+                        
+                if 'cvs' == type:                    
+                    try:
+                        relative_path = filepath.split(uri)[1]
+                    except IndexError:
+                        relative_path = filepath
+
+                    try:
+                        relative_path = filepath.split(uri.split(":")[-1])[1]
+                    except IndexError:
+                        relative_path = filepath
+
+                printdbg(repobj.uri)
+                printdbg(relative_path)
 
                 # Measure files
                 loc, sloc, lang = self.__measureFile(relative_path,revision,repobj,tmpdir)
