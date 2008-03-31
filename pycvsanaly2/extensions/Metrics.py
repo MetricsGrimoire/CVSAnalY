@@ -28,12 +28,9 @@ from repositoryhandler.backends import create_repository
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-
-DEBUG = True
-
-def debug(text):
-    if DEBUG:
-        print text
+from pycvsanaly2.utils import printdbg
+from tempfile import mkdtemp
+import os
 
 class Metrics (Extension):
 
@@ -79,7 +76,7 @@ class Metrics (Extension):
 
             try:
                 cursor.execute ("CREATE TABLE metrics (" +
-                                "id integer primary key," +
+                                "id integer primary key default 1 auto_increment," +
                                 "file_id integer," +
                                 "commit_id integer," +
                                 "lang tinytext," +
@@ -144,8 +141,12 @@ class Metrics (Extension):
             repoid, uri, type = repodata
             repobj = create_repository(type,uri)        
 
+            # Temp dir for the checkouts
+            tmpdir = mkdtemp()
+            
             # Obtain files and revisions
             query = 'select rev, path, a.commit_id, a.file_id, composed_rev from scmlog s, actions a, file_paths f where (a.type="M" or a.type="A") and a.commit_id=s.id and a.file_id=f.id and s.repository_id="'+str(repoid)+'";'
+
             read_cursor.execute (statement (query, db.place_holder))
             rs = read_cursor.fetchone()
             while rs:
@@ -155,18 +156,19 @@ class Metrics (Extension):
                 # Remove repository url from filepath
                 # (all the filepaths begin with the repo URL)
                 relative_path = filepath.split(uri)[1]
-                
-            
+
                 # Measure files
-                loc, sloc, lang = self.__measureFile(relative_path,revision,repobj)
+                loc, sloc, lang = self.__measureFile(relative_path,revision,repobj,tmpdir)
 
                 # Write everything
-                #write_cursor.execute(QUERY_WRITE)
+                query = 'insert into metrics (file_id,commit_id,loc) values ("%s","%s","%s")' % (str(file_id),str(commit_id),str(loc))
+                write_cursor.execute(query)
 
                 rs = read_cursor.fetchone()
 
             # Write everything related to this repo
             cnn.commit()
+            # Clean tmpdir
 
         cnn.close()
 
@@ -179,22 +181,38 @@ class Metrics (Extension):
     def __extractFileRev(self,rs):
         revision, filepath, commit_id, file_id, composed = rs
 
-        if 1 == composed:
+        if composed:
             revision = revision.split("|")[0]
 
         return filepath, revision, file_id, commit_id
             
-    def __measureFile(self,filepath,revision,repository):
+    def __measureFile(self,filepath,revision,repository,outputdir):
 
-        debug("Obtaining "+filepath+" @ "+revision)
+        printdbg("Obtaining "+filepath+" @ "+revision)
 
         loc = -1
         sloc = -1
         lang = "NULL"
-        
+             
         # Download file from repository
-        #repository.checkout(filepath)
+        repository.checkout(filepath,outputdir,rev=revision)
+
+        checkout_path = os.path.join(outputdir,filepath)
+
+        try:
+            loc = self.__getLOC(checkout_path)
+        except:
+            pass
+
         return loc,sloc,lang
+
+    def __getLOC(self,filename):
+        """Measures LOC using Python file functions"""
+        fileobj = open(filename,'r')
+        loc = len(fileobj.readlines())
+        fileobj.close()
+        return loc
+
     
 register_extension("Metrics",Metrics)
         
