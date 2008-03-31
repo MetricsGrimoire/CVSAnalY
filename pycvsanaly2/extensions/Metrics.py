@@ -31,6 +31,7 @@ from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunEr
 from pycvsanaly2.utils import printdbg
 from tempfile import mkdtemp
 import os
+import commands
 
 class Metrics (Extension):
 
@@ -76,7 +77,7 @@ class Metrics (Extension):
 
             try:
                 cursor.execute ("CREATE TABLE metrics (" +
-                                "id integer primary key default 1 auto_increment," +
+                                "id integer primary key not null auto_increment," +
                                 "file_id integer," +
                                 "commit_id integer," +
                                 "lang tinytext," +
@@ -161,7 +162,7 @@ class Metrics (Extension):
                 loc, sloc, lang = self.__measureFile(relative_path,revision,repobj,tmpdir)
 
                 # Write everything
-                query = 'insert into metrics (file_id,commit_id,loc) values ("%s","%s","%s")' % (str(file_id),str(commit_id),str(loc))
+                query = 'insert into metrics (file_id,commit_id,loc,sloc,lang) values ("%s","%s","%s","%s","%s")' % (str(file_id),str(commit_id),str(loc),str(sloc),str(lang))
                 write_cursor.execute(query)
 
                 rs = read_cursor.fetchone()
@@ -201,7 +202,9 @@ class Metrics (Extension):
 
         try:
             loc = self.__getLOC(checkout_path)
-        except:
+            sloc, lang = self.__getSLOCLang(checkout_path)
+        except IOError:
+            # File does not exist (moved or deleted)
             pass
 
         return loc,sloc,lang
@@ -212,6 +215,24 @@ class Metrics (Extension):
         loc = len(fileobj.readlines())
         fileobj.close()
         return loc
+
+    def __getSLOCLang(self,filename):
+        """Measures SLOC and identifies programming language using SlocCount"""
+
+        sloccountcmd = 'sloccount --wide --details '+filename
+        outputlines = commands.getoutput(sloccountcmd).split('\n')
+
+        sloc = 0
+        lang = 'unknown'
+        for l in outputlines:
+            # If there is not 'top_dir', then ignore line
+            if '\ttop_dir\t' in l:
+                sloc, lang, unused1, unused2 = l.split('\t')
+
+            # If no line with 'top_dir' is found, that means
+            # that SLOC is 0 and lang is unknown
+        
+        return sloc, lang
 
     
 register_extension("Metrics",Metrics)
