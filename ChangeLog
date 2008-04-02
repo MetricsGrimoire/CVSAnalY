@@ -1,3 +1,9 @@
+2008-04-02  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/CVSParser.py:
+
+	Save file paths relative to the repository root path for CVS.
+	
 2008-04-01  Israel Herraiz  <herraiz@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

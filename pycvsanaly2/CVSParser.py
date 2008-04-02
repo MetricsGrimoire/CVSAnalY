@@ -36,9 +36,21 @@ class CVSParser (Parser):
     def __init__ (self):
         Parser.__init__ (self)
 
+        self.root_path = None
+        
         # Parser context
         self.file = None
         self.commit = None
+
+    def set_repository (self, repo):
+        Parser.set_repository (self, repo)
+        
+        uri = repo.get_uri ()
+        s = uri.rfind (':')
+        if s >= 0:
+            self.root_path = uri[s + 1:]
+        else:
+            self.root_path = uri
 
     def parse_line (self, line):
         if line is None or line == '':
@@ -52,6 +64,7 @@ class CVSParser (Parser):
         match = self.patterns['file'].match (line)
         if match:
             path = match.group (1)
+            path = path[len (self.root_path):]
             path = path[:path.rfind (',')]
             
             f = File ()
