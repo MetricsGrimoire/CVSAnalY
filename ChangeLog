@@ -1,3 +1,12 @@
+2008-04-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/ExtensionsManager.py:
+	* pycvsanaly2/extensions/Metrics.py:
+	* pycvsanaly2/extensions/__init__.py:
+
+	Implement extensions dependencies system.
+	
 2008-04-02  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/CVSParser.py:

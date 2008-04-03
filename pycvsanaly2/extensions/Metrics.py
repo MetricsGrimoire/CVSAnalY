@@ -35,6 +35,7 @@ import commands
 
 class Metrics (Extension):
 
+    deps = ['FilePaths']
 
     def __init__ (self):
         self.db = None

@@ -31,6 +31,8 @@ class ExtensionRunError (Exception):
 
 class Extension:
 
+    deps = []
+    
     def run (self, repo, db):
         raise NotImplementedError
 

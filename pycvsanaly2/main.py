@@ -37,7 +37,7 @@ from Database import (create_database, TableAlreadyExists, AccessDenied, Databas
                       DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
 		      DatabaseException)
 from DBContentHandler import DBContentHandler
-from ExtensionsManager import ExtensionsManager, InvalidExtension
+from ExtensionsManager import ExtensionsManager, InvalidExtension, InvalidDependency
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
 from FindProgram import find_program
@@ -223,6 +223,9 @@ def main (argv):
     except InvalidExtension, e:
         printerr ("Invalid extension %s", (e.name))
         return 1
+    except InvalidDependency, e:
+        printerr ("Extension %s depends on extension %s which is not a valid extension", (e.name1, e.name2))
+        return 1
     except Exception, e:
         printerr ("Unknown extensions error: %s", (str (e)))
         return 1
@@ -276,7 +279,7 @@ def main (argv):
 
     printout ("Parsing log for %s (%s)", (uri, repo.get_type ()))
     parser.set_content_handler (DBContentHandler (db))
-    parser.run ()
+    #parser.run ()
 
     # Run extensions
     printout ("Executing extensions")
