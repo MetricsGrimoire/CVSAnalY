@@ -20,6 +20,7 @@
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
+from pycvsanaly2.utils import to_utf8
 
 class DBFilePath:
 
@@ -34,7 +35,7 @@ class DBFilePath:
         else:
             self.id = id
 
-        self.path = unicode (path)
+        self.path = to_utf8 (path)
         self.file_id = file_id
 
 class FilePaths (Extension):

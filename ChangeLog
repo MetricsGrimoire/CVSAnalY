@@ -1,3 +1,9 @@
+2008-04-09  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Use to_utf8 instead of unicode.
+	
 2008-04-09  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/main.py:
