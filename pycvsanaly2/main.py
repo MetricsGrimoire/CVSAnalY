@@ -279,7 +279,7 @@ def main (argv):
 
     printout ("Parsing log for %s (%s)", (uri, repo.get_type ()))
     parser.set_content_handler (DBContentHandler (db))
-    #parser.run ()
+    parser.run ()
 
     # Run extensions
     printout ("Executing extensions")
