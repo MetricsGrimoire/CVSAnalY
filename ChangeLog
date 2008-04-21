@@ -1,3 +1,9 @@
+2008-04-21  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Deleted '/' from the beginning of each path.
+
 2008-04-09  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/FilePaths.py:
