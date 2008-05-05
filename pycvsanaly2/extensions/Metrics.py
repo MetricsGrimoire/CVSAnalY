@@ -147,7 +147,12 @@ class Metrics (Extension):
             tmpdir = mkdtemp()
             
             # Obtain files and revisions
-            query = 'select rev, path, a.commit_id, a.file_id, composed_rev from scmlog s, actions a, file_paths f where (a.type="M" or a.type="A") and a.commit_id=s.id and a.file_id=f.id and s.repository_id="'+str(repoid)+'";'
+            query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
+            query += 'FROM scmlog s, actions a, file_paths f '
+            query += 'WHERE (a.type="M" or a.type="A") '
+            query += 'AND a.commit_id=s.id '
+            query += 'AND a.file_id=f.id '
+            query += 'AND s.repository_id="' + str(repoid) + '"'
 
             read_cursor.execute (statement (query, db.place_holder))
             rs = read_cursor.fetchone()
@@ -185,7 +190,9 @@ class Metrics (Extension):
                 loc, sloc, lang = self.__measureFile(relative_path,revision,repobj,tmpdir)
 
                 # Write everything
-                query = 'insert into metrics (file_id,commit_id,loc,sloc,lang) values ("%s","%s","%s","%s","%s")' % (str(file_id),str(commit_id),str(loc),str(sloc),str(lang))
+                query =  'INSERT INTO metrics (file_id, commit_id, loc, sloc, lang) '
+                query += 'VALUES ("%s","%s","%s","%s","%s")' % (str(file_id), str(commit_id), 
+                                                                str(loc), str(sloc), str(lang))
                 write_cursor.execute(query)
 
                 rs = read_cursor.fetchone()
