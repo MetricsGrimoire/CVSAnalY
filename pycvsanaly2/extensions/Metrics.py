@@ -219,8 +219,12 @@ class Metrics (Extension):
         lang = "NULL"
              
         # Download file from repository
-        repository.checkout(filepath,outputdir,rev=revision)
-
+        try:
+            repository.checkout(filepath,outputdir,rev=revision)
+        except Exception, e:
+            printdbg("Error obtaining %s@%s. Exception: %s" % (filepath, revision, str(e)))
+            return loc, sloc, lang
+            
         checkout_path = os.path.join(outputdir,filepath)
 
         try:

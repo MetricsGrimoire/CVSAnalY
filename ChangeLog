@@ -1,3 +1,9 @@
+2008-05-05  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Caught checkout exceptions.
+
 2008-04-21  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/FilePaths.py:
