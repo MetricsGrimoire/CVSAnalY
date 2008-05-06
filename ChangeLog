@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	SVN Metrics support.
+	
+2008-05-05  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Readable SQL statements.
 
 2008-05-05  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>

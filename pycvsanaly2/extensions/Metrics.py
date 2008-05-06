@@ -128,7 +128,9 @@ class Metrics (Extension):
         write_cursor = cnn.cursor()
         
         # Obtain repository data and create repo object
-        query = 'select id, uri, type from repositories;'
+        query = 'SELECT id, uri, type '
+        query += 'FROM repositories'
+        
         read_cursor.execute(query)
         rs = read_cursor.fetchone()
         while rs:
@@ -145,6 +147,22 @@ class Metrics (Extension):
 
             # Temp dir for the checkouts
             tmpdir = mkdtemp()
+            
+            # Obtain first revision
+            query =  'SELECT MIN(rev) '
+            query += 'FROM scmlog'
+            read_cursor.execute(statement (query, db.place_holder))
+            first_rev = read_cursor.fetchone()[0]
+            
+            # SVN needs the first revision
+            if type == 'svn':
+                try:
+                    repobj.checkout('.', tmpdir, newdir='.', rev=first_rev)
+                except Exception, e:
+                    msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str(first_rev), 
+                                                                             str(e))
+                    raise ExtensionRunError (msg)
+                printdbg('SVN checkout first rev finished')
             
             # Obtain files and revisions
             query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
@@ -166,7 +184,7 @@ class Metrics (Extension):
                 # Heuristics, depending on the repository
                 relative_path = ""
                 
-                if 'svn' == type:
+                if 'svn' == type:                    
                     try:
                         relative_path = filepath.split(uri)[1]
                     except IndexError:
@@ -227,7 +245,11 @@ class Metrics (Extension):
              
         # Download file from repository
         try:
-            repository.checkout(filepath,outputdir,rev=revision)
+            if type == 'svn':
+                repository.update(os.path.join(outputdir, filepath),rev=revision)
+            else:
+                repository.checkout(filepath,outputdir,rev=revision)
+                
         except Exception, e:
             printdbg("Error obtaining %s@%s. Exception: %s" % (filepath, revision, str(e)))
             return loc, sloc, lang
