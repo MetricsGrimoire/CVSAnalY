@@ -1,4 +1,10 @@
-2008-05-05  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+2008-05-07  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Force svn update and added missing 'get_type()'.
+
+2008-05-06  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
 

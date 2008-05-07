@@ -245,8 +245,9 @@ class Metrics (Extension):
              
         # Download file from repository
         try:
-            if type == 'svn':
-                repository.update(os.path.join(outputdir, filepath),rev=revision)
+            if repository.get_type() == 'svn':
+                repository.update(os.path.join(outputdir, filepath),
+                                  rev=revision,force=True)
             else:
                 repository.checkout(filepath,outputdir,rev=revision)
                 
