@@ -1,3 +1,9 @@
+2008-05-08  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Added CMetrics support.
+
 2008-05-07  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
