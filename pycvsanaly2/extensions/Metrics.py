@@ -208,8 +208,9 @@ class Metrics (Extension):
                 measures = self.__measureFile(relative_path,revision,repobj,tmpdir)
                 
                 # Create SQL Query insert
-                fields = []
-                values = []
+                fields = ['file_id', 'commit_id']
+                values = [str(file_id), str(commit_id)]
+                
                 for key in measures.keys():
                     fields.append("%s" % str(key))
                     if key == 'lang':
