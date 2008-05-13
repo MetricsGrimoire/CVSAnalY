@@ -23,6 +23,7 @@ import re
 from CVSParser import CVSParser
 from SVNParser import SVNParser
 from GitParser import GitParser
+from BzrParser import BzrParser
 
 from utils import printerr
 
@@ -92,6 +93,28 @@ def create_parser_from_logfile (uri):
         f.close ()
 
         return retval
+
+    def log_file_is_bzr (logfile):
+        retval = False
+
+        try:
+            f = open (logfile, 'r')
+        except IOError, e:
+            printerr (str (e))
+            return False
+
+        patt = re.compile ("^revno:[ \t]+(.*)$")
+
+        line = f.readline ()
+        while line:
+            if patt.match (line) is not None:
+                retval = True
+                break
+            line = f.readline ()
+
+        f.close ()
+
+        return retval        
     
     if os.path.isfile (uri):
         if logfile_is_svn (uri):
@@ -100,6 +123,8 @@ def create_parser_from_logfile (uri):
             p = CVSParser ()
         elif log_file_is_git (uri):
             p = GitParser ()
+        elif log_file_is_bzr (uri):
+            p = BzrParser ()
 
         assert p is not None
         
@@ -117,6 +142,8 @@ def create_parser_from_repository (repo):
         p = SVNParser ()
     elif repo.get_type () == 'git':
         p = GitParser ()
+    elif repo.get_type () == 'bzr':
+        p = BzrParser ()
     else:
         printerr ("Error: Unsupported repository type: %s", (repo.get_type ()))
         return None

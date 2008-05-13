@@ -1,5 +1,12 @@
 2008-05-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/BzrParser.py:
+	* pycvsanaly2/ParserFactory.py:
+
+	Initial bazar support.
+	
+2008-05-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/main.py:
 
 	Make sure the repo uri doesn't have a trailing '/' when extraction
