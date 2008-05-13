@@ -249,24 +249,6 @@ class Metrics (Extension):
 
         printdbg("Obtaining "+filepath+" @ "+revision)
 
-        loc = -1
-        sloc = -1
-        lang = "NULL"
-             
-        # Download file from repository
-        try:
-            if repository.get_type() == 'svn':
-                repository.update(os.path.join(outputdir, filepath),
-                                  rev=revision,force=True)
-            else:
-                repository.checkout(filepath,outputdir,rev=revision)
-                
-        except Exception, e:
-            printdbg("Error obtaining %s@%s. Exception: %s" % (filepath, revision, str(e)))
-            return loc, sloc, lang
-            
-        checkout_path = os.path.join(outputdir,filepath)
-
         # Initialize measures
         measures = {
                     'lang'           : 'unknown',
@@ -286,7 +268,21 @@ class Metrics (Extension):
                     'halstead_level' : -1,
                     'halstead_md'    : -1,
                     }
+             
+        # Download file from repository
+        try:
+            if repository.get_type() == 'svn':
+                repository.update(os.path.join(outputdir, filepath),
+                                  rev=revision,force=True)
+            else:
+                repository.checkout(filepath,outputdir,rev=revision)
+                
+        except Exception, e:
+            printdbg("Error obtaining %s@%s. Exception: %s" % (filepath, revision, str(e)))
+            return measures
             
+        checkout_path = os.path.join(outputdir,filepath)
+
         try:
             measures['loc'] = self.__getLOC(checkout_path)
         except Exception, e:
