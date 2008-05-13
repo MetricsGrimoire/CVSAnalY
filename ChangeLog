@@ -1,3 +1,10 @@
+2008-05-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/main.py:
+
+	Make sure the repo uri doesn't have a trailing '/' when extraction
+	the repo name from the uri.
+	
 2008-05-09  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

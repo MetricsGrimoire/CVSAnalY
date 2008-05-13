@@ -268,7 +268,7 @@ def main (argv):
         
     if not db_exists or rep is None:
         # We consider the name of the repo as the last item of the root path
-        name = repo.get_uri ().split ("/")[-1].strip ()
+        name = repo.get_uri ().rstrip ("/").split ("/")[-1].strip ()
         cursor = cnn.cursor ()
         rep = DBRepository (None, repo.get_uri (), name, repo.get_type ())
         cursor.execute (statement (DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
