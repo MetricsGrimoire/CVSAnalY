@@ -1,3 +1,9 @@
+2008-06-11  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Fixed cmetrics bugs.
+
 2008-05-09  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

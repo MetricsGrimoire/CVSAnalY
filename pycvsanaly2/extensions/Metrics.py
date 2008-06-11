@@ -284,32 +284,32 @@ class Metrics (Extension):
         checkout_path = os.path.join(outputdir,filepath)
 
         try:
-            measures['loc'] = self.__getLOC(checkout_path)
+            measures['loc'] = self.__get_LOC(checkout_path)
         except Exception, e:
             printdbg('Error loc. Exception: %s' % str(e))
             
         try:
-            measures['sloc'], measures['lang'] = self.__getSLOCLang(checkout_path)        
+            measures['sloc'], measures['lang'] = self.__get_SLOCLang(checkout_path)        
         except Exception, e:
             printdbg('Error sloc. Exception: %s' % str(e))
             
         try:
             if measures['lang'] == 'ansic':
-                cmetrics = self.__getCMetrics(checkout_path)
+                cmetrics = self.__get_CMetrics(checkout_path)
                 measures.update(cmetrics)
         except Exception, e:
             printdbg('Error cmetrics. Exception: %s' % str(e))
             
         return measures
 
-    def __getLOC(self,filename):
+    def __get_LOC(self,filename):
         """Measures LOC using Python file functions"""
         fileobj = open(filename,'r')
         loc = len(fileobj.readlines())
         fileobj.close()
         return loc
 
-    def __getSLOCLang(self,filename):
+    def __get_SLOCLang(self,filename):
         """Measures SLOC and identifies programming language using SlocCount"""
 
         sloccountcmd = 'sloccount --wide --details '+filename
@@ -348,15 +348,20 @@ class Metrics (Extension):
         outputtext = commands.getoutput(halsteadcmd)
         values = outputtext.split('\t')
         try:
-            filename, halstead_length, halstead_volume, halstead_level, halstead_md = values
-        except ValueError:
+            filename = values[0]
+            halstead_length = int(values[1])
+            halstead_volume = int(values[2])
+            halstead_level = float(values[3].replace(',','.'))
+            halstead_md = int(values[4])
+        except ValueError, e:
             halstead_length = -1
             halstead_volume = -1
             halstead_level = -1
             halstead_md = -1
-
+            printdbg('Error cmetrics halstead. File: %s. Exception: %s' % (filename, str(e)))
+        
         # Running mccabe
-        mccabecmd = "mccabe "+filename
+        mccabecmd = "mccabe -n "+filename
         # The output of this tool is multiline (one line per function)
         outputlines = commands.getoutput(mccabecmd).split('\n')
         mccabe_total = 0
@@ -368,17 +373,18 @@ class Metrics (Extension):
             values = l.split('\t')
             mccabe_ok = False
             try:
-                if 4 == len(values):
+                if 5 == len(values):
                     mccabe = int(values[-2])
                     nfunctions += 1
                     mccabe_ok = True
                 else:
                     mccabe = -1
-            except ValueError:
+            except ValueError, e:
                 # If values[-2] or values[-1] is not actually a number
                 mccabe = 0
                 nfunctions -= 1
                 mccabe_ok = False
+                printdbg('Error cmetrics mccabe. File: %s. Exception: %s' % (filename, str(e)))
 
             if mccabe_ok:
                 mccabe_values.append(mccabe)
@@ -401,6 +407,7 @@ class Metrics (Extension):
         if 1 == nfunctions:
             mccabe_median = mccabe_mean
         elif 2 <= nfunctions:
+            n = len(mccabe_values)
             if nfunctions & 1:
                 mccabe_median = mccabe_values[n // 2]
             else:
