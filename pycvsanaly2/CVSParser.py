@@ -31,16 +31,18 @@ class CVSParser (Parser):
     patterns['file'] = re.compile ("^RCS file: (.*)$")
     patterns['revision'] = re.compile ("^revision ([\d\.]*)$")
     patterns['info'] = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: (.*);(  lines: \+(\d*) -(\d*))?")
+    patterns['branch'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+)0\.([0-9]+)$")
     patterns['separator'] = re.compile ("^[=]+$")
     
     def __init__ (self):
         Parser.__init__ (self)
 
-        self.root_path = None
+        self.root_path = ""
         
         # Parser context
         self.file = None
         self.commit = None
+        self.branches = None
 
     def set_repository (self, repo):
         Parser.set_repository (self, repo)
@@ -71,8 +73,17 @@ class CVSParser (Parser):
             f.path = path
             self.file = f
 
+            self.branches = {}
+
             return
 
+        # Branch
+        match = self.patterns['branch'].match (line)
+        if match:
+            self.branches[match.group (2) + match.group (4)] = match.group (1)
+            
+            return
+        
         # Revision
         match = self.patterns['revision'].match (line)
         if match:
@@ -105,6 +116,17 @@ class CVSParser (Parser):
             else:
                 action.type = 'M'
             action.f1 = self.file
+
+            # Branch
+            revision = commit.revision.split ('|')[0]
+            try:
+                prefix = revision [:revision.rfind ('.')]
+                branch = self.branches[prefix]
+            except KeyError:
+                branch = 'trunk'
+
+            action.branch = branch
+            
             # FIXME: is it possible to know when file was added? revision 1.1.1.1 or something?
 
             commit.actions.append (action)

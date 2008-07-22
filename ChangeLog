@@ -1,3 +1,48 @@
+2008-07-22 Liliana Tovar <lilitovar@gsyc.es>
+
+	* db/cvsanaly2_model_dbdesigner.png
+	* db/cvsanaly2_model_dbdesigner.sql
+	* db/cvsanaly2_model_dbdesigner.xml
+	
+	Added database schema.
+	
+2008-07-21  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Database.py:
+
+	Add branches table.
+	
+2008-07-21  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/Repository.py:
+	* pycvsanaly2/Parser.py:
+	* pycvsanaly2/CVSParser.py:
+	* pycvsanaly2/GitParser.py:
+	* pycvsanaly2/SVNParser.py:
+
+	Save also the branch name where an action was done.
+	
+2008-07-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Make Metrics extension extensible to other languages, although
+	ansic is still the only one supported.
+	
+2008-07-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Do not update files in SVN but trees for every affected
+	revision. It drastically improves performance.
+	
+2008-07-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Code cleanups and minor fixes in Metrics extension.
+	
 2008-06-11  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

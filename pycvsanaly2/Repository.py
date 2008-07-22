@@ -48,9 +48,10 @@ class Commit:
 
 class Action:
     def __init__ (self):
-        self.__dict__ = { 'type' : None,
-                          'f1'   : None,
-                          'f2'   : None }
+        self.__dict__ = { 'type'   : None,
+                          'branch' : None,
+                          'f1'     : None,
+                          'f2'     : None }
 
     def __getattr__ (self, name):
         return self.__dict__[name]
@@ -61,12 +62,14 @@ class Action:
     def __eq__ (self, other):
         return self.type == other.type and \
             self.f1 == other.f1 and \
-            self.f1 == other.f2
+            self.f2 == other.f2 and \
+            self.branch == other.branch
     
     def __ne__ (self, other):
         return self.type != other.type or \
             self.f1 != other.f1 or \
-            self.f1 != other.f2
+            self.f2 != other.f2 or \
+            self.branch != other.branch
     
 class File:
     def __init__ (self):

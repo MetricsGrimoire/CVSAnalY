@@ -139,7 +139,18 @@ class SVNParser (Parser):
         for action in remove_actions:
             printdbg ("SVN Parser: Removing action %s %s", (action.type, action.f1.path))
             commit.actions.remove (action)
-        
+
+    def __guess_branch_from_path (self, path):
+        if path.startswith ("/branches"):
+            try:
+                branch = path.split ('/')[2]
+            except:
+                branch = 'trunk'
+        else:
+            branch = 'trunk'
+
+        return branch
+            
     def parse_line (self, line):
         if line is None or line == '':
             return
@@ -192,6 +203,8 @@ class SVNParser (Parser):
             action.f1 = f1
             action.f2 = f2
 
+            action.branch = self.__guess_branch_from_path (f1.path)
+
             self.commit.actions.append (action)
             self.handler.file (f1)
 
@@ -212,6 +225,8 @@ class SVNParser (Parser):
             action = Action ()
             action.type = match.group (1)
             action.f1 = f
+
+            action.branch = self.__guess_branch_from_path (f.path)
 
             self.commit.actions.append (action)
             self.handler.file (f)

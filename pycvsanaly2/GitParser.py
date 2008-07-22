@@ -72,7 +72,11 @@ class GitParser (Parser):
 
             return (added, removed)
             
-        return None        
+        return None
+
+    def __get_branch_for_revision (self, revision):
+        # TODO
+        return None
 
     def flush (self):
         if self.commit is None:
@@ -136,6 +140,8 @@ class GitParser (Parser):
             action.type = match.group (1)
             action.f1 = f
 
+            action.branch = self.__get_branch_for_revision (self.commit.revision)
+            
             self.commit.actions.append (action)
             self.handler.file (f)
         
@@ -159,6 +165,8 @@ class GitParser (Parser):
             action.f1 = f1
             action.f2 = f2
 
+            action.branch = self.__get_branch_for_revision (self.commit.revision)
+            
             self.commit.actions.append (action)
             self.handler.file (f1)
 

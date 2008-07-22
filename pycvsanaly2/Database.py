@@ -84,11 +84,25 @@ class DBFile:
         self.parent = parent
         self.deleted = deleted
 
+class DBBranch:
+
+    id_counter = 1
+
+    __insert__ = "INSERT INTO branches (id, name) values (?, ?)"
+
+    def __init__ (self, id, name):
+        if id is None:
+            self.id = DBBranch.id_counter
+            DBBranch.id_counter += 1
+        else:
+            self.id = id
+        self.name = to_utf8 (name)
+        
 class DBAction:
 
     id_counter = 1
 
-    __insert__ = "INSERT INTO actions (id, type, file_id, commit_id) values (?, ?, ?, ?)"
+    __insert__ = "INSERT INTO actions (id, type, file_id, commit_id, branch_id) values (?, ?, ?, ?, ?)"
     
     def __init__ (self, id, type):
         if id is None:
@@ -122,6 +136,12 @@ def initialize_ids (db, cursor):
     id = cursor.fetchone ()[0]
     if id is not None:
         DBFile.id_counter = id + 1
+
+    # Branches
+    cursor.execute (statement ("SELECT max(id) from branches", db.place_holder))
+    id = cursor.fetchone ()[0]
+    if id is not None:
+        DBBranch.id_counter = id + 1
     
         
 class DatabaseException (Exception):
@@ -146,9 +166,9 @@ def statement (str, ph_mark):
         printdbg (str)
         return str
 
-    tokens = str.split("'")
+    tokens = str.split ("'")
     for i in range(0, len (tokens), 2):
-        tokens[i] = tokens[i].replace("?", ph_mark)
+        tokens[i] = tokens[i].replace ("?", ph_mark)
 
     retval = "'".join (tokens)
     printdbg (retval)
@@ -203,7 +223,12 @@ class SqliteDatabase (Database):
                             "id integer primary key," +
                             "type varchar(1)," +
                             "file_id integer," +
-                            "commit_id integer" +
+                            "commit_id integer," +
+                            "branch_id integer" + 
+                            ")")
+            cursor.execute ("CREATE TABLE branches (" +
+                            "id integer primary key," +
+                            "name varchar" +
                             ")")
             cursor.execute ("CREATE TABLE tree (" +
                             "id integer primary key," +
@@ -277,13 +302,19 @@ class MysqlDatabase (Database):
                             "file_name varchar(255)," +
                             "deleted bool" +
                             ") CHARACTER SET=utf8")
+            cursor.execute ("CREATE TABLE branches (" +
+                            "id INT primary key," +
+                            "name varchar(255)" +
+                            ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE actions (" +
                             "id INT primary key," +
                             "type varchar(1)," +
                             "file_id integer," +
                             "commit_id integer," +
+                            "branch_id integer," +
                             "FOREIGN KEY (file_id) REFERENCES tree(id)," +
-                            "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" + 
+                            "FOREIGN KEY (commit_id) REFERENCES scmlog(id)," +
+                            "FOREIGN KEY (branch_id) REFERENCES branches(id)" + 
                             ") CHARACTER SET=utf8")
         except _mysql_exceptions.OperationalError, e:
             if e.args[0] == 1050:

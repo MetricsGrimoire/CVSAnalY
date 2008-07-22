@@ -106,14 +106,15 @@ if __name__ == '__main__':
             for action in commit.actions:
                 print "%s %s " % (action.type, action.f1.path),
                 if action.f2 is not None:
-                    print "(%s)" % (action.f2.path)
+                    print "(%s) on branch %s" % (action.f2.path, action.branch)
                 else:
-                    print 
+                    print "on branch %s" % (action.branch)
             print "Message"
             print commit.message
 
     # SVN Parser from logfile
     p = create_parser_from_logfile (sys.argv[1])
+    p.config.lines = False
     p.set_content_handler (StdoutContentHandler ())
     p.run ()
 

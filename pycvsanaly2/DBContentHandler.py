@@ -18,7 +18,7 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from ContentHandler import ContentHandler
-from Database import DBRepository, DBLog, DBFile, DBAction, statement
+from Database import DBRepository, DBLog, DBFile, DBAction, DBBranch, statement
 from profile import plog
 from utils import printdbg
 
@@ -34,6 +34,7 @@ class DBContentHandler (ContentHandler):
         
         self.file_cache = {}
         self.commit_cache = None
+        self.branch_cache = {}
 
     def __del__ (self):
         if self.cnn is not None:
@@ -116,6 +117,24 @@ class DBContentHandler (ContentHandler):
         
         return node
 
+    def __ensure_branch (self, branch):
+        cursor = self.cnn.cursor ()
+
+        cursor.execute (statement ("SELECT id from branches where name = ?", self.db.place_holder), (branch,))
+        rs = cursor.fetchone ()
+        if not rs:
+            b = DBBranch (None, branch)
+            cursor.execute (statement (DBBranch.__insert__, self.db.place_holder), (b.id, b.name))
+            branch_id = b.id
+        else:
+            branch_id = rs[0]
+            
+        self.branch_cache [branch] = branch_id
+            
+        cursor.close ()
+
+        return branch_id
+    
     def commit (self, commit):
         if commit.revision in self.__get_repository_commits ():
             return
@@ -156,10 +175,13 @@ class DBContentHandler (ContentHandler):
             if action.type == 'D':
                 file.deleted = True
 
+            branch_id = self.branch_cache.get (action.branch, self.__ensure_branch (action.branch))
+
             dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
             dbaction.file_id = file.id
-            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id))
+            dbaction.branch_id = branch_id
+            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id, dbaction.branch_id))
 
         if len (self.actions) >= self.MAX_ACTIONS:
             printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
