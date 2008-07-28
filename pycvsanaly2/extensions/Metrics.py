@@ -28,11 +28,17 @@ from repositoryhandler.backends import create_repository
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-from pycvsanaly2.utils import printdbg, printerr
+from pycvsanaly2.utils import printdbg, printerr, printout
+from pycvsanaly2.FindProgram import find_program
 from tempfile import mkdtemp
 import os
 import commands
 
+
+class ProgramNotFound (Extension):
+
+    def __init__ (self, program):
+        self.program = program
 
 class Measures:
 
@@ -99,8 +105,12 @@ class FileMetricsC (FileMetrics):
     Renaud, stored in the Libresoft's subversion repository."""
     
     def get_CommentsBlank (self):
+        kdsi = find_program ('kdsi')
+        if kdsi is None:
+            raise ProgramNotFound ('kdsi')
+        
         # Running kdsi
-        kdsicmd = "kdsi " + self.path
+        kdsicmd = kdsi + " " + self.path
         outputtext = commands.getoutput (kdsicmd)
         # Get rid of all the spaces and get a list
         output_values = [x for x in outputtext.split (' ') if '' != x]
@@ -110,8 +120,12 @@ class FileMetricsC (FileMetrics):
         return comment_number, comment_lines, blank_lines
 
     def get_HalsteadComplexity (self):
+        halstead = find_program ('halstead')
+        if halstead is None:
+            raise ProgramNotFound ('halstead')
+        
         # Running halstead
-        halsteadcmd = "halstead " + self.path
+        halsteadcmd = halstead + " " + self.path
         outputtext = commands.getoutput (halsteadcmd)
         values = outputtext.split ('\t')
 
@@ -124,8 +138,12 @@ class FileMetricsC (FileMetrics):
         return halstead_length, halstead_volume, halstead_level, halstead_md
 
     def get_MccabeComplexity (self):
+        mccabe = find_program ('mccabe')
+        if mccabe is None:
+            raise ProgramNotFound ('mccabe')
+        
         # Running mccabe
-        mccabecmd = "mccabe -n " + self.path
+        mccabecmd = mccabe + " -n " + self.path
         # The output of this tool is multiline (one line per function)
         outputlines = commands.getoutput (mccabecmd).split ('\n')
         mccabe_values = []
@@ -175,21 +193,24 @@ _metrics = {
 def create_file_metrics (path):
     """Measures SLOC and identifies programming language using SlocCount"""
 
-    sloccountcmd = 'sloccount --wide --details ' + path
-    outputlines = commands.getoutput (sloccountcmd).split ('\n')
-
     sloc = 0
     lang = 'unknown'
-    for l in outputlines:
-        # If there is not 'top_dir', then ignore line
-        if '\ttop_dir\t' in l:
-            sloc, lang, unused1, unused2 = l.split ('\t')
+    
+    sloccount = find_program ('sloccount')
+    if sloccount is not None:
+        sloccountcmd = sloccount + ' --wide --details ' + path
+        outputlines = commands.getoutput (sloccountcmd).split ('\n')
 
-        # If no line with 'top_dir' is found, that means
-        # that SLOC is 0 and lang is unknown
+        for l in outputlines:
+            # If there is not 'top_dir', then ignore line
+            if '\ttop_dir\t' in l:
+                sloc, lang, unused1, unused2 = l.split ('\t')
+
+            # If no line with 'top_dir' is found, that means
+            # that SLOC is 0 and lang is unknown
         
     fm = _metrics.get (lang, FileMetrics)
-    return fm (path, lang, sloc);
+    return fm (path, lang, sloc)
         
 class Metrics (Extension):
 
@@ -380,6 +401,8 @@ class Metrics (Extension):
             
                 try:
                     measures.sloc, measures.lang = fm.get_SLOCLang ()
+                except ProgramNotFound, e:
+                    printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error sloc. Exception: %s', (str (e)))
 
@@ -387,6 +410,8 @@ class Metrics (Extension):
                     measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
                 except NotImplementedError:
                     pass
+                except ProgramNotFound, e:
+                    printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error CommentsBlank. Exception: %s', (str (e)))
 
@@ -395,6 +420,8 @@ class Metrics (Extension):
                         measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
                 except NotImplementedError:
                     pass
+                except ProgramNotFound, e:
+                    printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error cmetrics halstead. Exception: %s', (str (e)))
                     
@@ -404,6 +431,8 @@ class Metrics (Extension):
                         measures.nfunctions = fm.get_MccabeComplexity ()
                 except NotImplementedError:
                     pass
+                except ProgramNotFound, e:
+                    printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error cmetrics mccabe. Exception: %s', (str(e)))
                 

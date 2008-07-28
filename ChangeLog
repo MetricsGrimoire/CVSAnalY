@@ -1,4 +1,11 @@
-2008-07-22 Liliana Tovar <lilitovar@gsyc.es>
+2008-07-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Use find_program to look for the commands and raise and exception
+	when the command is not found in path.
+	
+2008-07-22  Liliana Tovar <lilitovar@gsyc.es>
 
 	* db/cvsanaly2_model_dbdesigner.png
 	* db/cvsanaly2_model_dbdesigner.sql
