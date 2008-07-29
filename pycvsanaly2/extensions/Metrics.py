@@ -33,7 +33,7 @@ from pycvsanaly2.FindProgram import find_program
 from tempfile import mkdtemp
 import os
 import commands
-
+import re
 
 class ProgramNotFound (Extension):
 
@@ -99,6 +99,32 @@ class FileMetrics:
     def get_MccabeComplexity (self):
         raise NotImplementedError
 
+    def _get_mccabe_stats (nfunctions, mccabe_values):
+        # There is a mccabe value for each function
+        # This calculates some summary statistics for that set of
+        # values
+        mccabe_sum = sum (mccabe_values)
+        if nfunctions >= 1:
+            mccabe_mean = mccabe_sum / nfunctions
+            
+        mccabe_min = min (mccabe_values)
+        mccabe_max = max (mccabe_values)
+
+        # Calculate median
+        mccabe_values.sort ()
+        if nfunctions == 1:
+            mccabe_median = mccabe_mean
+        elif nfunctions >= 2:
+            n = len (mccabe_values)
+            if nfunctions & 1:
+                mccabe_median = mccabe_values[n // 2]
+            else:
+                mccabe_median = (mccabe_values[n // 2 - 1] + mccabe_values[n // 2]) / 2
+
+        return mccabe_sum, mccabe_min, mccabe_max, mccabe_mean, mccabe_median
+    
+    _get_mccabe_stats = staticmethod (_get_mccabe_stats)
+    
 class FileMetricsC (FileMetrics):
     """Measures McCabe's complexity, Halstead's complexity,
     comment and blank lines, using the 'metrics' package by Brian
@@ -158,36 +184,74 @@ class FileMetricsC (FileMetrics):
             nfunctions += 1
             mccabe_values.append (mccabe)
 
-        # There is a mccabe value for each function
-        # This calculates some summary statistics for that set of
-        # values
         if mccabe_values:
-            mccabe_sum = sum (mccabe_values)
-            if nfunctions >= 1:
-                mccabe_mean = mccabe_sum / nfunctions
-            
-            mccabe_min = min (mccabe_values)
-            mccabe_max = max (mccabe_values)
-
-            # Calculate median
-            mccabe_values.sort ()
-            if nfunctions == 1:
-                mccabe_median = mccabe_mean
-            elif nfunctions >= 2:
-                n = len (mccabe_values)
-                if nfunctions & 1:
-                    mccabe_median = mccabe_values[n // 2]
-                else:
-                    mccabe_median = (mccabe_values[n // 2 - 1] + mccabe_values[n // 2]) / 2
+            mccabe_sum, mccabe_min, mccabe_max, \
+                mccabe_mean, mccabe_median = self._get_mccabe_stats (nfunctions, mccabe_values)
         else:
             nfunctions = None
             
         return mccabe_sum, mccabe_min, mccabe_max, mccabe_mean, mccabe_median, nfunctions
                 
+
+class FileMetricsPython (FileMetrics):
+
+    patterns = {}
+    patterns['numComments'] = re.compile ("^[ \b\t]+([0-9]+)[ \b\t]+numComments$")
+    patterns['mccabe'] = re.compile ("^[ \b\t]+([0-9]+)[ \b\t]+(.*)$")
+    
+    def __init__ (self, path, lang='unknown', sloc=0):
+        FileMetrics.__init__ (self, path, lang, sloc)
+
+        self.pymetrics = None
+
+    def __ensure_pymetrics (self):
+        if self.pymetrics is not None:
+            return
+
+        self.pymetrics = find_program ('pymetrics')
+        if self.pymetrics is None:
+            raise ProgramNotFound ('pymetrics')
+        
+    def get_CommentsBlank (self):
+        self.__ensure_pymetrics ()
+
+        command = self.pymetrics + ' -C -S -i simple:SimpleMetric ' + self.path
+        outputlines = commands.getoutput (command).split ('\n')
+        comment_number = comment_lines = blank_lines = None
+        for line in outputlines:
+            m = self.patterns['numComments'].match (line)
+            if m:
+                comment_lines = m.group (1)
+                continue
+                
+        return comment_number, comment_lines, blank_lines
+    
+    def get_MccabeComplexity (self):
+        self.__ensure_pymetrics ()
+
+        command = self.pymetrics + ' -C -S -B -i mccabe:McCabeMetric ' + self.path
+        outputlines = commands.getoutput (command).split ('\n')
+        mccabe_values = []
+        nfunctions = 0
+        mccabe_sum = mccabe_min = mccabe_max = mccabe_mean = mccabe_median = None
+        for line in outputlines:
+            m = self.patterns['mccabe'].match (line)
+            if m:
+                nfunctions += 1
+                mccabe_values.append (int (m.group (1)))
+
+        if mccabe_values:
+            mccabe_sum, mccabe_min, mccabe_max, \
+                mccabe_mean, mccabe_median = self._get_mccabe_stats (nfunctions, mccabe_values)
+        else:
+            nfunctions = None
+                
+        return mccabe_sum, mccabe_min, mccabe_max, mccabe_mean, mccabe_median, nfunctions                              
     
 _metrics = {
     "unknown" : FileMetrics,
-    "ansic"   : FileMetricsC
+    "ansic"   : FileMetricsC,
+    "python"  : FileMetricsPython
 }
     
 def create_file_metrics (path):
