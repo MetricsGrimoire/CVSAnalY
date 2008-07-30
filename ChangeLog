@@ -1,3 +1,11 @@
+2008-07-30  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Instead of checking out the whole repository, download only the
+	toplevel directories and update them when needed. It fixes the
+	problems with the apache svn.
+	
 2008-07-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

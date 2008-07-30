@@ -380,6 +380,16 @@ class Metrics (Extension):
         for repoid, uri, type in read_cursor.fetchall ():
             repobj = create_repository (type, uri)
 
+            # Get top level dirs of the repo
+            query =  'SELECT tree.file_name '
+            query += 'FROM tree,actions,scmlog,repositories '
+            query += 'WHERE tree.parent = -1 '
+            query += 'AND tree.id = actions.file_id '
+            query += 'AND actions.commit_id = scmlog.id '
+            query += 'AND repositories.id = ?'
+            read_cursor.execute (statement (query, db.place_holder), (repoid,))
+            topdirs = [dirname[0] for dirname  in read_cursor.fetchall () if dirname[0]]
+
             # Temp dir for the checkouts
             tmpdir = mkdtemp ()
             
@@ -390,14 +400,15 @@ class Metrics (Extension):
                 first_rev = read_cursor.fetchone()[0]
                 
                 try:
-                    repobj.checkout ('.', tmpdir, newdir='.', rev=first_rev)
+                    for topdir in topdirs:
+                        repobj.checkout (topdir, tmpdir, newdir=topdir, rev=first_rev)
                 except Exception, e:
                     msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
                                                                              str (e))
                     raise ExtensionRunError (msg)
                 
                 printdbg ('SVN checkout first rev finished')
-            
+
             # Obtain files and revisions
             query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
             query += 'FROM scmlog s, actions a, file_paths f '
@@ -441,8 +452,11 @@ class Metrics (Extension):
                 if revision != current_revision:
                     try:
                         if repobj.get_type () == 'svn':
-                            printdbg ("Updating tree to revision %s", (revision))
-                            repobj.update (tmpdir, rev=revision, force=True)
+                            for topdir in topdirs:
+                                if not filepath.startswith (topdir):
+                                    continue
+                                printdbg ("Updating tree %s to revision %s", (topdir, revision))
+                                repobj.update (os.path.join (tmpdir, topdir), rev=revision, force=True)
                         else:
                             printdbg ("Checking out %s @ %s", (relative_path, revision))
                             repository.checkout (relative_path, tmpdir, rev=revision)
