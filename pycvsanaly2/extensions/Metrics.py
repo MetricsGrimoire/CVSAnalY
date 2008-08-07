@@ -459,7 +459,7 @@ class Metrics (Extension):
                                 repobj.update (os.path.join (tmpdir, topdir), rev=revision, force=True)
                         else:
                             printdbg ("Checking out %s @ %s", (relative_path, revision))
-                            repository.checkout (relative_path, tmpdir, rev=revision)
+                            repobj.checkout (relative_path, tmpdir, rev=revision)
                     except Exception, e:
                         printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, revision, str (e)))
             
