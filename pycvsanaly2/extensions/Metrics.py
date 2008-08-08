@@ -16,6 +16,7 @@
 #
 # Authors :
 #       Israel Herraiz <herraiz@gsyc.escet.urjc.es>
+#       Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 # Description
 # -----------
@@ -395,17 +396,22 @@ class Metrics (Extension):
             
             # SVN needs the first revision
             if type == 'svn':
-                query = 'SELECT MIN(rev) FROM scmlog'
-                read_cursor.execute (statement (query, db.place_holder))
-                first_rev = read_cursor.fetchone()[0]
+                for topdir in topdirs:
+                    query =  'SELECT MIN(scmlog.rev) FROM scmlog, actions, tree '
+                    query += 'WHERE actions.commit_id = scmlog.id '
+                    query += 'AND actions.file_id = tree.id '
+                    query += 'AND tree.parent = -1 '
+                    query += 'AND tree.file_name = ? '
+                    query += 'AND scmlog.repository_id = ?'
+                    read_cursor.execute (statement (query, db.place_holder), (topdir, repoid))
+                    first_rev = read_cursor.fetchone()[0]
                 
-                try:
-                    for topdir in topdirs:
+                    try:
                         repobj.checkout (topdir, tmpdir, newdir=topdir, rev=first_rev)
-                except Exception, e:
-                    msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
-                                                                             str (e))
-                    raise ExtensionRunError (msg)
+                    except Exception, e:
+                        msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
+                                                                                 str (e))
+                        raise ExtensionRunError (msg)
                 
                 printdbg ('SVN checkout first rev finished')
 

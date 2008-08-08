@@ -1,3 +1,10 @@
+2008-08-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	When doing the first checkout in svn, we need to do it for the
+	first revision of every top level dir.
+	
 2008-08-07  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
