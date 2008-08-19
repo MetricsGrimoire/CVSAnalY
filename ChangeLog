@@ -1,5 +1,12 @@
 2008-08-19  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/utils.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Clean temporary directories up when done.
+	
+2008-08-19  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Get toplevel dirs only for svn repos.

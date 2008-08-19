@@ -79,3 +79,17 @@ def printdbg (str = '\n', args = None):
         return
 
     printout ("DBG: " + str, args)
+
+def remove_directory (path):
+    import os
+    
+    if not os.path.exists (path):
+        return
+
+    for root, dirs, files in os.walk (path, topdown = False):
+        for file in files:
+            os.remove (os.path.join (root, file))
+        for dir in dirs:
+            os.rmdir (os.path.join (root, dir))
+
+    os.rmdir (path)

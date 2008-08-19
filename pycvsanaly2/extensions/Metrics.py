@@ -29,7 +29,7 @@ from repositoryhandler.backends import create_repository
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-from pycvsanaly2.utils import printdbg, printerr, printout
+from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
 from pycvsanaly2.FindProgram import find_program
 from tempfile import mkdtemp
 import os
@@ -535,8 +535,10 @@ class Metrics (Extension):
                 write_cursor.execute (statement (query, db.place_holder), values)
 
             # Write everything related to this repo
-            cnn.commit()
-            # TODO: Clean tmpdir
+            cnn.commit ()
+
+            # Clean tmpdir
+            remove_directory (tmpdir)
 
         cnn.close()
 
