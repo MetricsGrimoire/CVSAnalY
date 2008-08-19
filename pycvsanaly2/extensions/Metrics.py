@@ -381,21 +381,21 @@ class Metrics (Extension):
         for repoid, uri, type in read_cursor.fetchall ():
             repobj = create_repository (type, uri)
 
-            # Get top level dirs of the repo
-            query =  'SELECT tree.file_name '
-            query += 'FROM tree,actions,scmlog,repositories '
-            query += 'WHERE tree.parent = -1 '
-            query += 'AND tree.id = actions.file_id '
-            query += 'AND actions.commit_id = scmlog.id '
-            query += 'AND repositories.id = ?'
-            read_cursor.execute (statement (query, db.place_holder), (repoid,))
-            topdirs = [dirname[0] for dirname  in read_cursor.fetchall () if dirname[0]]
-
             # Temp dir for the checkouts
             tmpdir = mkdtemp ()
             
             # SVN needs the first revision
             if type == 'svn':
+                # Get top level dirs of the repo
+                query =  'SELECT tree.file_name '
+                query += 'FROM tree,actions,scmlog,repositories '
+                query += 'WHERE tree.parent = -1 '
+                query += 'AND tree.id = actions.file_id '
+                query += 'AND actions.commit_id = scmlog.id '
+                query += 'AND repositories.id = ?'
+                read_cursor.execute (statement (query, db.place_holder), (repoid,))
+                topdirs = [dirname[0] for dirname  in read_cursor.fetchall () if dirname[0]]
+                
                 for topdir in topdirs:
                     query =  'SELECT MIN(scmlog.rev) FROM scmlog, actions, tree '
                     query += 'WHERE actions.commit_id = scmlog.id '

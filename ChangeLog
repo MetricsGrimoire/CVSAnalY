@@ -1,3 +1,9 @@
+2008-08-19  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Get toplevel dirs only for svn repos.
+	
 2008-08-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
