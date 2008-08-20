@@ -1,3 +1,9 @@
+2008-08-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Add support for C++ and Java metrics.
+	
 2008-08-19  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/utils.py:

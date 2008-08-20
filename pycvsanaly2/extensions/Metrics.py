@@ -32,6 +32,7 @@ from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunEr
 from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
 from pycvsanaly2.FindProgram import find_program
 from tempfile import mkdtemp
+from xml.sax import handler as xmlhandler, make_parser
 import os
 import commands
 import re
@@ -248,11 +249,98 @@ class FileMetricsPython (FileMetrics):
             nfunctions = None
                 
         return mccabe_sum, mccabe_min, mccabe_max, mccabe_mean, mccabe_median, nfunctions                              
+
+class FileMetricsCCCC (FileMetrics):
+    # Abstract class
     
+    cccc_lang = None
+    
+    class XMLMetricsHandler (xmlhandler.ContentHandler):
+        
+        def __init__ (self):
+            self.comment_lines = 0
+            self.nfunctions = 0
+            self.mccabe_values = []
+
+            self.current = None
+
+        def startElement (self, name, attributes):
+            if name == 'project_summary':
+                self.current = name
+            elif name == 'lines_of_comment' and self.current == 'project_summary':
+                self.comment_lines = int (attributes['value'])
+            elif name == 'module':
+                self.current = name
+                self.nfunctions += 1
+            elif name == 'McCabes_cyclomatic_complexity' and self.current == 'module':
+                self.mccabe_values.append (int (attributes['value']))
+                
+        def endElement (self, name):
+            if name == 'project_summary' or name == 'module':
+                self.current = None
+    
+    def __init__ (self, path, lang='unknown', sloc=0):
+        FileMetrics.__init__ (self, path, lang, sloc)
+
+        self.handler = None
+
+    def __ensure_handler (self):
+        if self.handler is not None:
+            return
+
+        cccc = find_program ('cccc')
+        if cccc is None:
+            raise ProgramNotFound ('cccc')
+
+        tmpdir = mkdtemp ()
+        
+        command = cccc + ' --outdir=' + tmpdir + ' --lang=' + self.cccc_lang + ' ' + self.path
+        status, dummy = commands.getstatusoutput (command)
+
+        self.handler = FileMetricsCCCC.XMLMetricsHandler ()
+        fd = open (os.path.join (tmpdir, 'cccc.xml'), 'r')
+
+        parser = make_parser ()
+        parser.setContentHandler (self.handler)
+        parser.feed (fd.read ())
+
+        fd.close ()
+
+        remove_directory (tmpdir)
+
+    def get_CommentsBlank (self):
+        self.__ensure_handler ()
+
+        return None, self.handler.comment_lines, None
+
+    def get_MccabeComplexity (self):
+        self.__ensure_handler ()
+
+        mccabe_sum = mccabe_min = mccabe_max = mccabe_mean = mccabe_median = None
+        nfunctions = self.handler.nfunctions
+        if self.handler.mccabe_values:
+            mccabe_sum, mccabe_min, mccabe_max, \
+                mccabe_mean, mccabe_median = self._get_mccabe_stats (self.handler.nfunctions, self.handler.mccabe_values)
+        else:
+            nfunctions = None
+                
+        return mccabe_sum, mccabe_min, mccabe_max, mccabe_mean, mccabe_median, nfunctions                                      
+    
+class FileMetricsCPP (FileMetricsCCCC):
+
+    cccc_lang = 'c++'
+
+class FileMetricsJava (FileMetricsCCCC):
+
+    cccc_lang = 'java'
+
+
 _metrics = {
     "unknown" : FileMetrics,
     "ansic"   : FileMetricsC,
-    "python"  : FileMetricsPython
+    "python"  : FileMetricsPython,
+    "cpp"     : FileMetricsCPP,
+    "java"    : FileMetricsJava
 }
     
 def create_file_metrics (path):
