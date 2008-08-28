@@ -1,3 +1,12 @@
+2008-08-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/profile.py:
+	* pycvsanaly2/Timer.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Add a profiler to be able to figure out how long it takes
+	something and use it in the Metrics extension.
+	
 2008-08-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

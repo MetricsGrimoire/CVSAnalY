@@ -31,6 +31,7 @@ from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExi
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
 from pycvsanaly2.FindProgram import find_program
+from pycvsanaly2.profile import profiler_start, profiler_stop
 from tempfile import mkdtemp
 from xml.sax import handler as xmlhandler, make_parser
 import os
@@ -442,6 +443,8 @@ class Metrics (Extension):
         cursor.close ()
 
     def run (self, repo, db):
+        profiler_start ("Running Metrics extension")
+        
         self.db = db
 
         cnn = self.db.connect()
@@ -495,7 +498,9 @@ class Metrics (Extension):
                     first_rev = read_cursor.fetchone()[0]
                 
                     try:
+                        profiler_start ("Checking out toplevel %s", (topdir,))
                         repobj.checkout (topdir, tmpdir, newdir=topdir, rev=first_rev)
+                        profiler_stop ("Checking out toplevel %s", (topdir,))
                     except Exception, e:
                         msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
                                                                                  str (e))
@@ -550,10 +555,14 @@ class Metrics (Extension):
                                 if not filepath.startswith (topdir):
                                     continue
                                 printdbg ("Updating tree %s to revision %s", (topdir, revision))
+                                profiler_start ("Updating tree %s to revision %s", (topdir, revision))
                                 repobj.update (os.path.join (tmpdir, topdir), rev=revision, force=True)
+                                profiler_stop ("Updating tree %s to revision %s", (topdir, revision))
                         else:
                             printdbg ("Checking out %s @ %s", (relative_path, revision))
+                            profiler_start ("Checking out %s @ %s", (relative_path, revision))
                             repobj.checkout (relative_path, tmpdir, rev=revision)
+                            profiler_stop ("Checking out %s @ %s", (relative_path, revision))
                     except Exception, e:
                         printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, revision, str (e)))
             
@@ -566,18 +575,23 @@ class Metrics (Extension):
                 printdbg ("Measuring %s @ %s", (checkout_path, revision))
                 measures = Measures ()
 
+                profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, revision))
                 try:
                     measures.loc = fm.get_LOC ()
                 except Exception, e:
                     printerr ('Error loc. Exception: %s', (str (e)))
-            
+                profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, revision))
+
+                profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, revision))
                 try:
                     measures.sloc, measures.lang = fm.get_SLOCLang ()
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error sloc. Exception: %s', (str (e)))
+                profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, revision))
 
+                profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, revision))
                 try:
                     measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
                 except NotImplementedError:
@@ -586,7 +600,9 @@ class Metrics (Extension):
                     printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error CommentsBlank. Exception: %s', (str (e)))
+                profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, revision))
 
+                profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, revision))
                 try:
                     measures.halstead_length, measures.halstead_vol, \
                         measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
@@ -596,7 +612,9 @@ class Metrics (Extension):
                     printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error cmetrics halstead. Exception: %s', (str (e)))
-                    
+                profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, revision))
+
+                profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
                 try:
                     measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
                         measures.mccabe_mean, measures.mccabe_median, \
@@ -607,6 +625,7 @@ class Metrics (Extension):
                     printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
                 except Exception, e:
                     printerr ('Error cmetrics mccabe. Exception: %s', (str(e)))
+                profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
                 
                 # Create SQL Query insert
                 fields = ['file_id', 'commit_id']
@@ -620,14 +639,20 @@ class Metrics (Extension):
                 
                 query = 'INSERT INTO metrics '
                 query += '(%s) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)' % (fields)
+                profiler_start ("Inserting results in db for %s", (filepath,))
                 write_cursor.execute (statement (query, db.place_holder), values)
+                profiler_stop ("Inserting results in db for %s", (filepath,))
 
             # Write everything related to this repo
+            profiler_start ("Commiting to db for repo %s", (uri,))
             cnn.commit ()
+            profiler_stop ("Commiting to db for repo %s", (uri,))
 
             # Clean tmpdir
             remove_directory (tmpdir)
 
         cnn.close()
+        
+        profiler_stop ("Running Metrics extension")
 
 register_extension ("Metrics", Metrics)

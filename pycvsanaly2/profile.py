@@ -15,12 +15,44 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 import os
+import sys
 
+from Timer import Timer
 from Config import Config
 
+config = Config ()
+
 def plog (data):
-    if not Config ().profile:
+    if not config.profile:
         return
     
     str = "MARK: %s: %s" % ('foo', data)
     os.access (str, os.F_OK)
+
+_timers = {}
+def profiler_start (msg, args = None):
+    if not config.profile:
+        return
+
+    if args is not None:
+        msg = msg % args
+
+    if msg in _timers:
+        _timers[msg].start ()
+    else:
+        _timers[msg] = Timer ()
+
+def profiler_stop (msg, args = None):
+    if not config.profile:
+        return
+
+    if args is not None:
+        msg = msg % args
+
+    t = _timers[msg]
+    t.stop ()
+
+    str = "[ %s ] %f s elapsed\n" % (msg, t.elapsed ())
+    sys.stdout.write (str)
+    sys.stdout.flush ()
+    
