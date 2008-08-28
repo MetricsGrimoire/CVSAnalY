@@ -477,26 +477,21 @@ class Metrics (Extension):
             
             # SVN needs the first revision
             if type == 'svn':
+                topdirs = []
+                
                 # Get top level dirs of the repo
-                query =  'SELECT DISTINCT(tree.file_name) '
-                query += 'FROM tree,actions,scmlog,repositories '
-                query += 'WHERE tree.parent = -1 '
-                query += 'AND tree.id = actions.file_id '
-                query += 'AND actions.commit_id = scmlog.id '
-                query += 'AND repositories.id = ?'
+                query =  'SELECT tree.file_name, MIN(scmlog.rev) '
+                query += 'FROM scmlog, actions, tree '
+                query += 'WHERE actions.commit_id = scmlog.id '
+                query += 'AND actions.file_id = tree.id '
+                query += 'AND tree.parent = -1 '
+                query += 'AND scmlog.repository_id = ? '
+                query += 'GROUP BY tree.id;'
+                
                 read_cursor.execute (statement (query, db.place_holder), (repoid,))
-                topdirs = [dirname[0] for dirname  in read_cursor.fetchall () if dirname[0]]
                 
-                for topdir in topdirs:
-                    query =  'SELECT MIN(scmlog.rev) FROM scmlog, actions, tree '
-                    query += 'WHERE actions.commit_id = scmlog.id '
-                    query += 'AND actions.file_id = tree.id '
-                    query += 'AND tree.parent = -1 '
-                    query += 'AND tree.file_name = ? '
-                    query += 'AND scmlog.repository_id = ?'
-                    read_cursor.execute (statement (query, db.place_holder), (topdir, repoid))
-                    first_rev = read_cursor.fetchone()[0]
-                
+                for topdir, first_rev in read_cursor.fetchall ():
+                    topdirs.append (topdir)                
                     try:
                         profiler_start ("Checking out toplevel %s", (topdir,))
                         repobj.checkout (topdir, tmpdir, newdir=topdir, rev=first_rev)
@@ -514,7 +509,8 @@ class Metrics (Extension):
             query += 'WHERE (a.type="M" or a.type="A") '
             query += 'AND a.commit_id=s.id '
             query += 'AND a.file_id=f.id '
-            query += 'AND s.repository_id=?'
+            query += 'AND s.repository_id=? '
+            query += 'ORDER BY a.commit_id'
 
             current_revision = None
             read_cursor.execute (statement (query, db.place_holder), (repoid,))

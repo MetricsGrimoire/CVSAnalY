@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	'Top level dirs' and 'revision per files' queries improved.
+
+2008-08-28  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Topdir query fixed. Now, only it takes distinct topdirs.
 	
 2008-08-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
