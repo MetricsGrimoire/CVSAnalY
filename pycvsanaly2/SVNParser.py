@@ -152,7 +152,12 @@ class SVNParser (Parser):
         return branch
             
     def parse_line (self, line):
-        if line is None or line == '':
+        if not line:
+            if self.state == SVNParser.FILES:
+                self.state = SVNParser.MESSAGE
+            elif self.state == SVNParser.MESSAGE:
+                self.commit.message += '\n'
+                
             return
         
         # Separator
@@ -189,6 +194,12 @@ class SVNParser (Parser):
             printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
             return
 
+        # Message
+        if self.state == SVNParser.MESSAGE:
+            self.commit.message += line + '\n'
+            
+            return
+        
         # File moved/copied/replaced
         match = self.patterns['file-moved'].match (line)
         if match:
@@ -239,7 +250,4 @@ class SVNParser (Parser):
 
             return
         
-        # Message or other lines
-        if self.state == SVNParser.FILES or self.state == SVNParser.MESSAGE:
-            self.state = SVNParser.MESSAGE
-            self.commit.message += line + '\n'
+

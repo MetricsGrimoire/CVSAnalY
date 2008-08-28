@@ -1,5 +1,12 @@
 2008-08-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/SVNParser.py:
+
+	Do not consider commit messages starting wit 'A ' as an added
+	file.
+	
+2008-08-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/profile.py:
 	* pycvsanaly2/Timer.py:
 	* pycvsanaly2/extensions/Metrics.py:
