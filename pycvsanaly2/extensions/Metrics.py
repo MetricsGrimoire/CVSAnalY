@@ -478,7 +478,7 @@ class Metrics (Extension):
             # SVN needs the first revision
             if type == 'svn':
                 # Get top level dirs of the repo
-                query =  'SELECT tree.file_name '
+                query =  'SELECT DISTINCT(tree.file_name) '
                 query += 'FROM tree,actions,scmlog,repositories '
                 query += 'WHERE tree.parent = -1 '
                 query += 'AND tree.id = actions.file_id '
