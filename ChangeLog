@@ -1,5 +1,11 @@
 2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Ignore invalid topdirs.
+	
+2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/extensions/FileTypes.py:
 	* pycvsanaly2/extensions/file_types.py:
 

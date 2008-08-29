@@ -491,6 +491,9 @@ class Metrics (Extension):
                 read_cursor.execute (statement (query, db.place_holder), (repoid,))
                 
                 for topdir, first_rev in read_cursor.fetchall ():
+                    if not topdir:
+                        continue
+                    
                     topdirs.append (topdir)                
                     try:
                         profiler_start ("Checking out toplevel %s", (topdir,))
