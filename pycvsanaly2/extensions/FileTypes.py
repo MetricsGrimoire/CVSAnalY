@@ -104,7 +104,7 @@ class FileTypes (Extension):
             cursor.execute (statement ("SELECT max(id) from file_types", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
-                DBFileType.id_counter = id
+                DBFileType.id_counter = id + 1
             cursor.close ()
 
             files = self.__get_files (cnn)

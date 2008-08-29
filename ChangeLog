@@ -1,5 +1,16 @@
 2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/extensions/FilePaths.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+
+	Fix initial id when the table already exists.
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Make Metrics extensions incremental.
+	
+2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Use the FileTypes extension in Metrics in order to ignore the 

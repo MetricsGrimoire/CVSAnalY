@@ -365,7 +365,7 @@ def create_file_metrics (path):
         
     fm = _metrics.get (lang, FileMetrics)
     return fm (path, lang, sloc)
-        
+
 class Metrics (Extension):
 
     deps = ['FilePaths', 'FileTypes']
@@ -410,7 +410,7 @@ class Metrics (Extension):
 
             try:
                 cursor.execute ("CREATE TABLE metrics (" +
-                                "id integer primary key not null auto_increment," +
+                                "id integer primary key not null," +
                                 "file_id integer," +
                                 "commit_id integer," +
                                 "lang tinytext," +
@@ -442,18 +442,34 @@ class Metrics (Extension):
         cnn.commit ()
         cursor.close ()
 
+    def __get_metrics (self, cnn):
+        cursor = cnn.cursor ()
+        cursor.execute (statement ("SELECT file_id, commit_id from metrics", self.db.place_holder))
+        metrics = [(res[0], res[1]) for res in cursor.fetchall ()]
+        cursor.close ()
+        
+        return metrics
+        
     def run (self, repo, db):
         profiler_start ("Running Metrics extension")
         
         self.db = db
 
-        cnn = self.db.connect()
+        cnn = self.db.connect ()
+        id_counter = 1
+        metrics = []
 
         try:
             self.__create_table (cnn)
         except TableAlreadyExists:
-            # Do something
-            pass
+            cursor = cnn.cursor ()
+            cursor.execute (statement ("SELECT max(id) from metrics", db.place_holder))
+            id = cursor.fetchone ()[0]
+            if id is not None:
+                id_counter = id + 1
+            cursor.close ()
+
+            metrics = self.__get_metrics (cnn)
         except Exception, e:
             raise ExtensionRunError (str(e))
 
@@ -520,6 +536,9 @@ class Metrics (Extension):
             current_revision = None
             read_cursor.execute (statement (query, db.place_holder), (repoid,))
             for revision, filepath, commit_id, file_id, composed in read_cursor.fetchall ():
+                if (file_id, commit_id) in metrics:
+                    continue
+                
                 if composed:
                     revision = revision.split ("|")[0]
                     
@@ -629,8 +648,8 @@ class Metrics (Extension):
                 profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
                 
                 # Create SQL Query insert
-                fields = ['file_id', 'commit_id']
-                values = [file_id, commit_id]
+                fields = ['id', 'file_id', 'commit_id']
+                values = [id_counter, file_id, commit_id]
                 
                 for key in measures.getattrs ():
                     fields.append (key)
@@ -639,10 +658,12 @@ class Metrics (Extension):
                 fields = ','.join (fields)
                 
                 query = 'INSERT INTO metrics '
-                query += '(%s) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)' % (fields)
+                query += '(%s) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)' % (fields)
                 profiler_start ("Inserting results in db for %s", (filepath,))
                 write_cursor.execute (statement (query, db.place_holder), values)
                 profiler_stop ("Inserting results in db for %s", (filepath,))
+
+                id_counter += 1
 
             # Write everything related to this repo
             profiler_start ("Commiting to db for repo %s", (uri,))

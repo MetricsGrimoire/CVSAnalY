@@ -134,7 +134,7 @@ class FilePaths (Extension):
             cursor.execute (statement ("SELECT max(id) from file_paths", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
-                DBFilePath.id_counter = id
+                DBFilePath.id_counter = id + 1
             cursor.close ()
 
             paths = self.__get_paths (cnn)
