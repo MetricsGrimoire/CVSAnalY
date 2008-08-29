@@ -2,6 +2,13 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Use the FileTypes extension in Metrics in order to ignore the 
+	revisions where there aren't code changes.
+	
+2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Ignore invalid topdirs.
 	
 2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>

@@ -368,7 +368,7 @@ def create_file_metrics (path):
         
 class Metrics (Extension):
 
-    deps = ['FilePaths']
+    deps = ['FilePaths', 'FileTypes']
 
     def __init__ (self):
         self.db = None
@@ -508,10 +508,12 @@ class Metrics (Extension):
 
             # Obtain files and revisions
             query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
-            query += 'FROM scmlog s, actions a, file_paths f '
+            query += 'FROM scmlog s, actions a, file_paths f, file_types t '
             query += 'WHERE (a.type="M" or a.type="A") '
             query += 'AND a.commit_id=s.id '
             query += 'AND a.file_id=f.id '
+            query += 'AND a.file_id=t.file_id '
+            query += 'AND (t.type = "code" OR t.type = "unknown") '
             query += 'AND s.repository_id=? '
             query += 'ORDER BY a.commit_id'
 
