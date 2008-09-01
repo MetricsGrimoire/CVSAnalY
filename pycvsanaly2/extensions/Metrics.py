@@ -402,6 +402,7 @@ class Metrics (Extension):
                                 "halstead_md integer" +
                                 ")")
             except pysqlite2.dbapi2.OperationalError:
+                cursor.close ()
                 raise TableAlreadyExists
             except:
                 raise
@@ -434,6 +435,7 @@ class Metrics (Extension):
                                 ") CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
+                    cursor.close ()
                     raise TableAlreadyExists
                 raise
             except:
@@ -673,6 +675,8 @@ class Metrics (Extension):
             # Clean tmpdir
             remove_directory (tmpdir)
 
+        read_cursor.close ()
+        write_cursor.close ()
         cnn.close()
         
         profiler_stop ("Running Metrics extension")

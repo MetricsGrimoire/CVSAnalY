@@ -1,3 +1,11 @@
+2008-09-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/FilePaths.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Add some missing cursor.close()
+	
 2008-08-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/FilePaths.py:

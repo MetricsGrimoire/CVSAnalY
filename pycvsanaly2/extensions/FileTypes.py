@@ -59,6 +59,7 @@ class FileTypes (Extension):
                                 "type varchar" +
                                 ")")
             except pysqlite2.dbapi2.OperationalError:
+                cursor.close ()
                 raise TableAlreadyExists
             except:
                 raise
@@ -74,6 +75,7 @@ class FileTypes (Extension):
                                 ") CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
+                    cursor.close ()
                     raise TableAlreadyExists
                 raise
             except:
@@ -130,6 +132,7 @@ class FileTypes (Extension):
             rs = cursor.fetchmany ()
             
         cnn.commit ()
+        cursor.close ()
         cnn.close ()
         
 
