@@ -93,3 +93,32 @@ def remove_directory (path):
             os.rmdir (os.path.join (root, dir))
 
     os.rmdir (path)
+
+def get_path_for_revision (current_path, current_file_id, rev, cursor, place_holder):
+    from Database import statement
+
+    cursor.execute (statement ("select id from scmlog where rev = ?", place_holder), (rev,))
+    commit_id = cursor.fetchone ()[0]
+
+    file_id = current_file_id
+    old_path = None
+    index = len (current_path)
+    while index >= 0:
+        path = current_path[:index]
+
+        query = "select old_path from actions where type = 'V' and file_id = ? and commit_id <= ?"
+        cursor.execute (statement (query, place_holder), (file_id, commit_id))
+        rs = cursor.fetchone ()
+        if rs is not None:
+            old_path = rs[0]
+            break
+
+        cursor.execute (statement ("select parent from tree where id = ?", place_holder), (file_id,))
+        file_id = cursor.fetchone ()[0]
+
+        index = current_path.rfind ('/', 0, index)
+
+    if old_path is not None:
+        return current_path.replace (path, old_path)
+
+    return current_path

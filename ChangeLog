@@ -1,5 +1,20 @@
 2008-09-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Database.py:
+
+	Save the old_path of a renamed or moved file in the actions table.
+
+	* pycvsanaly2/utils.py:
+
+	Add a funtion to figure out the path a given file for any revision.
+	
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Use the correct path for renamed or moved files.
+	
+2008-09-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/extensions/FilePaths.py:
 	* pycvsanaly2/extensions/FileTypes.py:
 	* pycvsanaly2/extensions/Metrics.py:

@@ -102,7 +102,7 @@ class DBAction:
 
     id_counter = 1
 
-    __insert__ = "INSERT INTO actions (id, type, file_id, commit_id, branch_id) values (?, ?, ?, ?, ?)"
+    __insert__ = "INSERT INTO actions (id, type, file_id, old_path, commit_id, branch_id) values (?, ?, ?, ?, ?, ?)"
     
     def __init__ (self, id, type):
         if id is None:
@@ -111,6 +111,7 @@ class DBAction:
         else:
             self.id = id
         self.type = type
+        self.old_path = None
 
 def initialize_ids (db, cursor):
     # Respositories
@@ -223,6 +224,7 @@ class SqliteDatabase (Database):
                             "id integer primary key," +
                             "type varchar(1)," +
                             "file_id integer," +
+                            "old_path varchar," +
                             "commit_id integer," +
                             "branch_id integer" + 
                             ")")
@@ -310,6 +312,7 @@ class MysqlDatabase (Database):
                             "id INT primary key," +
                             "type varchar(1)," +
                             "file_id integer," +
+                            "old_path mediumtext," + 
                             "commit_id integer," +
                             "branch_id integer," +
                             "FOREIGN KEY (file_id) REFERENCES tree(id)," +

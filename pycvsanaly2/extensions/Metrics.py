@@ -29,7 +29,7 @@ from repositoryhandler.backends import create_repository
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
+from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory, get_path_for_revision
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from tempfile import mkdtemp
@@ -475,8 +475,8 @@ class Metrics (Extension):
         except Exception, e:
             raise ExtensionRunError (str(e))
 
-        read_cursor = cnn.cursor()
-        write_cursor = cnn.cursor()
+        read_cursor = cnn.cursor ()
+        write_cursor = cnn.cursor ()
 
         repobj = None
         repoid = -1
@@ -552,24 +552,26 @@ class Metrics (Extension):
                 
                 if type == 'svn':                    
                     try:
-                        relative_path = filepath.split(uri)[1]
+                        relative_path = filepath.split (uri)[1]
                     except IndexError:
                         relative_path = filepath
                         
                 elif type == 'cvs':                    
                     try:
-                        relative_path = filepath.split(uri)[1]
+                        relative_path = filepath.split (uri)[1]
                     except IndexError:
                         relative_path = filepath
 
                     try:
-                        relative_path = filepath.split(uri.split(":")[-1])[1]
+                        relative_path = filepath.split (uri.split (":")[-1])[1]
                     except IndexError:
                         relative_path = filepath
 
                 printdbg (repobj.get_uri ())
                 printdbg (relative_path)
 
+                relative_path = get_path_for_revision (relative_path, file_id, revision, read_cursor, db.place_holder).strip ('/')
+                
                 if revision != current_revision:
                     try:
                         if repobj.get_type () == 'svn':

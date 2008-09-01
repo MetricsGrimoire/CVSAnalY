@@ -148,6 +148,8 @@ class DBContentHandler (ContentHandler):
 
         for action in commit.actions:
             printdbg ("DBContentHandler: Action: %s", (action.type))
+            dbaction = DBAction (None, action.type)
+            
             if action.f2 is not None:
                 if self.file_cache.has_key (action.f1.path):
                     file = self.file_cache[action.f1.path]
@@ -159,6 +161,7 @@ class DBContentHandler (ContentHandler):
                 if action.type == 'V':
                     # Rename the node
                     self.file_cache[action.f2.path] = file
+                    dbaction.old_path = action.f2.path
                     printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f2.path, file.id, file.file_name))
                 else:
                     self.file_cache[action.f1.path] = file
@@ -177,11 +180,10 @@ class DBContentHandler (ContentHandler):
 
             branch_id = self.branch_cache.get (action.branch, self.__ensure_branch (action.branch))
 
-            dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
             dbaction.file_id = file.id
             dbaction.branch_id = branch_id
-            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.commit_id, dbaction.branch_id))
+            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.old_path, dbaction.commit_id, dbaction.branch_id))
 
         if len (self.actions) >= self.MAX_ACTIONS:
             printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
