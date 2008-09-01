@@ -1,5 +1,11 @@
 2008-09-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Add a profiler for get_path_for_revision()
+	
+2008-09-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/DBContentHandler.py:
 	* pycvsanaly2/Database.py:
 
