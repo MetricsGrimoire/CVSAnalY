@@ -106,8 +106,8 @@ def get_path_for_revision (current_path, current_file_id, rev, cursor, place_hol
     while index >= 0:
         path = current_path[:index]
 
-        query =  "select old_path, (select date from scmlog where id = commit_id) date "
-        query += "from actions where type = 'V' and file_id = ? and date > ? order by date"
+        query =  "select old_path, date from actions, scmlog "
+        query += "where commit_id = scmlog.id and type = 'V' and file_id = ? and date > ? order by date"
         cursor.execute (statement (query, place_holder), (file_id, commit_date))
         rs = cursor.fetchone ()
         if rs is not None:
