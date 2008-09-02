@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Ignore directories.
+	
+2008-09-02  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Add more information in error messages.
 	
 2008-09-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>

@@ -595,6 +595,9 @@ class Metrics (Extension):
                     current_revision = revision
 
                 checkout_path = os.path.join (tmpdir, relative_path)
+                if os.path.isdir (checkout_path):
+                    continue
+                
                 fm = create_file_metrics (checkout_path)
                     
                 # Measure the file
