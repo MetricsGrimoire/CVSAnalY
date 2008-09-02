@@ -106,7 +106,7 @@ def get_path_for_revision (current_path, current_file_id, rev, cursor, place_hol
     while index >= 0:
         path = current_path[:index]
 
-        query = "select old_path from actions where type = 'V' and file_id = ? and commit_id <= ?"
+        query = "select old_path from actions where type = 'V' and file_id = ? and commit_id < ?"
         cursor.execute (statement (query, place_holder), (file_id, commit_id))
         rs = cursor.fetchone ()
         if rs is not None:
