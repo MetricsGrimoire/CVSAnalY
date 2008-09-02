@@ -605,7 +605,7 @@ class Metrics (Extension):
                 try:
                     measures.loc = fm.get_LOC ()
                 except Exception, e:
-                    printerr ('Error loc. Exception: %s', (str (e)))
+                    printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
                 profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, revision))
 
                 profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, revision))
@@ -614,7 +614,7 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error sloc. Exception: %s', (str (e)))
+                    printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
                 profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, revision))
 
                 profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, revision))
@@ -625,7 +625,7 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error CommentsBlank. Exception: %s', (str (e)))
+                    printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
                 profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, revision))
 
                 profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, revision))
@@ -637,7 +637,7 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error cmetrics halstead. Exception: %s', (str (e)))
+                    printerr ('Error running cmetrics halstead for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
                 profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, revision))
 
                 profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
@@ -650,7 +650,7 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error cmetrics mccabe. Exception: %s', (str(e)))
+                    printerr ('Error running cmetrics mccabe for %s@%s. Exception: %s', (checkout_path, revision, str(e)))
                 profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
                 
                 # Create SQL Query insert
