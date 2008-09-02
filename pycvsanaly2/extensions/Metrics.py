@@ -169,7 +169,7 @@ class FileMetricsC (FileMetrics):
             halstead_volume = None
         try:
             halstead_level = float (values[3].replace (',', '.'))
-            if halstead_level == float ('inf'):
+            if halstead_level == float ('inf') or halstead_level == float ('nan'):
                 halstead_level = None
         except:
             halstead_level = None
