@@ -97,8 +97,8 @@ def remove_directory (path):
 def get_path_for_revision (current_path, current_file_id, rev, cursor, place_holder):
     from Database import statement
 
-    cursor.execute (statement ("select id from scmlog where rev = ?", place_holder), (rev,))
-    commit_id = cursor.fetchone ()[0]
+    cursor.execute (statement ("select date from scmlog where rev = ?", place_holder), (rev,))
+    commit_date = cursor.fetchone ()[0]
 
     file_id = current_file_id
     old_path = None
@@ -106,8 +106,9 @@ def get_path_for_revision (current_path, current_file_id, rev, cursor, place_hol
     while index >= 0:
         path = current_path[:index]
 
-        query = "select old_path from actions where type = 'V' and file_id = ? and commit_id < ?"
-        cursor.execute (statement (query, place_holder), (file_id, commit_id))
+        query =  "select old_path, (select date from scmlog where id = commit_id) date "
+        query += "from actions where type = 'V' and file_id = ? and date > ? order by date"
+        cursor.execute (statement (query, place_holder), (file_id, commit_date))
         rs = cursor.fetchone ()
         if rs is not None:
             old_path = rs[0]
