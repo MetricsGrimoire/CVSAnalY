@@ -570,9 +570,10 @@ class Metrics (Extension):
                 printdbg (repobj.get_uri ())
                 printdbg (relative_path)
 
-                profiler_start ("Getting path for the given revision")
-                relative_path = get_path_for_revision (relative_path, file_id, revision, read_cursor, db.place_holder).strip ('/')
-                profiler_stop ("Getting path for the given revision")
+                if type != 'cvs': # There aren't moved or renamed paths in CVS
+                    profiler_start ("Getting path for the given revision")
+                    relative_path = get_path_for_revision (relative_path, file_id, revision, read_cursor, db.place_holder).strip ('/')
+                    profiler_stop ("Getting path for the given revision")
                 
                 if revision != current_revision:
                     try:
