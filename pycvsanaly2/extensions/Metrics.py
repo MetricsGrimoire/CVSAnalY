@@ -159,10 +159,24 @@ class FileMetricsC (FileMetrics):
         values = outputtext.split ('\t')
 
         filename = values[0]
-        halstead_length = int (values[1])
-        halstead_volume = int (values[2])
-        halstead_level = float (values[3].replace (',', '.'))
-        halstead_md = int (values[4])
+        try:
+            halstead_length = int (values[1])
+        except:
+            halstead_length = None
+        try:
+            halstead_volume = int (values[2])
+        except:
+            halstead_volume = None
+        try:
+            halstead_level = float (values[3].replace (',', '.'))
+            if halstead_level == float ('inf'):
+                halstead_level = None
+        except:
+            halstead_level = None
+        try:
+            halstead_md = int (values[4])
+        except:
+            halstead_md = None
 
         return halstead_length, halstead_volume, halstead_level, halstead_md
 
@@ -182,8 +196,12 @@ class FileMetricsC (FileMetrics):
             values = l.split ('\t')
             if len (values) != 5:
                 continue
-            
-            mccabe = int (values[-2])
+
+            try:
+                mccabe = int (values[-2])
+            except:
+                mccabe = 0
+                
             nfunctions += 1
             mccabe_values.append (mccabe)
 
@@ -241,7 +259,11 @@ class FileMetricsPython (FileMetrics):
             m = self.patterns['mccabe'].match (line)
             if m:
                 nfunctions += 1
-                mccabe_values.append (int (m.group (1)))
+                try:
+                    mccabe = int (m.group (1))
+                except:
+                    mccabe = 0
+                mccabe_values.append (mccabe)
 
         if mccabe_values:
             mccabe_sum, mccabe_min, mccabe_max, \
