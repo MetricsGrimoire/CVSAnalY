@@ -620,6 +620,10 @@ class Metrics (Extension):
                 checkout_path = os.path.join (tmpdir, relative_path)
                 if os.path.isdir (checkout_path):
                     continue
+
+                if not os.path.exists (checkout_path):
+                    printerr ("Error measuring %s@%s. File not found", (checkout_path, revision))
+                    continue
                 
                 fm = create_file_metrics (checkout_path)
                     

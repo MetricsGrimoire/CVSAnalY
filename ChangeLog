@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Make sure checkout path actually exists before running metrics.
+	
+2008-09-02  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Avoids 'nan' values.
 	
 2008-09-02  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
