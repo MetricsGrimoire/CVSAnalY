@@ -1,3 +1,9 @@
+2008-09-03  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	'revision per files' query ordered by commit date.
+
 2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/CVSParser.py:

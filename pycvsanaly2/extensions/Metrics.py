@@ -556,7 +556,7 @@ class Metrics (Extension):
             query += 'AND a.file_id=t.file_id '
             query += 'AND (t.type = "code" OR t.type = "unknown") '
             query += 'AND s.repository_id=? '
-            query += 'ORDER BY a.commit_id'
+            query += 'ORDER BY s.date DESC'
 
             current_revision = None
             read_cursor.execute (statement (query, db.place_holder), (repoid,))
