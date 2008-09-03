@@ -1,3 +1,9 @@
+2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/CVSParser.py:
+
+	Remove 'Attic' also from the composed revision in cvs.
+	
 2008-09-03  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

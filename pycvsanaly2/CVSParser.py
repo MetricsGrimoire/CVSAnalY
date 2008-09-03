@@ -119,6 +119,7 @@ class CVSParser (Parser):
             if act == 'dead':
                 action.type = 'D'
                 self.file.path = self.file.path.replace ('/Attic', '')
+                commit.revision = commit.revision.replace ('/Attic', '')
             elif revision == '1.1':
                 action.type = 'A'
             else:
