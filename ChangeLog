@@ -1,10 +1,9 @@
 2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
-	* pycvsanaly2/main.py:
+	* pycvsanaly2/CVSParser.py:
 
-	Enable repository handler debug when running cvsanaly in debug
-	mode.
-
+	Remove 'Attic' from the path of deleted files.
+	
 2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/main.py:

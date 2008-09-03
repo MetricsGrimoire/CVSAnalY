@@ -118,6 +118,7 @@ class CVSParser (Parser):
             act = match.group (9)
             if act == 'dead':
                 action.type = 'D'
+                self.file.path = self.file.path.replace ('/Attic', '')
             elif revision == '1.1':
                 action.type = 'A'
             else:
@@ -133,8 +134,6 @@ class CVSParser (Parser):
 
             action.branch = branch
             
-            # FIXME: is it possible to know when file was added? revision 1.1.1.1 or something?
-
             commit.actions.append (action)
             self.handler.commit (commit)
 
