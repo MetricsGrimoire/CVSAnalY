@@ -31,6 +31,7 @@ class CVSParser (Parser):
     patterns['file'] = re.compile ("^RCS file: (.*)$")
     patterns['revision'] = re.compile ("^revision ([\d\.]*)$")
     patterns['info'] = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: (.*);(  lines: \+(\d*) -(\d*))?")
+    patterns['branches'] = re.compile ("^branches:  ([\d\.]*);$")
     patterns['branch'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+)0\.([0-9]+)$")
     patterns['separator'] = re.compile ("^[=]+$")
     
@@ -60,7 +61,12 @@ class CVSParser (Parser):
 
         # File separator
         if self.patterns['separator'].match (line):
+            if self.commit is not None:
+                self.handler.commit (self.commit)
+                self.commit = None
+                
             self.handler.file (self.file)
+            self.file = None
         
         # File 
         match = self.patterns['file'].match (line)
@@ -74,6 +80,7 @@ class CVSParser (Parser):
             self.file = f
 
             self.branches = {}
+            self.commit = None
 
             return
 
@@ -87,6 +94,9 @@ class CVSParser (Parser):
         # Revision
         match = self.patterns['revision'].match (line)
         if match:
+            if self.commit is not None:
+                self.handler.commit (self.commit)
+
             commit = Commit ()
             # composed rev: revision + | + file path
             # to make sure revision is unique
@@ -103,6 +113,7 @@ class CVSParser (Parser):
 
             revision = commit.revision.split ('|')[0]
             if revision == '1.1.1.1':
+                self.commit = None
                 return
             
             commit.committer = match.group (8)
@@ -136,11 +147,24 @@ class CVSParser (Parser):
             action.branch = branch
             
             commit.actions.append (action)
-            self.handler.commit (commit)
-
-            # FIXME: do we really need intrunk, cvs_flag and external?, WTF are they?
 
             return
+
+        # Branches
+        match = self.patterns['branches'].match (line)
+        if match:
+            if self.commit is None:
+                return
+            
+            action = self.commit.actions[0]
+            revision = self.commit.revision.split ('|')[0]
+            if action.type == 'D' and revision == '1.1':
+                # File added on a branch
+                action.type = 'A'
+                action.branch = self.branches[match.group (1)]
+
+            return
+                                          
 
         # TODO: message commit
         

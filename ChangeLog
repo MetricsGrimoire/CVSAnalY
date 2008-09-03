@@ -1,5 +1,11 @@
 2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/CVSParser.py:
+
+	Detect files added on a branch.
+	
+2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Use the composed revision to identify a single action in cvs.
