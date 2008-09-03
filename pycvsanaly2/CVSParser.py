@@ -100,6 +100,11 @@ class CVSParser (Parser):
         match = self.patterns['info'].match (line)
         if match:
             commit = self.commit
+
+            revision = commit.revision.split ('|')[0]
+            if revision == '1.1.1.1':
+                return
+            
             commit.committer = match.group (8)
             self.handler.committer (commit.committer)
             
@@ -113,12 +118,13 @@ class CVSParser (Parser):
             act = match.group (9)
             if act == 'dead':
                 action.type = 'D'
+            elif revision == '1.1':
+                action.type = 'A'
             else:
                 action.type = 'M'
             action.f1 = self.file
 
             # Branch
-            revision = commit.revision.split ('|')[0]
             try:
                 prefix = revision [:revision.rfind ('.')]
                 branch = self.branches[prefix]
