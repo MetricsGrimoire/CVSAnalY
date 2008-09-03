@@ -565,7 +565,9 @@ class Metrics (Extension):
                     continue
                 
                 if composed:
-                    revision = revision.split ("|")[0]
+                    rev = revision.split ("|")[0]
+                else:
+                    rev = revision
                     
                 # Remove repository url from filepath
                 # (all the filepaths begin with the repo URL)
@@ -595,7 +597,7 @@ class Metrics (Extension):
 
                 if type != 'cvs': # There aren't moved or renamed paths in CVS
                     profiler_start ("Getting path for the given revision")
-                    relative_path = get_path_for_revision (relative_path, file_id, revision, read_cursor, db.place_holder).strip ('/')
+                    relative_path = get_path_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder).strip ('/')
                     profiler_stop ("Getting path for the given revision")
                 
                 if revision != current_revision:
@@ -604,17 +606,17 @@ class Metrics (Extension):
                             for topdir in topdirs:
                                 if not filepath.startswith (topdir):
                                     continue
-                                printdbg ("Updating tree %s to revision %s", (topdir, revision))
-                                profiler_start ("Updating tree %s to revision %s", (topdir, revision))
-                                repobj.update (os.path.join (tmpdir, topdir), rev=revision, force=True)
-                                profiler_stop ("Updating tree %s to revision %s", (topdir, revision))
+                                printdbg ("Updating tree %s to revision %s", (topdir, rev))
+                                profiler_start ("Updating tree %s to revision %s", (topdir, rev))
+                                repobj.update (os.path.join (tmpdir, topdir), rev=rev, force=True)
+                                profiler_stop ("Updating tree %s to revision %s", (topdir, rev))
                         else:
-                            printdbg ("Checking out %s @ %s", (relative_path, revision))
-                            profiler_start ("Checking out %s @ %s", (relative_path, revision))
-                            repobj.checkout (relative_path, tmpdir, rev=revision)
-                            profiler_stop ("Checking out %s @ %s", (relative_path, revision))
+                            printdbg ("Checking out %s @ %s", (relative_path, rev))
+                            profiler_start ("Checking out %s @ %s", (relative_path, rev))
+                            repobj.checkout (relative_path, tmpdir, rev=rev)
+                            profiler_stop ("Checking out %s @ %s", (relative_path, rev))
                     except Exception, e:
-                        printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, revision, str (e)))
+                        printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
             
                     current_revision = revision
 
@@ -623,32 +625,32 @@ class Metrics (Extension):
                     continue
 
                 if not os.path.exists (checkout_path):
-                    printerr ("Error measuring %s@%s. File not found", (checkout_path, revision))
+                    printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
                     continue
                 
                 fm = create_file_metrics (checkout_path)
                     
                 # Measure the file
-                printdbg ("Measuring %s @ %s", (checkout_path, revision))
+                printdbg ("Measuring %s @ %s", (checkout_path, rev))
                 measures = Measures ()
 
-                profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, revision))
+                profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
                 try:
                     measures.loc = fm.get_LOC ()
                 except Exception, e:
-                    printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
-                profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, revision))
+                    printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+                profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, revision))
+                profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
                 try:
                     measures.sloc, measures.lang = fm.get_SLOCLang ()
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
-                profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, revision))
+                    printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+                profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, revision))
+                profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
                 try:
                     measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
                 except NotImplementedError:
@@ -656,10 +658,10 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
-                profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, revision))
+                    printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+                profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, revision))
+                profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
                 try:
                     measures.halstead_length, measures.halstead_vol, \
                         measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
@@ -668,10 +670,10 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error running cmetrics halstead for %s@%s. Exception: %s', (checkout_path, revision, str (e)))
-                profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, revision))
+                    printerr ('Error running cmetrics halstead for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+                profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
+                profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
                 try:
                     measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
                         measures.mccabe_mean, measures.mccabe_median, \
@@ -681,8 +683,8 @@ class Metrics (Extension):
                 except ProgramNotFound, e:
                     printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
                 except Exception, e:
-                    printerr ('Error running cmetrics mccabe for %s@%s. Exception: %s', (checkout_path, revision, str(e)))
-                profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, revision))
+                    printerr ('Error running cmetrics mccabe for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
+                profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
                 
                 # Create SQL Query insert
                 fields = ['id', 'file_id', 'commit_id']
