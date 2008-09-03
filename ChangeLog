@@ -7,6 +7,13 @@
 
 2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/main.py:
+
+	Enable repository handler debug when running cvsanaly in debug
+	mode.
+	
+2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/CVSParser.py:
 
 	Ignore useless 1.1.1.1 revisions in CVS and register 1.1 revisions

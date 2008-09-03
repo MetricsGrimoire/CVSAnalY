@@ -184,6 +184,10 @@ def main (argv):
     if extensions is not None:
         config.extensions.extend ([item for item in extensions if item not in config.extensions])
 
+    if config.debug:
+        import repositoryhandler.backends
+        repositoryhandler.backends.DEBUG = True
+        
     path = uri_to_filename (uri)
     if path is not None:
         repo = create_repository_from_path (path)
