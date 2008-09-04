@@ -1,5 +1,13 @@
 2008-09-04  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/Database.py:
+
+	Use longtext instead of text as type for message field in scmlog
+	table. It seems there are people who write very long commit
+	messages.
+	
+2008-09-04  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/CVSParser.py:
 
 	Include also the commit message in CVS repos. Definitely fixes bug

@@ -293,7 +293,7 @@ class MysqlDatabase (Database):
                             "date datetime," +
                             "lines_added int," +
                             "lines_removed int," +
-                            "message text," +
+                            "message longtext," +
                             "composed_rev bool," +
                             "repository_id INT," + 
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" + 
