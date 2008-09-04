@@ -30,7 +30,8 @@ class CVSParser (Parser):
     patterns = {}
     patterns['file'] = re.compile ("^RCS file: (.*)$")
     patterns['revision'] = re.compile ("^revision ([\d\.]*)$")
-    patterns['info'] = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: (.*);(  lines: \+(\d*) -(\d*))?")
+    patterns['info'] = \
+        re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: ([^;]*);(  lines: \+(\d+) -(\d+);?)?")
     patterns['branches'] = re.compile ("^branches:  ([\d\.]*);$")
     patterns['branch'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+)0\.([0-9]+)$")
     patterns['separator'] = re.compile ("^[=]+$")

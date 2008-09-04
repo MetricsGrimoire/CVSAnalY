@@ -1,5 +1,12 @@
 2008-09-04  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/CVSParser.py:
+
+	Fix info regexp in CVS parser. It seems some versions of CVS add a
+	trailing ';'
+	
+2008-09-04  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/Database.py:
 
 	Use longtext instead of text as type for message field in scmlog
