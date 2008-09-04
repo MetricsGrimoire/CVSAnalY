@@ -1,3 +1,10 @@
+2008-09-04  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/CVSParser.py:
+
+	Include also the commit message in CVS repos. Definitely fixes bug
+	#364.
+	
 2008-09-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/CVSParser.py:

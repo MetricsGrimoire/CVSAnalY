@@ -34,6 +34,7 @@ class CVSParser (Parser):
     patterns['branches'] = re.compile ("^branches:  ([\d\.]*);$")
     patterns['branch'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+)0\.([0-9]+)$")
     patterns['separator'] = re.compile ("^[=]+$")
+    patterns['rev-separator'] = re.compile ("^[-]+$")
     
     def __init__ (self):
         Parser.__init__ (self)
@@ -56,7 +57,10 @@ class CVSParser (Parser):
             self.root_path = uri
 
     def parse_line (self, line):
-        if line is None or line == '':
+        if not line:
+            if self.commit is not None and self.commit.message:
+                self.commit.message += '\n'
+                
             return
 
         # File separator
@@ -67,6 +71,12 @@ class CVSParser (Parser):
                 
             self.handler.file (self.file)
             self.file = None
+
+        # Revision separator
+        if self.patterns['rev-separator'].match (line):
+            # Ignore rev separator so that we don't
+            # include it in the commit message
+            return
         
         # File 
         match = self.patterns['file'].match (line)
@@ -166,5 +176,6 @@ class CVSParser (Parser):
             return
                                           
 
-        # TODO: message commit
-        
+        # Message.
+        if self.commit is not None:
+            self.commit.message += line + '\n'
