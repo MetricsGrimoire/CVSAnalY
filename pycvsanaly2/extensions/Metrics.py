@@ -482,7 +482,7 @@ class Metrics (Extension):
     def __checkout (self, repo, uri, rootdir, newdir = None, rev = None):
         count = 0
 
-        while self.RETRIES - count > 0:
+        while self.RETRIES - count >= 0:
             repo.checkout (uri, rootdir, newdir=newdir, rev=rev)
             if newdir is not None:
                 uri = os.path.join (rootdir, newdir)
@@ -502,7 +502,7 @@ class Metrics (Extension):
     def __update (self, repo, uri, rev):
         count = 0
 
-        while self.RETRIES - count > 0:
+        while self.RETRIES - count >= 0:
             repo.update (uri, rev=rev, force=True)
             try:
                 new_rev = repo.get_last_revision (uri)

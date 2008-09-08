@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Fix the retries.
+	
+2008-09-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Make sure checkouts and updates don't fail and try again when they
 	do.
 	
