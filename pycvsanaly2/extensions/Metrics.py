@@ -393,6 +393,10 @@ class Metrics (Extension):
 
     deps = ['FilePaths', 'FileTypes']
 
+    # How many times it'll retry
+    # when an update or chekcout fails
+    RETRIES = 1
+
     def __init__ (self):
         self.db = None
     
@@ -474,6 +478,41 @@ class Metrics (Extension):
         cursor.close ()
         
         return metrics
+
+    def __checkout (self, repo, uri, rootdir, newdir = None, rev = None):
+        count = 0
+
+        while self.RETRIES - count > 0:
+            repo.checkout (uri, rootdir, newdir=newdir, rev=rev)
+            if newdir is not None:
+                uri = os.path.join (rootdir, newdir)
+            else:
+                uri = os.path.join (rootdir, uri)
+                
+            try:
+                new_rev = repo.get_last_revision (uri)
+                if rev == new_rev:
+                    break
+                printout ("Warning: checkout %s@%s failed in try %d: got %s.", (uri, rev, count + 1, new_rev))
+            except Exception, e:
+                printout ("Warning: checkout %s@%s failed in try %d: %s", (uri, rev, count + 1, str (e)))
+            
+            count += 1
+
+    def __update (self, repo, uri, rev):
+        count = 0
+
+        while self.RETRIES - count > 0:
+            repo.update (uri, rev=rev, force=True)
+            try:
+                new_rev = repo.get_last_revision (uri)
+                if rev == new_rev:
+                    break
+                printout ("Warning: update %s@%s failed in try %d: got %s.", (uri, rev, count + 1, new_rev))
+            except Exception, e:
+                printout ("Warning: update %s@%s failed in try %d: %s", (uri, rev, count + 1, str (e)))
+
+            count += 1
         
     def run (self, repo, db):
         profiler_start ("Running Metrics extension")
@@ -538,7 +577,7 @@ class Metrics (Extension):
                     topdirs.append (topdir)                
                     try:
                         profiler_start ("Checking out toplevel %s", (topdir,))
-                        repobj.checkout (topdir, tmpdir, newdir=topdir, rev=first_rev)
+                        self.__checkout (repobj, topdir, tmpdir, newdir=topdir, rev=first_rev)
                         profiler_stop ("Checking out toplevel %s", (topdir,))
                     except Exception, e:
                         msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
@@ -608,12 +647,12 @@ class Metrics (Extension):
                                     continue
                                 printdbg ("Updating tree %s to revision %s", (topdir, rev))
                                 profiler_start ("Updating tree %s to revision %s", (topdir, rev))
-                                repobj.update (os.path.join (tmpdir, topdir), rev=rev, force=True)
+                                self.__update (repobj, os.path.join (tmpdir, topdir), rev=rev)
                                 profiler_stop ("Updating tree %s to revision %s", (topdir, rev))
                         else:
                             printdbg ("Checking out %s @ %s", (relative_path, rev))
                             profiler_start ("Checking out %s @ %s", (relative_path, rev))
-                            repobj.checkout (relative_path, tmpdir, rev=rev)
+                            self.__checkout (repobj, relative_path, tmpdir, rev=rev)
                             profiler_stop ("Checking out %s @ %s", (relative_path, rev))
                     except Exception, e:
                         printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
