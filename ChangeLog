@@ -1,5 +1,13 @@
 2008-09-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/Parser.py:
+	* pycvsanaly2/main.py:
+
+	Add an option to save the repository log in a given path.
+	
+2008-09-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Fix the retries.

@@ -26,10 +26,28 @@ from repositoryhandler.backends.watchers import LOG
 
 from ContentHandler import ContentHandler
 from Config import Config
-from utils import printerr
+from utils import printerr, printout
 
 class Parser:
 
+    class SaveLog:
+        CHUNK_SIZE = 1024
+        
+        def __init__ (self, filename):
+            self.fd = open (filename, "w")
+            self.buffer = ""
+
+        def add_line (self, line):
+            self.buffer += line
+            if len (self.buffer) >= self.CHUNK_SIZE:
+                self.fd.write (self.buffer)
+                self.buffer = ""
+
+        def close (self):
+            if self.buffer:
+                self.fd.write (self.buffer)
+            self.fd.close ()
+    
     def __init__ (self):
         self.handler = ContentHandler ()
         self.config = Config ()
@@ -59,8 +77,20 @@ class Parser:
 
     def run (self):
         self.handler.begin ()
+
+        save_log = None
+        if self.config.save_logfile is not None:
+            try:
+                save_log = Parser.SaveLog (self.config.save_logfile)
+            except Exception, e:
+                printout ("Warning: error creating file %s for saving log file: %s",
+                          (self.config.save_logfile, str (e)))
+                save_log = None
         
         def new_line (data, user_data = None):
+            if save_log is not None:
+                save_log.add_line (data)
+                
             self.n_line += 1
             self.parse_line (data.strip ('\n'))
 
@@ -84,6 +114,9 @@ class Parser:
             self.repo.add_watch (LOG, new_line)
             self.repo.log (self.uri)
 
+        if save_log is not None:
+            save_log.close ()
+            
         self.flush ()
 
         self.handler.end ()

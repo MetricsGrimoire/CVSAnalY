@@ -68,7 +68,8 @@ Options:
                                  only for SVN repositories because of performance reasons.
 
   -b, --branch                   Repository branch to analyze (head/trunk/master)
-  -l, --repo-logfile             Logfile to use instead of getting log from the repository
+  -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
+  -s, --save-logfile[=path]      Save the repository log to the given path
       --extensions=ext1,ext2,    List of extensions to run        
 
 Database:
@@ -82,11 +83,11 @@ Database:
 
 def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVgqf:b:l:u:p:d:H:"
+    short_opts = "hVgqf:b:l:s:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", "branch=",
-                 "repo-logfile=", "with-lines=", "db-user=", "db-password=", "db-hostname=",
-                 "db-database=", "db-driver=", "extensions="]
+                 "repo-logfile=", "save-logfile=", "with-lines=", "db-user=", "db-password=",
+                 "db-hostname=", "db-database=", "db-driver=", "extensions="]
 
     # Default options
     debug = None
@@ -100,6 +101,7 @@ def main (argv):
     branch = None
     driver = None
     logfile = None
+    save_logfile = None
     lines = None
     extensions = None
 
@@ -143,6 +145,8 @@ def main (argv):
             branch = value
         elif opt in ("-l", "--repo-logfile"):
             logfile = value
+        elif opt in ("-s", "--save-logfile"):
+            save_logfile = value
         elif opt in ("--extensions", ):
             extensions = value.split (',')
 
@@ -171,6 +175,8 @@ def main (argv):
         config.branch = branch
     if logfile is not None:
         config.repo_logfile = logfile
+    if save_logfile is not None:
+        config.save_logfile = save_logfile
     if driver is not None:
         config.db_driver = driver
     if user is not  None:
