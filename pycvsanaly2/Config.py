@@ -28,7 +28,6 @@ class Config:
     __shared_state = { 'debug'        : False,
                        'quiet'        : False,
                        'profile'      : False,
-                       'branch'       : None,
                        'repo_logfile' : None,
                        'save_logfile' : None, 
                        'lines'        : True,
@@ -37,7 +36,9 @@ class Config:
                        'db_password'  : None, 
                        'db_database'  : 'cvsanaly',
                        'db_hostname'  : 'localhost',
-                       'extensions'   : []}
+                       'extensions'   : [],
+                       # Metrics xxtension options
+                       'metrics_all'  : False}
     
     def __init__ (self):
         self.__dict__ = self.__shared_state
@@ -68,10 +69,6 @@ class Config:
             pass        
         try:
             self.profile = config.profile
-        except:
-            pass
-        try:
-            self.branch = config.branch
         except:
             pass
         try:
@@ -108,6 +105,10 @@ class Config:
             pass
         try:
             self.extensions.extend ([item for item in config.extensions if item not in self.extensions])
+        except:
+            pass
+        try:
+            self.metrics_all = config.metrics_all
         except:
             pass
 

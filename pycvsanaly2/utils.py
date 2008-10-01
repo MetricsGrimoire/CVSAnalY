@@ -17,6 +17,8 @@
 # Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 import sys
+import re
+import os
 
 from Config import Config
 
@@ -36,8 +38,6 @@ def to_utf8 (string):
     return s.encode ('utf-8')
 
 def uri_is_remote (uri):
-    import re
-
     match = re.compile ("^.*://.*$").match (uri)
     if match is None:
         return False
@@ -81,8 +81,6 @@ def printdbg (str = '\n', args = None):
     printout ("DBG: " + str, args)
 
 def remove_directory (path):
-    import os
-    
     if not os.path.exists (path):
         return
 
@@ -96,7 +94,7 @@ def remove_directory (path):
 
 def get_path_for_revision (current_path, current_file_id, rev, cursor, place_holder):
     from Database import statement
-
+    
     cursor.execute (statement ("select date from scmlog where rev = ?", place_holder), (rev,))
     commit_date = cursor.fetchone ()[0]
 
@@ -123,3 +121,25 @@ def get_path_for_revision (current_path, current_file_id, rev, cursor, place_hol
         return current_path.replace (path, old_path)
 
     return current_path
+
+def path_is_deleted_for_revision (path, file_id, rev, cursor, place_holder):
+    from Database import statement
+    
+    cursor.execute (statement ("select date from scmlog where rev = ?", place_holder), (rev,))
+    commit_date = cursor.fetchone ()[0]
+
+    fid = file_id
+
+    while fid != -1:
+        query =  "select actions.id from actions, scmlog where "
+        query += "commit_id = scmlog.id and type = 'D' and file_id = ? and "
+        query += "date > ? order by date"
+        cursor.execute (statement (query, place_holder), (fid, commit_date))
+        rs = cursor.fetchone ()
+        if rs is not None:
+            return True
+
+        cursor.execute (statement ("select parent from tree where id = ?", place_holder), (fid,))
+        fid = cursor.fetchone ()[0]
+
+    return False

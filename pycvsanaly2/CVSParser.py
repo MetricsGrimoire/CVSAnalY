@@ -34,8 +34,8 @@ class CVSParser (Parser):
         re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: ([^;]*);(  lines: \+(\d+) -(\d+);?)?")
     patterns['branches'] = re.compile ("^branches:  ([\d\.]*);$")
     patterns['branch'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+)0\.([0-9]+)$")
-    patterns['separator'] = re.compile ("^[=]+$")
     patterns['rev-separator'] = re.compile ("^[-]+$")
+    patterns['file-separator'] = re.compile ("^[=]+$")
     
     def __init__ (self):
         Parser.__init__ (self)
@@ -44,8 +44,11 @@ class CVSParser (Parser):
         
         # Parser context
         self.file = None
+        self.file_added_on_branch = None
         self.commit = None
         self.branches = None
+        self.rev_separator = None
+        self.file_separator = None
 
     def set_repository (self, repo):
         Parser.set_repository (self, repo)
@@ -57,6 +60,19 @@ class CVSParser (Parser):
         else:
             self.root_path = uri
 
+    def flush (self):
+        if self.commit is not None:
+            # Remove trailing \n from commit message
+            self.commit.message = self.commit.message[:-1]
+            
+            self.handler.commit (self.commit)
+            self.commit = None
+
+        if self.file is not None:
+            self.handler.file (self.file)
+            self.file_added_on_branch = None
+            self.file = None
+
     def parse_line (self, line):
         if not line:
             if self.commit is not None and self.commit.message:
@@ -64,24 +80,33 @@ class CVSParser (Parser):
                 
             return
 
-        # File separator
-        if self.patterns['separator'].match (line):
-            if self.commit is not None:
-                self.handler.commit (self.commit)
-                self.commit = None
-                
-            self.handler.file (self.file)
-            self.file = None
-
-        # Revision separator
+        # Revision Separator
         if self.patterns['rev-separator'].match (line):
-            # Ignore rev separator so that we don't
+            # Ignore separators so that we don't
             # include it in the commit message
+            if self.rev_separator is None:
+                self.rev_separator = line
+            else:
+                self.rev_separator += line + '\n'
+            
             return
-        
+
+        # File Separator
+        if self.patterns['file-separator'].match (line):
+            # Ignore separators so that we don't
+            # include it in the commit message
+            if self.file_separator is None:
+                self.file_separator = line
+            else:
+                self.file_separator += line + '\n'
+            
+            return 
+
         # File 
         match = self.patterns['file'].match (line)
         if match:
+            self.flush ()
+
             path = match.group (1)
             path = path[len (self.root_path):]
             path = path[:path.rfind (',')]
@@ -92,6 +117,7 @@ class CVSParser (Parser):
 
             self.branches = {}
             self.commit = None
+            self.file_separator = None
 
             return
 
@@ -114,6 +140,8 @@ class CVSParser (Parser):
             commit.composed_rev = True
             commit.revision = "%s|%s" % (match.group (1), self.file.path)
             self.commit = commit
+
+            self.rev_separator = None
 
             return
 
@@ -150,8 +178,15 @@ class CVSParser (Parser):
 
             # Branch
             try:
-                prefix = revision [:revision.rfind ('.')]
+                last_dot = revision.rfind ('.')
+                prefix = revision[:last_dot]
                 branch = self.branches[prefix]
+                if self.file_added_on_branch and \
+                   self.file_added_on_branch == prefix and \
+                   revision[last_dot + 1:] == '1':
+                    action.type = 'A'
+                    self.file_added_on_branch = None
+                    
             except KeyError:
                 branch = 'trunk'
 
@@ -171,12 +206,23 @@ class CVSParser (Parser):
             revision = self.commit.revision.split ('|')[0]
             if action.type == 'D' and revision == '1.1':
                 # File added on a branch
-                action.type = 'A'
-                action.branch = self.branches[match.group (1)]
+                self.file_added_on_branch = match.group (1)
+
+                # Discard this commit
+                self.commit = None
 
             return
                                           
-
         # Message.
         if self.commit is not None:
+            if self.rev_separator is not None:
+                # Previous separator was probably a
+                # false positive
+                self.commit.message += self.rev_separator + '\n'
+                self.rev_separator = None
+            if self.file_separator is not None:
+                # Previous separator was probably a
+                # false positive
+                self.commit.message += self.file_separator + '\n'
+                self.file_separator = None
             self.commit.message += line + '\n'

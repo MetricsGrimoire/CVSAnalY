@@ -49,7 +49,7 @@ config_files_code = [
     re.compile('\.h$'), # C or C++ header
     re.compile('\.hh$'), # C++ header
     re.compile('\.hpp$'), # C++ header
-     re.compile('\.hxx$'), # C++ header
+    re.compile('\.hxx$'), # C++ header
     re.compile('\.sh$'), # Shell
     re.compile('\.pl$'), # Perl
     re.compile('\.pm$'), # Perl
@@ -135,24 +135,25 @@ config_files_code = [
     re.compile('\.hg$'), # C++ headers - Found in gtkmm*
     re.compile('\.dtd'), # XML Document Type Definition
     re.compile('\.bat'), # DOS batch files
-    re.compile('\.vala') # Vala
+    re.compile('\.vala'), # Vala
+    re.compile('\.py\.in$') 
     ]
 
 # Development documentation files (for hacking generally)
 
 config_files_devel_doc = [
-    re.compile('readme.*$'),
-    re.compile('changelog.*'),
-    re.compile('todo.*$'),
-    re.compile('credits.*$'),
-    re.compile('authors.*$'),
-    re.compile('changes.*$'),
-    re.compile('news.*$'),
-    re.compile('install.*$'),  
-    re.compile('hacking.*$'),
-    re.compile('copyright.*$'),
-    re.compile('licen(s|c)e.*$'),
-    re.compile('copying.*$'),
+    re.compile('^readme.*$'),
+    re.compile('^changelog.*'),
+    re.compile('^todo.*$'),
+    re.compile('^credits.*$'),
+    re.compile('^authors.*$'),
+    re.compile('^changes.*$'),
+    re.compile('^news.*$'),
+    re.compile('^install.*$'),  
+    re.compile('^hacking.*$'),
+    re.compile('^copyright.*$'),
+    re.compile('^licen(s|c)e.*$'),
+    re.compile('^copying.*$'),
     re.compile('manifest$'),
     re.compile('faq$'),
     re.compile('building$'),
@@ -197,7 +198,10 @@ config_files_building = [
     re.compile('\.in.*$'),
     re.compile('configure.*$'),
     re.compile('makefile.*$'), 
-    re.compile('config.sub$'),
+    re.compile('config\.sub$'),
+    re.compile('config\.guess$'),
+    re.compile('ltmain\.sh$'),
+    re.compile('autogen\.sh$'),
     re.compile('config$'),
     re.compile('conf$'),
     re.compile('cvsignore$'),
@@ -214,6 +218,8 @@ config_files_building = [
     re.compile('rules$'),
     re.compile('\.kdelnk$'),
     re.compile('\.menu$'),
+    re.compile('linguas$'), # Build translations
+    re.compile('potfiles.*$'), # Build translations
     re.compile('\.shlibs$'), # Shared libraries
 #    re.compile('%debian%'),
 #    re.compile('%specs/%'),
@@ -229,12 +235,14 @@ config_files_documentation = [
 #    re.compile('%HOWTO%'),
     re.compile('\.html$'),
     re.compile('\.txt$'),
-    re.compile('\.ps$'),
-    re.compile('\.dvi$'),
+    re.compile('\.ps(\.gz|\.bz2)?$'),
+    re.compile('\.dvi(\.gz|\.bz2)?$'),
     re.compile('\.lyx$'),
     re.compile('\.tex$'),
     re.compile('\.texi$'),
-    re.compile('\.pdf$'),
+    re.compile('\.pdf(\.gz|\.bz2)?$'),
+    re.compile('\.djvu$'),
+    re.compile('\.epub$'),
     re.compile('\.sgml$'),
     re.compile('\.docbook$'),    
     re.compile('\.wml$'),
@@ -318,6 +326,7 @@ config_files_ui = [
     re.compile('\.theme$'),
     re.compile('\.kimap$'),
     re.compile('\.glade$'),
+    re.compile('\.gtkbuilder$'),
     re.compile('rc$')
     ]
 
@@ -334,20 +343,36 @@ config_files_sound = [
     re.compile('\.arts$')
     ]
 
-config_files = {
-    'documentation' : config_files_documentation,
-    'images'        : config_files_images,
-    'i18n'          : config_files_translation,
-    'ui'            : config_files_ui,
-    'multimedia'    : config_files_sound,
-    'code'          : config_files_code,
-    'build'         : config_files_building,
-    'devel-doc'     : config_files_devel_doc
-    }
+# Packages (yes, there are people who upload packages to the repo)
+
+config_files_packages = [
+    re.compile('\.tar$'),
+    re.compile('\.tar.gz$'),
+    re.compile('\.tar.bz2$'),
+    re.compile('\.tgz$'),
+    re.compile('\.deb$'),
+    re.compile('\.rpm$'),
+    re.compile('\.srpm$'),
+    re.compile('\.ebuild$')
+    ]
+
+# The list should keep this order
+# ie. we want ltmain.sh -> build instead of code
+config_files = [
+    ('image'         , config_files_images),
+    ('i18n'          , config_files_translation),
+    ('ui'            , config_files_ui),
+    ('multimedia'    , config_files_sound),
+    ('package'       , config_files_packages),
+    ('build'         , config_files_building),
+    ('code'          , config_files_code),
+    ('documentation' , config_files_documentation),
+    ('devel-doc'     , config_files_devel_doc)
+    ]
 
 def guess_file_type (filename):
-    for type in config_files:
-        for patt in config_files[type]:
+    for type, patt_list in config_files:
+        for patt in patt_list:
             if patt.search (filename.lower ()):
                 return type
             
@@ -355,5 +380,16 @@ def guess_file_type (filename):
 
 if __name__ == '__main__':
     import sys
+    import os
 
-    print guess_file_type (sys.argv[1])
+    path = sys.argv[1]
+    if os.path.isdir (path):
+        for root, dirs, files in os.walk (path):
+            for skip in ('.svn', 'CVS', '.git'):
+                if skip in dirs:
+                    dirs.remove (skip)
+
+            for file in files:
+                print "%s: %s" % (os.path.join (root, file), guess_file_type (file))
+    else:
+        print guess_file_type (path)

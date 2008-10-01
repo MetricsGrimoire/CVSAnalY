@@ -72,9 +72,9 @@ class DBFile:
 
     id_counter = 1
 
-    __insert__ = "INSERT INTO tree (id, parent, file_name, deleted) values (?, ?, ?, ?)"
+    __insert__ = "INSERT INTO tree (id, parent, file_name, repository_id) values (?, ?, ?, ?)"
     
-    def __init__ (self, id, file_name, parent, deleted = False):
+    def __init__ (self, id, file_name, parent):
         if id is None:
             self.id = DBFile.id_counter
             DBFile.id_counter += 1
@@ -82,8 +82,21 @@ class DBFile:
             self.id = id
         self.file_name = to_utf8 (file_name)
         self.parent = parent
-        self.deleted = deleted
 
+class DBPerson:
+
+    id_counter = 1
+
+    __insert__ = "INSERT INTO people (id, name) values (?, ?)"
+
+    def __init__ (self, id, name):
+        if id is None:
+            self.id = DBPerson.id_counter
+            DBPerson.id_counter += 1
+        else:
+            self.id = id
+        self.name = to_utf8 (name)
+        
 class DBBranch:
 
     id_counter = 1
@@ -102,7 +115,7 @@ class DBAction:
 
     id_counter = 1
 
-    __insert__ = "INSERT INTO actions (id, type, file_id, old_path, commit_id, branch_id) values (?, ?, ?, ?, ?, ?)"
+    __insert__ = "INSERT INTO actions (id, type, file_id, old_path, commit_id, branch_id, head) values (?, ?, ?, ?, ?, ?, ?)"
     
     def __init__ (self, id, type):
         if id is None:
@@ -112,6 +125,7 @@ class DBAction:
             self.id = id
         self.type = type
         self.old_path = None
+        self.head = False
 
 def initialize_ids (db, cursor):
     # Respositories
@@ -143,6 +157,12 @@ def initialize_ids (db, cursor):
     id = cursor.fetchone ()[0]
     if id is not None:
         DBBranch.id_counter = id + 1
+
+    # People
+    cursor.execute (statement ("SELECT max(id) from people", db.place_holder))
+    id = cursor.fetchone ()[0]
+    if id is not None:
+        DBPerson.id_counter = id + 1
     
         
 class DatabaseException (Exception):
@@ -208,11 +228,15 @@ class SqliteDatabase (Database):
                             "name varchar," +
                             "type varchar" + 
                             ")")
+            cursor.execute ("CREATE TABLE people (" +
+                            "id integer primary key," +
+                            "name varchar" +
+                            ")")
             cursor.execute ("CREATE TABLE scmlog (" +
                             "id integer primary key," +
                             "rev varchar," +
-                            "committer varchar," +
-                            "author varchar," +
+                            "committer integer," +
+                            "author integer," +
                             "date datetime," +
                             "lines_added integer," +
                             "lines_removed integer," +
@@ -226,7 +250,8 @@ class SqliteDatabase (Database):
                             "file_id integer," +
                             "old_path varchar," +
                             "commit_id integer," +
-                            "branch_id integer" + 
+                            "branch_id integer," +
+                            "head bool" +
                             ")")
             cursor.execute ("CREATE TABLE branches (" +
                             "id integer primary key," +
@@ -236,7 +261,7 @@ class SqliteDatabase (Database):
                             "id integer primary key," +
                             "parent integer," +
                             "file_name varchar(255)," +
-                            "deleted bool" +
+                            "repository_id integer" +
                             ")")
         except pysqlite2.dbapi2.OperationalError:
             raise TableAlreadyExists
@@ -285,24 +310,31 @@ class MysqlDatabase (Database):
                             "name varchar(255)," +
                             "type varchar(30)" + 
                             ") CHARACTER SET=utf8")
+            cursor.execute ("CREATE TABLE people (" +
+                            "id INT primary key," +
+                            "name varchar(255)" +
+                            ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE scmlog (" +
                             "id INT primary key," +
                             "rev mediumtext," +
-                            "committer varchar(255)," +
-                            "author varchar(255)," +
+                            "committer INT," +
+                            "author INT," +
                             "date datetime," +
                             "lines_added int," +
                             "lines_removed int," +
                             "message longtext," +
                             "composed_rev bool," +
-                            "repository_id INT," + 
+                            "repository_id INT," +
+                            "FOREIGN KEY (committer) REFERENCES people(id)," +
+                            "FOREIGN KEY (author) REFERENCES people(id)," +
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" + 
                             ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE tree (" +
                             "id INT primary key," +
                             "parent integer," +
                             "file_name varchar(255)," +
-                            "deleted bool" +
+                            "repository_id INT," +
+                            "FOREIGN KEY (repository_id) REFERENCES repositories(id)" +
                             ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE branches (" +
                             "id INT primary key," +
@@ -315,6 +347,7 @@ class MysqlDatabase (Database):
                             "old_path mediumtext," + 
                             "commit_id integer," +
                             "branch_id integer," +
+                            "head bool," +
                             "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)," +
                             "FOREIGN KEY (branch_id) REFERENCES branches(id)" + 

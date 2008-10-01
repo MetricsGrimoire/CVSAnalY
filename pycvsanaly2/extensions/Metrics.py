@@ -29,7 +29,9 @@ from repositoryhandler.backends import create_repository
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory, get_path_for_revision
+from pycvsanaly2.Config import Config
+from pycvsanaly2.utils import (printdbg, printerr, printout, remove_directory,
+                               get_path_for_revision, path_is_deleted_for_revision)
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from tempfile import mkdtemp
@@ -397,8 +399,17 @@ class Metrics (Extension):
     # when an update or chekcout fails
     RETRIES = 1
 
+    # Insert query
+    __insert__ = 'INSERT INTO metrics (id, file_id, commit_id, lang, sloc, loc, ncomment, ' + \
+                 'lcomment, lblank, nfunctions, mccabe_max, mccabe_min, mccabe_sum, mccabe_mean, ' + \
+                 'mccabe_median, halstead_length, halstead_vol, halstead_level, halstead_md) ' + \
+                 'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    MAX_METRICS = 100
+
     def __init__ (self):
         self.db = None
+        self.config = Config ()
+        self.metrics = []
     
     def __create_table (self, cnn):
         cursor = cnn.cursor ()
@@ -482,15 +493,16 @@ class Metrics (Extension):
     def __checkout (self, repo, uri, rootdir, newdir = None, rev = None):
         count = 0
 
+        if newdir is not None:
+            file_path = os.path.join (rootdir, newdir)
+        else:
+            file_path = os.path.join (rootdir, uri)
+        
         while self.RETRIES - count >= 0:
             repo.checkout (uri, rootdir, newdir=newdir, rev=rev)
-            if newdir is not None:
-                uri = os.path.join (rootdir, newdir)
-            else:
-                uri = os.path.join (rootdir, uri)
                 
             try:
-                new_rev = repo.get_last_revision (uri)
+                new_rev = repo.get_last_revision (file_path)
                 if rev == new_rev:
                     break
                 printout ("Warning: checkout %s@%s failed in try %d: got %s.", (uri, rev, count + 1, new_rev))
@@ -513,6 +525,13 @@ class Metrics (Extension):
                 printout ("Warning: update %s@%s failed in try %d: %s", (uri, rev, count + 1, str (e)))
 
             count += 1
+
+    def __insert_many (self, cursor):
+        if not self.metrics:
+            return
+        
+        cursor.executemany (statement (self.__insert__, self.db.place_holder), self.metrics)
+        self.metrics = []
         
     def run (self, repo, db):
         profiler_start ("Running Metrics extension")
@@ -540,216 +559,198 @@ class Metrics (Extension):
         read_cursor = cnn.cursor ()
         write_cursor = cnn.cursor ()
 
-        repobj = None
-        repoid = -1
-        uri = None
-        
-        # Obtain repository data and create repo object
-        query = 'SELECT id, uri, type FROM repositories'
-        read_cursor.execute (statement (query, db.place_holder))
-        
-        # Analyze all the repos contained in the db
-        for repoid, uri, type in read_cursor.fetchall ():
-            repobj = create_repository (type, uri)
+        uri = repo.get_uri ()
+        type = repo.get_type ()
+        read_cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
+        repoid = read_cursor.fetchone ()[0]
 
-            # Temp dir for the checkouts
-            tmpdir = mkdtemp ()
+        # Temp dir for the checkouts
+        tmpdir = mkdtemp ()
             
-            # SVN needs the first revision
-            if type == 'svn':
-                topdirs = []
+        # SVN needs the first revision
+        if type == 'svn':
+            topdirs = []
                 
-                # Get top level dirs of the repo
-                query =  'SELECT tree.file_name, MIN(scmlog.rev) '
-                query += 'FROM scmlog, actions, tree '
-                query += 'WHERE actions.commit_id = scmlog.id '
-                query += 'AND actions.file_id = tree.id '
-                query += 'AND tree.parent = -1 '
-                query += 'AND scmlog.repository_id = ? '
-                query += 'GROUP BY tree.id;'
+            # Get top level dirs of the repo
+            query =  'SELECT tree.file_name, tree.id, MIN(scmlog.rev) '
+            query += 'FROM scmlog, actions, tree '
+            query += 'WHERE actions.commit_id = scmlog.id '
+            query += 'AND actions.file_id = tree.id '
+            query += 'AND tree.parent = -1 '
+            if not self.config.metrics_all:
+                query += 'AND tree.id not in (SELECT file_id from actions '
+                query += 'WHERE type = "D" and head) '
+            query += 'AND scmlog.repository_id = ? '
+            query += 'GROUP BY tree.id;'
                 
-                read_cursor.execute (statement (query, db.place_holder), (repoid,))
-                
-                for topdir, first_rev in read_cursor.fetchall ():
-                    if not topdir:
-                        continue
-                    
-                    topdirs.append (topdir)                
-                    try:
-                        profiler_start ("Checking out toplevel %s", (topdir,))
-                        self.__checkout (repobj, topdir, tmpdir, newdir=topdir, rev=first_rev)
-                        profiler_stop ("Checking out toplevel %s", (topdir,))
-                    except Exception, e:
-                        msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
-                                                                                 str (e))
-                        raise ExtensionRunError (msg)
-                
-                printdbg ('SVN checkout first rev finished')
-
-            # Obtain files and revisions
-            query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
-            query += 'FROM scmlog s, actions a, file_paths f, file_types t '
-            query += 'WHERE (a.type="M" or a.type="A") '
-            query += 'AND a.commit_id=s.id '
-            query += 'AND a.file_id=f.id '
-            query += 'AND a.file_id=t.file_id '
-            query += 'AND (t.type = "code" OR t.type = "unknown") '
-            query += 'AND s.repository_id=? '
-            query += 'ORDER BY s.date DESC'
-
-            current_revision = None
             read_cursor.execute (statement (query, db.place_holder), (repoid,))
-            for revision, filepath, commit_id, file_id, composed in read_cursor.fetchall ():
-                if (file_id, commit_id) in metrics:
-                    continue
                 
-                if composed:
-                    rev = revision.split ("|")[0]
-                else:
-                    rev = revision
+            for topdir, topdir_id, first_rev in read_cursor.fetchall ():
+                topdirs.append ((topdir, first_rev))
+                aux_cursor = cnn.cursor ()
+                aux_topdir = get_path_for_revision (topdir, topdir_id, first_rev, aux_cursor, db.place_holder).strip ('/')
+                aux_cursor.close ()
+                try:
+                    profiler_start ("Checking out toplevel %s", (topdir,))
+                    self.__checkout (repo, aux_topdir, tmpdir, newdir=topdir, rev=first_rev)
+                    profiler_stop ("Checking out toplevel %s", (topdir,))
+                except Exception, e:
+                    msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
+                                                                                 str (e))
+                    raise ExtensionRunError (msg)
+                
+            printdbg ('SVN checkout first rev finished')
+
+        # Obtain files and revisions
+        query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
+        query += 'FROM scmlog s, actions a, file_paths f, file_types t '
+        query += 'WHERE a.commit_id=s.id '
+        query += 'AND a.file_id=f.id '
+        query += 'AND a.file_id=t.file_id '
+        query += 'AND a.type in ("M", "A") '
+        query += 'AND t.type in ("code", "unknown") '
+        if not self.config.metrics_all:
+            query += 'AND a.head '
+        query += 'AND s.repository_id=? '
+        query += 'ORDER BY s.date DESC'
+
+        current_revision = None
+        read_cursor.execute (statement (query, db.place_holder), (repoid,))
+        for revision, filepath, commit_id, file_id, composed in read_cursor.fetchall ():
+            if (file_id, commit_id) in metrics:
+                continue
+                
+            if composed:
+                rev = revision.split ("|")[0]
+            else:
+                rev = revision
                     
-                # Remove repository url from filepath
-                # (all the filepaths begin with the repo URL)
-
-                # Heuristics, depending on the repository
-                relative_path = ""
+            relative_path = filepath
                 
-                if type == 'svn':                    
-                    try:
-                        relative_path = filepath.split (uri)[1]
-                    except IndexError:
-                        relative_path = filepath
-                        
-                elif type == 'cvs':                    
-                    try:
-                        relative_path = filepath.split (uri)[1]
-                    except IndexError:
-                        relative_path = filepath
-
-                    try:
-                        relative_path = filepath.split (uri.split (":")[-1])[1]
-                    except IndexError:
-                        relative_path = filepath
-
-                printdbg (repobj.get_uri ())
-                printdbg (relative_path)
-
-                if type != 'cvs': # There aren't moved or renamed paths in CVS
-                    profiler_start ("Getting path for the given revision")
-                    relative_path = get_path_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder).strip ('/')
-                    profiler_stop ("Getting path for the given revision")
+            if type != 'cvs': # There aren't moved or renamed paths in CVS
+                profiler_start ("Check if the path has been deleted")
+                deleted = path_is_deleted_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder)
+                profiler_stop ("Check if the path has been deleted")
+                if deleted:
+                    printdbg ("Path %s is deleted in revision %s, skipping", (relative_path, rev))
+                    continue
+                    
+                profiler_start ("Getting path for the given revision")
+                relative_path = get_path_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder).strip ('/')
+                printdbg ("File path %s is relative path %s on revision %s", (filepath, relative_path, rev))
+                profiler_stop ("Getting path for the given revision")
                 
-                if revision != current_revision:
-                    try:
-                        if repobj.get_type () == 'svn':
-                            for topdir in topdirs:
-                                if not filepath.startswith (topdir):
-                                    continue
-                                printdbg ("Updating tree %s to revision %s", (topdir, rev))
-                                profiler_start ("Updating tree %s to revision %s", (topdir, rev))
-                                self.__update (repobj, os.path.join (tmpdir, topdir), rev=rev)
-                                profiler_stop ("Updating tree %s to revision %s", (topdir, rev))
-                        else:
-                            printdbg ("Checking out %s @ %s", (relative_path, rev))
-                            profiler_start ("Checking out %s @ %s", (relative_path, rev))
-                            self.__checkout (repobj, relative_path, tmpdir, rev=rev)
-                            profiler_stop ("Checking out %s @ %s", (relative_path, rev))
-                    except Exception, e:
-                        printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
+            if revision != current_revision:
+                try:
+                    if type == 'svn':
+                        for topdir, first_rev in topdirs:
+                            if relative_path == topdir and rev == first_rev:
+                                # We already have such revision from the initial checkout
+                                continue
+                            if not relative_path.startswith (topdir):
+                                continue
+                            printdbg ("Updating tree %s to revision %s", (topdir, rev))
+                            profiler_start ("Updating tree %s to revision %s", (topdir, rev))
+                            self.__update (repo, os.path.join (tmpdir, topdir), rev=rev)
+                            profiler_stop ("Updating tree %s to revision %s", (topdir, rev))
+                    else:
+                        printdbg ("Checking out %s @ %s", (relative_path, rev))
+                        profiler_start ("Checking out %s @ %s", (relative_path, rev))
+                        self.__checkout (repo, relative_path, tmpdir, rev=rev)
+                        profiler_stop ("Checking out %s @ %s", (relative_path, rev))
+                except Exception, e:
+                    printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
             
-                    current_revision = revision
+                current_revision = revision
 
-                checkout_path = os.path.join (tmpdir, relative_path)
-                if os.path.isdir (checkout_path):
-                    continue
+            checkout_path = os.path.join (tmpdir, relative_path)
+            if os.path.isdir (checkout_path):
+                continue
 
-                if not os.path.exists (checkout_path):
-                    printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
-                    continue
+            if not os.path.exists (checkout_path):
+                printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
+                continue
                 
-                fm = create_file_metrics (checkout_path)
+            fm = create_file_metrics (checkout_path)
                     
-                # Measure the file
-                printdbg ("Measuring %s @ %s", (checkout_path, rev))
-                measures = Measures ()
+            # Measure the file
+            printdbg ("Measuring %s @ %s", (checkout_path, rev))
+            measures = Measures ()
 
-                profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
-                try:
-                    measures.loc = fm.get_LOC ()
-                except Exception, e:
-                    printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-                profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+            profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+            try:
+                measures.loc = fm.get_LOC ()
+            except Exception, e:
+                printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
-                try:
-                    measures.sloc, measures.lang = fm.get_SLOCLang ()
-                except ProgramNotFound, e:
-                    printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
-                except Exception, e:
-                    printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-                profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+            profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+            try:
+                measures.sloc, measures.lang = fm.get_SLOCLang ()
+            except ProgramNotFound, e:
+                printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
+            except Exception, e:
+                printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
-                try:
-                    measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
-                except NotImplementedError:
-                    pass
-                except ProgramNotFound, e:
-                    printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
-                except Exception, e:
-                    printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-                profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+            profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+            try:
+                measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
+            except NotImplementedError:
+                pass
+            except ProgramNotFound, e:
+                printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
+            except Exception, e:
+                printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
 
-                profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
-                try:
-                    measures.halstead_length, measures.halstead_vol, \
-                        measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
-                except NotImplementedError:
-                    pass
-                except ProgramNotFound, e:
-                    printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
-                except Exception, e:
-                    printerr ('Error running cmetrics halstead for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-                profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
-
-                profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
-                try:
-                    measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
-                        measures.mccabe_mean, measures.mccabe_median, \
-                        measures.nfunctions = fm.get_MccabeComplexity ()
-                except NotImplementedError:
-                    pass
-                except ProgramNotFound, e:
-                    printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
-                except Exception, e:
-                    printerr ('Error running cmetrics mccabe for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
-                profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+            profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
+            try:
+                measures.halstead_length, measures.halstead_vol, \
+                    measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
+            except NotImplementedError:
+                pass
+            except ProgramNotFound, e:
+                printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
+            except Exception, e:
+                printerr ('Error running cmetrics halstead for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
                 
-                # Create SQL Query insert
-                fields = ['id', 'file_id', 'commit_id']
-                values = [id_counter, file_id, commit_id]
-                
-                for key in measures.getattrs ():
-                    fields.append (key)
-                    values.append (getattr (measures, key))
+            profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+            try:
+                measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
+                    measures.mccabe_mean, measures.mccabe_median, \
+                    measures.nfunctions = fm.get_MccabeComplexity ()
+            except NotImplementedError:
+                pass
+            except ProgramNotFound, e:
+                printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
+            except Exception, e:
+                printerr ('Error running cmetrics mccabe for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
+            profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
 
-                fields = ','.join (fields)
-                
-                query = 'INSERT INTO metrics '
-                query += '(%s) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)' % (fields)
-                profiler_start ("Inserting results in db for %s", (filepath,))
-                write_cursor.execute (statement (query, db.place_holder), values)
-                profiler_stop ("Inserting results in db for %s", (filepath,))
+            self.metrics.append ((id_counter, file_id, commit_id, measures.lang, measures.sloc, measures.loc,
+                                  measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
+                                  measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
+                                  measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
+                                  measures.halstead_level, measures.halstead_md))
 
-                id_counter += 1
+            if len (self.metrics) >= self.MAX_METRICS:
+                profiler_start ("Inserting results in db")
+                self.__insert_many (write_cursor)
+                cnn.commit ()
+                profiler_stop ("Inserting results in db")
+                    
+            id_counter += 1
 
-            # Write everything related to this repo
-            profiler_start ("Commiting to db for repo %s", (uri,))
-            cnn.commit ()
-            profiler_stop ("Commiting to db for repo %s", (uri,))
+        profiler_start ("Inserting results in db")
+        self.__insert_many (write_cursor)
+        cnn.commit ()
+        profiler_stop ("Inserting results in db")
 
-            # Clean tmpdir
-            remove_directory (tmpdir)
+        # Clean tmpdir
+        # TODO: how long would this take? 
+        remove_directory (tmpdir)
 
         read_cursor.close ()
         write_cursor.close ()

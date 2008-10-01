@@ -84,11 +84,11 @@ class FileTypes (Extension):
         cnn.commit ()
         cursor.close ()
 
-    def __get_files (self, cnn):
-        cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT file_id from file_types", self.db.place_holder))
+    def __get_files_for_repository (self, repo_id, cursor):
+        query = "SELECT ft.file_id from file_types ft, tree t " + \
+                "WHERE t.id = ft.file_id and t.repository_id = ?"
+        cursor.execute (statement (query, self.db.place_holder), (repo_id,))
         files = [res[0] for res in cursor.fetchall ()]
-        cursor.close ()
 
         return files
         
@@ -97,41 +97,45 @@ class FileTypes (Extension):
         
         cnn = self.db.connect ()
 
+        cursor = cnn.cursor ()
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
+        repo_id = cursor.fetchone ()[0]
+        
         files = []
         
         try:
             self.__create_table (cnn)
         except TableAlreadyExists:
-            cursor = cnn.cursor ()
             cursor.execute (statement ("SELECT max(id) from file_types", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
                 DBFileType.id_counter = id + 1
-            cursor.close ()
 
-            files = self.__get_files (cnn)
+            files = self.__get_files_for_repository (repo_id, cursor)
         except Exception, e:
             raise ExtensionRunError (str (e))
 
-        cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT file_id, path from file_paths", db.place_holder))
+        query = "SELECT fp.file_id, fp.path from file_paths fp, tree t " + \
+                "WHERE fp.file_id = t.id and t.repository_id = ? "
+        cursor.execute (statement (query, db.place_holder), (repo_id,))
+        write_cursor = cnn.cursor ()
         rs = cursor.fetchmany ()
         while rs:
             types = []
 
             for file_id, path in rs:
-                if file_id not in files:
-                    type = guess_file_type (path)
-                    types.append (DBFileType (None, type, file_id))
+                if file_id in files:
+                    continue
+                type = guess_file_type (path)
+                types.append (DBFileType (None, type, file_id))
                     
-            new_cursor = cnn.cursor ()
             file_types = [(type.id, type.file_id, type.type) for type in types]
-            new_cursor.executemany (statement (DBFileType.__insert__, self.db.place_holder), file_types)
-            new_cursor.close ()
+            write_cursor.executemany (statement (DBFileType.__insert__, self.db.place_holder), file_types)
 
             rs = cursor.fetchmany ()
             
         cnn.commit ()
+        write_cursor.close ()
         cursor.close ()
         cnn.close ()
         

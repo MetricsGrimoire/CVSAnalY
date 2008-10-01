@@ -76,7 +76,7 @@ class GitParser (Parser):
 
     def __get_branch_for_revision (self, revision):
         # TODO
-        return None
+        return "trunk"
 
     def flush (self):
         if self.commit is None:

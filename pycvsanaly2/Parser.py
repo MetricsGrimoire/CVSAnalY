@@ -21,6 +21,8 @@
 
 import os
 import re
+import threading
+from AsyncQueue import AsyncQueue
 
 from repositoryhandler.backends.watchers import LOG
 
@@ -75,6 +77,14 @@ class Parser:
     def parse_line (self):
         raise NotImplementedError
 
+    def _logreader (self, repo, queue):
+        def new_line (data, user_data = None):
+            queue.put (data)
+
+        repo.add_watch (LOG, new_line)
+        repo.log (self.uri)
+
+        
     def run (self):
         self.handler.begin ()
 
@@ -111,8 +121,22 @@ class Parser:
 
             f.close ()
         else:
-            self.repo.add_watch (LOG, new_line)
-            self.repo.log (self.uri)
+            queue = AsyncQueue ()
+            logreader_thread = threading.Thread (target=self._logreader,
+                                                 args=(self.repo, queue))
+            logreader_thread.setDaemon (True)
+            logreader_thread.start ()
+
+            # Use the queue with mutexes while the
+            # thread is alive
+            while logreader_thread.isAlive ():
+                line = queue.get ()
+                new_line (line)
+
+            # No threads now, we don't need locks
+            while not queue.empty_unlocked ():
+                line = queue.get_unlocked ()
+                new_line (line)
 
         if save_log is not None:
             save_log.close ()
@@ -123,7 +147,9 @@ class Parser:
 
 if __name__ == '__main__':
     import sys
-    from ParserFactory import create_parser_from_logfile
+    import os
+    from repositoryhandler.backends import create_repository, create_repository_from_path
+    from ParserFactory import create_parser_from_logfile, create_parser_from_repository
     from Repository import *
     from utils import *
     
@@ -145,8 +171,18 @@ if __name__ == '__main__':
             print "Message"
             print commit.message
 
-    # SVN Parser from logfile
-    p = create_parser_from_logfile (sys.argv[1])
+    if os.path.isfile (sys.argv[1]):
+        # Parser from logfile
+        p = create_parser_from_logfile (sys.argv[1])
+    else:
+        path = uri_to_filename (sys.argv[1])
+        if path is not None:
+            repo = create_repository_from_path (path)
+        else:
+            repo = create_repository ('svn', sys.argv[1])
+        p = create_parser_from_repository (repo)
+        p.set_uri (path or sys.argv[1])
+
     p.config.lines = False
     p.set_content_handler (StdoutContentHandler ())
     p.run ()

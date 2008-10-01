@@ -67,7 +67,6 @@ Options:
       --with-lines=yes/no/auto   Get lines added/removed per commit (auto). Disabled by default 
                                  only for SVN repositories because of performance reasons.
 
-  -b, --branch                   Repository branch to analyze (head/trunk/master)
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
       --extensions=ext1,ext2,    List of extensions to run        
@@ -79,15 +78,19 @@ Database:
   -p, --db-password              Database user password
   -d, --db-database              Database name (cvsanaly)
   -H, --db-hostname              Name of the host where database server is running (localhost)
+
+Metrics Options:
+
+      --metrics-all              Get metrics for every revision, not only for HEAD
 """
 
 def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVgqf:b:l:s:u:p:d:H:"
+    short_opts = "hVgqf:l:s:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", "branch=",
+    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
                  "repo-logfile=", "save-logfile=", "with-lines=", "db-user=", "db-password=",
-                 "db-hostname=", "db-database=", "db-driver=", "extensions="]
+                 "db-hostname=", "db-database=", "db-driver=", "extensions=", "metrics-all"]
 
     # Default options
     debug = None
@@ -98,12 +101,12 @@ def main (argv):
     passwd = None
     hostname = None
     database = None
-    branch = None
     driver = None
     logfile = None
     save_logfile = None
     lines = None
     extensions = None
+    metrics_all = None
 
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
@@ -141,14 +144,14 @@ def main (argv):
             database = value
         elif opt in ("--db-driver"):
             driver = value
-        elif opt in ("-b", "--branch"):
-            branch = value
         elif opt in ("-l", "--repo-logfile"):
             logfile = value
         elif opt in ("-s", "--save-logfile"):
             save_logfile = value
         elif opt in ("--extensions", ):
             extensions = value.split (',')
+        elif opt in ("--metrics-all", ):
+            metrics_all = True
 
     if len (args) <= 0:
         uri = os.getcwd ()
@@ -171,8 +174,6 @@ def main (argv):
         config.quiet = quiet
     if profile is not None:
         config.profile = profile
-    if branch is not None:
-        config.branch = branch
     if logfile is not None:
         config.repo_logfile = logfile
     if save_logfile is not None:
@@ -189,6 +190,8 @@ def main (argv):
         config.db_database = database
     if extensions is not None:
         config.extensions.extend ([item for item in extensions if item not in config.extensions])
+    if metrics_all is not None:
+        config.metrics_all = metrics_all
 
     if config.debug:
         import repositoryhandler.backends

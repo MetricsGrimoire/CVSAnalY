@@ -85,14 +85,14 @@ class FilePaths (Extension):
         retval = []
 
         def get_file (cursor, fid):
-            cursor.execute (statement ("SELECT id, parent, file_name, deleted from tree where id = ?", self.db.place_holder), (fid,))
+            cursor.execute (statement ("SELECT id, parent, file_name from tree where id = ?", self.db.place_holder), (fid,))
             
             try:
-                (id, parent, file_name, deleted) = cursor.fetchone ()
+                (id, parent, file_name) = cursor.fetchone ()
             except TypeError:
                 return None
             
-            return DBFile (id, file_name, parent, deleted)
+            return DBFile (id, file_name, parent)
         
         def build_path (cursor, node):
             if node is None or node.id == -1:
@@ -112,11 +112,11 @@ class FilePaths (Extension):
         
         return None
 
-    def __get_paths (self, cnn):
-        cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT path from file_paths", self.db.place_holder))
+    def __get_paths_for_repository (self, repo_id, cursor):
+        query = "SELECT fp.file_id from file_paths fp, tree t " + \
+                "WHERE t.id = fp.file_id and t.repository_id = ?"
+        cursor.execute (statement (query, self.db.place_holder), (repo_id,))
         paths = [res[0] for res in cursor.fetchall ()]
-        cursor.close ()
 
         return paths
     
@@ -125,6 +125,10 @@ class FilePaths (Extension):
 
         cnn = self.db.connect ()
 
+        cursor = cnn.cursor ()
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
+        repo_id = cursor.fetchone ()[0]
+
         # If table does not exist, the list of paths is empty,
         # otherwise it will be filled within the except block below
         paths = []
@@ -132,36 +136,35 @@ class FilePaths (Extension):
         try:
             self.__create_table (cnn)
         except TableAlreadyExists:
-            cursor = cnn.cursor ()
             cursor.execute (statement ("SELECT max(id) from file_paths", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
                 DBFilePath.id_counter = id + 1
-            cursor.close ()
 
-            paths = self.__get_paths (cnn)
+            paths = self.__get_paths_for_repository (repo_id, cursor)
         except Exception, e:
             raise ExtensionRunError (str (e))
 
-        cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT id from tree", db.place_holder))
+        cursor.execute (statement ("SELECT id from tree where repository_id = ?", db.place_holder), (repo_id,))
+        write_cursor = cnn.cursor ()
         rs = cursor.fetchmany ()
         while rs:
             files = []
 
-            for ids in rs:
-                path = self.get_path_from_id (cnn, ids[0])
-                if path is not None and path not in paths:
-                    files.append (DBFilePath (None, path, ids[0]))
+            for id in rs:
+                if id[0] in paths:
+                    continue
+                path = self.get_path_from_id (cnn, id[0])
+                if path is not None:
+                    files.append (DBFilePath (None, path, id[0]))
 
-            new_cursor = cnn.cursor ()
             file_paths = [(file.id, file.file_id, file.path) for file in files]
-            new_cursor.executemany (statement (DBFilePath.__insert__, self.db.place_holder), file_paths)
-            new_cursor.close ()
+            write_cursor.executemany (statement (DBFilePath.__insert__, self.db.place_holder), file_paths)
 
             rs = cursor.fetchmany ()
             
         cnn.commit ()
+        write_cursor.close ()
         cursor.close ()
         cnn.close ()
 

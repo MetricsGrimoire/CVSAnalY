@@ -1,3 +1,218 @@
+2008-10-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/AsyncQueue.py:
+	* pycvsanaly2/Parser.py:
+
+	Use a thread to read the log from the repository log command
+	output so that the log is read into memory as soon as possible and
+	we don't depend on the network most of the time.
+	
+2008-10-01  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Changed each topdir path to the path on its first revision.
+
+2008-09-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Fix a crash due to an invalid DBFile constructor invocation.
+	
+2008-09-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Do not get metrics for all the repositories of the database, but
+	for the given one only.
+	
+2008-09-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/FilePaths.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+
+	Work only over the files of the given repository.
+	
+2008-09-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Database.py:
+
+	Add a relationship between tree and repository to make sure the
+	same path is stored with different id for every repository.
+	
+2008-09-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/utils.py:
+
+	Fix circular dependency introduced by my previous commit.
+	
+2008-09-29  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/utils.py:
+
+	Move imports out of the functions
+	
+2008-09-22  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Do not include topdirs that are currently deleted when analyzing
+	only head.
+	
+2008-09-17  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Use executemany instead of execute to inster the metrics into the
+	db.
+	
+2008-09-17  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/main.py:
+
+	Remove the branch command line option, we have never used it and
+	it doesn't make sense anymore.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/CVSParser.py:
+
+	Do not trust revision and file separators, they can be part of the
+	commit message.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Remove the paths conversion mess, I'm quite sure we don't need it
+	at all.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/Database.py:
+	* pycvsanaly2/DBContentHandler.py:
+
+	Add a people table. Committer and author fields are now foreign
+	keys of such a table.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Check if branch is in the cache dict instead of using the get
+	method, since the default value is always created even when it's
+	not needed and ensure_branches method was always called.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/GitParser.py:
+
+	Branches stuff is not supported by the git parser yet, assuming
+	trunk is the only branch instead of returning None and then
+	crashing.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Change the query used to analyze only head.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/SVNParser.py:
+
+	Ignore actions on '/' since they are usually changes of
+	propertoies that are not intereting for us.
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	No need to check whether topdir is valid, since we have removed
+	the actions on '/' that procuded a null file in the db.
+	
+2008-09-16  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Database.py:
+
+	Add a flag 'head' to actions table to mark the last action of
+	every file in every branch.
+	
+2008-09-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/file_types.py:
+
+	Use a list instead of a dictionary for file types, since the order
+	in which the patterns are processed is important. Add more file
+	types.
+	
+2008-09-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/file_types.py:
+
+	Add more file types.
+	
+2008-09-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Order by date and rev to avoid updating the same revision more
+	than once.
+	
+2008-09-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Do not update the topdir to the revision of its initial checkout.
+	
+2008-09-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/file_types.py:
+
+	Update file types list.
+	
+2008-09-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Database.py:
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Remove the deleted flag from tree table. It doesn't work at all,
+	we are not actually using it and it's very confusing.
+	
+2008-09-11  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/utils.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Add an option for the metrics extension to run the metric tools
+	for every revision. Now, by default, only HEAD is analyzed if this
+	option is not provided.
+	
+2008-09-09  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Do not use the file path from the datebase to know whether to
+	update a topdir, since that path could be moved from one 'branch' to
+	another. Use the relative_path for the given revision instead.
+	
+2008-09-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/CVSParser.py:
+
+	Discard the special revision 1.1 with dead state created when a
+	file has been added in a branch.
+	
+2008-09-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Do not change uri or the second try will never work.
+	
 2008-09-08  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/Config.py:

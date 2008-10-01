@@ -230,17 +230,23 @@ class SVNParser (Parser):
         # File
         match = self.patterns['file'].match (line)
         if match:
-            f = File ()
-            f.path = match.group (2)
+            path = match.group (2)
 
-            action = Action ()
-            action.type = match.group (1)
-            action.f1 = f
+            if path != '/':
+                # path == '/' is probably a properties change in /
+                # not interesting for us, ignoring
 
-            action.branch = self.__guess_branch_from_path (f.path)
+                f = File ()
+                f.path = path
+                
+                action = Action ()
+                action.type = match.group (1)
+                action.f1 = f
 
-            self.commit.actions.append (action)
-            self.handler.file (f)
+                action.branch = self.__guess_branch_from_path (f.path)
+
+                self.commit.actions.append (action)
+                self.handler.file (f)
             
             if self.state == SVNParser.COMMIT:
                 self.state = SVNParser.FILES

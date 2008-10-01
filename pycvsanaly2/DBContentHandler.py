@@ -18,8 +18,7 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from ContentHandler import ContentHandler
-from Database import DBRepository, DBLog, DBFile, DBAction, DBBranch, statement
-from profile import plog
+from Database import DBRepository, DBLog, DBFile, DBAction, DBBranch, DBPerson, statement
 from utils import printdbg
 
 class DBContentHandler (ContentHandler):
@@ -35,6 +34,8 @@ class DBContentHandler (ContentHandler):
         self.file_cache = {}
         self.commit_cache = None
         self.branch_cache = {}
+        self.heads_cache = None
+        self.people_cache = {}
 
     def __del__ (self):
         if self.cnn is not None:
@@ -45,6 +46,7 @@ class DBContentHandler (ContentHandler):
 
         self.commits = []
         self.actions = []
+        self.heads = {}
 
     def repository (self, uri):
         cursor = self.cnn.cursor ()
@@ -64,9 +66,48 @@ class DBContentHandler (ContentHandler):
 
         return self.commit_cache
 
+    def __get_heads (self):
+        if self.heads_cache is not None:
+            return self.heads_cache
+
+        cursor = self.cnn.cursor ()
+        query =  "SELECT a.id, a.file_id, a.branch_id from actions a, scmlog s "
+        query += "where a.commit_id = s.id and head and repository_id = ?"
+        cursor.execute (statement (query, self.db.place_holder), (self.repo_id,))
+        self.heads_cache = []
+        for action_id, file_id, branch_id in cursor.fetchall ():
+            self.heads_cache.append ((action_id, file_id, branch_id))
+        cursor.close ()
+
+        return self.heads_cache
+
+    def __update_heads (self, cursor):
+        heads = self.__get_heads ()
+
+        if not heads:
+            return
+
+        old_heads = []
+        for action_id, file_id, branch_id in [item for item in heads]:
+            if file_id in self.heads.get (branch_id, []):
+                old_heads.append (action_id)
+                heads.remove ((action_id, file_id, branch_id))
+
+        if not old_heads:
+            return
+
+        query = "UPDATE actions set head = ? where id in ("
+        query += ",".join (['?' for item in old_heads])
+        query += ")"
+        old_heads.insert (0, False)
+        cursor.execute (statement (query, self.db.place_holder), (old_heads))
+
     def __insert_many (self):
         cursor = self.cnn.cursor ()
 
+        # Update the heads before inserting actions
+        self.__update_heads (cursor)
+        
         if self.actions:
             cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), self.actions)
             self.actions = []
@@ -98,14 +139,17 @@ class DBContentHandler (ContentHandler):
 
                 continue
 
-            cursor.execute (statement ("SELECT * from tree where file_name = ? AND parent = ? order by id", self.db.place_holder), (token, parent))
-            rs = cursor.fetchall ()
+            cursor.execute (statement ("SELECT * from tree where file_name = ? AND parent = ? AND repository_id = ?", self.db.place_holder),
+                            (token, parent, self.repo_id))
+            rs = cursor.fetchone ()
             if not rs:
                 node = DBFile (None, token, parent)
-                cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (node.id, node.parent, node.file_name, node.deleted))
+                node.repository_id = self.repo_id
+                cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (node.id, node.parent, node.file_name, node.repository_id))
                 self.file_cache[rpath] = node
             else:
-                node = DBFile (rs[-1][0], rs[-1][2], rs[-1][1], rs[-1][3]) 
+                node = DBFile (rs[0], rs[2], rs[1])
+                node.repository_id = rs[3]
 
             parent = node.id 
             i += 1
@@ -117,7 +161,27 @@ class DBContentHandler (ContentHandler):
         
         return node
 
+    def __ensure_person (self, person):
+        printdbg ("DBContentHandler: ensure_person %s", (person))
+        cursor = self.cnn.cursor ()
+
+        cursor.execute (statement ("SELECT id from people where name = ?", self.db.place_holder), (person,))
+        rs = cursor.fetchone ()
+        if not rs:
+            p = DBPerson (None, person)
+            cursor.execute (statement (DBPerson.__insert__, self.db.place_holder), (p.id, p.name))
+            person_id = p.id
+        else:
+            person_id = rs[0]
+
+        self.people_cache[person] = person_id
+
+        cursor.close ()
+
+        return person_id
+
     def __ensure_branch (self, branch):
+        printdbg ("DBContentHandler: ensure_branch %s", (branch))
         cursor = self.cnn.cursor ()
 
         cursor.execute (statement ("SELECT id from branches where name = ?", self.db.place_holder), (branch,))
@@ -129,7 +193,7 @@ class DBContentHandler (ContentHandler):
         else:
             branch_id = rs[0]
             
-        self.branch_cache [branch] = branch_id
+        self.branch_cache[branch] = branch_id
             
         cursor.close ()
 
@@ -141,15 +205,33 @@ class DBContentHandler (ContentHandler):
 
         log = DBLog (None, commit)
         log.repository_id = self.repo_id
-        self.commits.append ((log.id, log.rev, log.committer, log.author, log.date, log.lines_added, log.lines_removed, log.message, log.composed_rev, log.repository_id))
+
+        if log.committer in self.people_cache:
+            committer = self.people_cache[log.committer]
+        else:
+            committer = self.__ensure_person (log.committer)
+
+        if log.author == log.committer:
+            author = committer
+        elif log.author is not None:
+            if log.author in self.people_cache:
+                author = self.people_cache[log.author]
+            else:
+                author = self.__ensure_person (log.author)
+        else:
+            author = None
+            
+        self.commits.append ((log.id, log.rev, committer, author, log.date,
+                              log.lines_added, log.lines_removed, log.message,
+                              log.composed_rev, log.repository_id))
 
         printdbg ("DBContentHandler: commit: %d rev: %s", (log.id, log.rev))
         renamed_from = None
-
+        
         for action in commit.actions:
             printdbg ("DBContentHandler: Action: %s", (action.type))
             dbaction = DBAction (None, action.type)
-            
+
             if action.f2 is not None:
                 if self.file_cache.has_key (action.f1.path):
                     file = self.file_cache[action.f1.path]
@@ -175,15 +257,25 @@ class DBContentHandler (ContentHandler):
                     self.file_cache[action.f1.path] = file
                     printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f1.path, file.id, file.file_name))
 
-            if action.type == 'D':
-                file.deleted = True
+            if action.branch in self.branch_cache:
+                branch_id = self.branch_cache[action.branch]
+            else:
+                branch_id = self.__ensure_branch (action.branch)
 
-            branch_id = self.branch_cache.get (action.branch, self.__ensure_branch (action.branch))
-
+            if branch_id not in self.heads:
+                self.heads[branch_id] = [file.id]
+                dbaction.head = True
+            else:
+                if file.id not in self.heads[branch_id]:
+                    self.heads[branch_id].append (file.id)
+                    dbaction.head = True
+                
             dbaction.commit_id = log.id
             dbaction.file_id = file.id
             dbaction.branch_id = branch_id
-            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.old_path, dbaction.commit_id, dbaction.branch_id))
+
+            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.old_path,
+                                  dbaction.commit_id, dbaction.branch_id, dbaction.head))
 
         if len (self.actions) >= self.MAX_ACTIONS:
             printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
