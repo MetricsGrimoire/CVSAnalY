@@ -1,5 +1,17 @@
 2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/AsyncQueue.py:
+
+	Add an optional timeout parameter to get method and raise a
+	TimeOut exception when the queue is empty and the timeout is over.
+	
+	* pycvsanaly2/Parser.py:
+
+	Fix a race condition when the thread finishes and we are waiting
+	forever in get()
+	
+2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/main.py:
 
 	Do not crash when an invalid path has been provided, show an error

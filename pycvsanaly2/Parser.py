@@ -22,7 +22,7 @@
 import os
 import re
 import threading
-from AsyncQueue import AsyncQueue
+from AsyncQueue import AsyncQueue, TimeOut
 
 from repositoryhandler.backends.watchers import LOG
 
@@ -83,7 +83,6 @@ class Parser:
 
         repo.add_watch (LOG, new_line)
         repo.log (self.uri)
-
         
     def run (self):
         self.handler.begin ()
@@ -130,7 +129,10 @@ class Parser:
             # Use the queue with mutexes while the
             # thread is alive
             while logreader_thread.isAlive ():
-                line = queue.get ()
+                try:
+                    line = queue.get (1)
+                except TimeOut:
+                    continue
                 new_line (line)
 
             # No threads now, we don't need locks

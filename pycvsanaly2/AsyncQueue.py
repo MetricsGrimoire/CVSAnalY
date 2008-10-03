@@ -17,7 +17,11 @@
 # Authors: Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 import threading
+from time import time as _time
 from collections import deque
+
+class TimeOut (Exception):
+    pass
 
 class AsyncQueue:
 
@@ -71,11 +75,21 @@ class AsyncQueue:
     def put_unlocked (self, item):
         self._put (item)
 
-    def get (self):
+    def get (self, timeout = None):
         self.cond.acquire ()
         try:
-            while self._empty ():
-                self.cond.wait ()
+            if timeout is None:
+                while self._empty ():
+                    self.cond.wait ()
+            else:
+                if timeout < 0:
+                    raise ValueError("'timeout' must be a positive number")
+                endtime = _time() + timeout
+                while self._empty ():
+                    remaining = endtime - _time ()
+                    if remaining <= 0.0:
+                        raise TimeOut
+                    self.cond.wait (remaining)
             item = self._get ()
             return item
         finally:
@@ -115,4 +129,9 @@ if __name__ == '__main__':
         q.put (item)
 
     q.join ()
+
+    try:
+        q.get (5)
+    except TimeOut:
+        print "Queue empty! bye bye!"
         
