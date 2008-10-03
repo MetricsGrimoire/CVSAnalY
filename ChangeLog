@@ -1,5 +1,12 @@
 2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/main.py:
+
+	Do not crash when an invalid path has been provided, show an error
+	and exit instead. Fixes bug #792.
+	
+2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/DBContentHandler.py:
 	* pycvsanaly2/Database.py:
 

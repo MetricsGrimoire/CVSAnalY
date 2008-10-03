@@ -31,7 +31,7 @@ Main funcion of cvsanaly. Fun starts here!
 import os
 import getopt
 
-from repositoryhandler.backends import create_repository, create_repository_from_path
+from repositoryhandler.backends import create_repository, create_repository_from_path, RepositoryUnknownError
 from ParserFactory import create_parser_from_logfile, create_parser_from_repository
 from Database import (create_database, TableAlreadyExists, AccessDenied, DatabaseNotFound,
                       DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
@@ -199,7 +199,14 @@ def main (argv):
         
     path = uri_to_filename (uri)
     if path is not None:
-        repo = create_repository_from_path (path)
+        try:
+            repo = create_repository_from_path (path)
+        except RepositoryUnknownError:
+            printerr ("Path %s doesn't seem to point to a repository supported by cvsanaly", (path,))
+            return 1
+        except Exception, e:
+            printerr ("Unknown error creating repository for path %s (%s)", (path, str (e)))
+            return 1
     else:
         repo = create_repository ('svn', uri)
 
