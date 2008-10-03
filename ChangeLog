@@ -1,3 +1,15 @@
+2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Several performance improvements in the paths handling:
+	  - Only store the file_id in the file cache, we don't actually
+	    need to store the whole file object
+	  - Look only for id instead of * in the tree table
+	  - Create an index for file_name on table tree. It drastically
+	    improves the performance of the whole process.
+	Profile statements have been added too for debugging. 
+	
 2008-10-01  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/AsyncQueue.py:

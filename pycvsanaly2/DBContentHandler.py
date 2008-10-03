@@ -19,6 +19,7 @@
 
 from ContentHandler import ContentHandler
 from Database import DBRepository, DBLog, DBFile, DBAction, DBBranch, DBPerson, statement
+from profile import profiler_start, profiler_stop
 from utils import printdbg
 
 class DBContentHandler (ContentHandler):
@@ -44,6 +45,10 @@ class DBContentHandler (ContentHandler):
     def begin (self):
         self.cnn = self.db.connect ()
 
+        cursor = self.cnn.cursor ()
+        cursor.execute (statement ("CREATE index tree_filename on tree(file_name)", self.db.place_holder))
+        cursor.close ()
+        
         self.commits = []
         self.actions = []
         self.heads = {}
@@ -58,18 +63,24 @@ class DBContentHandler (ContentHandler):
         if self.commit_cache is not None:
             return self.commit_cache
 
+        profiler_start ("Getting commits for repository %d", (self.repo_id,))
+        
         cursor = self.cnn.cursor ()
         cursor.execute (statement ("SELECT rev from scmlog where repository_id = ?", self.db.place_holder), (self.repo_id,))
         res = cursor.fetchall ()
         self.commit_cache = [rev[0] for rev in res]
         cursor.close ()
 
+        profiler_stop ("Getting commits for repository %d", (self.repo_id,))
+        
         return self.commit_cache
 
     def __get_heads (self):
         if self.heads_cache is not None:
             return self.heads_cache
 
+        profiler_start ("Getting heads for repository %d", (self.repo_id,))
+        
         cursor = self.cnn.cursor ()
         query =  "SELECT a.id, a.file_id, a.branch_id from actions a, scmlog s "
         query += "where a.commit_id = s.id and head and repository_id = ?"
@@ -79,6 +90,8 @@ class DBContentHandler (ContentHandler):
             self.heads_cache.append ((action_id, file_id, branch_id))
         cursor.close ()
 
+        profiler_stop ("Getting heads for repository %d", (self.repo_id,))
+        
         return self.heads_cache
 
     def __update_heads (self, cursor):
@@ -87,6 +100,8 @@ class DBContentHandler (ContentHandler):
         if not heads:
             return
 
+        profiler_start ("Updating heads for repository %d", (self.repo_id,))
+        
         old_heads = []
         for action_id, file_id, branch_id in [item for item in heads]:
             if file_id in self.heads.get (branch_id, []):
@@ -94,13 +109,16 @@ class DBContentHandler (ContentHandler):
                 heads.remove ((action_id, file_id, branch_id))
 
         if not old_heads:
+            profiler_stop ("Updating heads for repository %d", (self.repo_id,))
             return
-
+        
         query = "UPDATE actions set head = ? where id in ("
         query += ",".join (['?' for item in old_heads])
         query += ")"
         old_heads.insert (0, False)
         cursor.execute (statement (query, self.db.place_holder), (old_heads))
+
+        profiler_stop ("Updating heads for repository %d", (self.repo_id,))
 
     def __insert_many (self):
         cursor = self.cnn.cursor ()
@@ -109,16 +127,23 @@ class DBContentHandler (ContentHandler):
         self.__update_heads (cursor)
         
         if self.actions:
+            profiler_start ("Inserting actions for repository %d", (self.repo_id,))
             cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), self.actions)
             self.actions = []
+            profiler_stop ("Inserting actions for repository %d", (self.repo_id,))
         if self.commits:
+            profiler_start ("Inserting commits for repository %d", (self.repo_id,))
             cursor.executemany (statement (DBLog.__insert__, self.db.place_holder), self.commits)
             self.commits = []
+            profiler_stop ("Inserting commits for repository %d", (self.repo_id,))
 
+        profiler_start ("Committing inserts for repository %d", (self.repo_id,))
         cursor.close ()
-        self.cnn.commit ()        
+        self.cnn.commit ()
+        profiler_stop ("Committing inserts for repository %d", (self.repo_id,))
         
     def __ensure_path (self, path):
+        profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
         printdbg ("DBContentHandler: ensure_path %s", (path))
         tokens = path.strip ('/').split ('/')
 
@@ -126,42 +151,45 @@ class DBContentHandler (ContentHandler):
         
         parent = -1
         node = None
-        i = 1
-        for token in tokens:
-            rpath = '/' + '/'.join (tokens[:i])
-            printdbg ("DBContentHandler: rpath: %s", (rpath))
-            if self.file_cache.has_key (rpath):
-                node = self.file_cache[rpath]
-                printdbg ("DBContentHandler: found %s in cache file_id = %d (%s)", (rpath, node.id, node.file_name))
-                printdbg ("DBContentHandler: parent = %d", (node.id))
-                parent = node.id
-                i += 1
+        for i, token in enumerate (tokens):
+            rpath = '/' + '/'.join (tokens[:i + 1])
+            printdbg ("DBContentHandler: rpath: %s", (rpath,))
+            if rpath in self.file_cache:
+                node_id = self.file_cache[rpath]
+                printdbg ("DBContentHandler: found %s in cache file_id = %d", (rpath, node_id))
+                printdbg ("DBContentHandler: parent = %d", (node_id))
+                parent = node_id
 
                 continue
 
-            cursor.execute (statement ("SELECT * from tree where file_name = ? AND parent = ? AND repository_id = ?", self.db.place_holder),
+            profiler_start ("Looking for path %s parent %d for repository %d", (token, parent, self.repo_id))
+            cursor.execute (statement ("SELECT id from tree where file_name = ? AND parent = ? AND repository_id = ?", self.db.place_holder),
                             (token, parent, self.repo_id))
             rs = cursor.fetchone ()
+            profiler_stop ("Looking for path %s parent %d for repository %d", (token, parent, self.repo_id))
             if not rs:
                 node = DBFile (None, token, parent)
                 node.repository_id = self.repo_id
+                profiler_start ("Inserting path %s parent %d for repository %d", (token, parent, self.repo_id))
                 cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (node.id, node.parent, node.file_name, node.repository_id))
-                self.file_cache[rpath] = node
+                profiler_stop ("Inserting path %s parent %d for repository %d", (token, parent, self.repo_id))
+                self.file_cache[rpath] = node.id
+                node_id = node.id
             else:
-                node = DBFile (rs[0], rs[2], rs[1])
-                node.repository_id = rs[3]
+                node_id = rs[0]
 
-            parent = node.id 
-            i += 1
+            parent = node_id 
 
-        assert node is not None
+        assert node_id is not None
 
         cursor.close ()
-        printdbg ("DBContentHandler: path ensured %s = %d (%s)", (path, node.id, node.file_name))
+        printdbg ("DBContentHandler: path ensured %s = %d", (path, node_id))
+        profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id))
         
-        return node
+        return node_id
 
     def __ensure_person (self, person):
+        profiler_start ("Ensuring person %s for repository %d", (person, self.repo_id))
         printdbg ("DBContentHandler: ensure_person %s", (person))
         cursor = self.cnn.cursor ()
 
@@ -178,9 +206,12 @@ class DBContentHandler (ContentHandler):
 
         cursor.close ()
 
+        profiler_stop ("Ensuring person %s for repository %d", (person, self.repo_id))
+
         return person_id
 
     def __ensure_branch (self, branch):
+        profiler_start ("Ensuring branch %s for repository %d", (branch, self.repo_id))
         printdbg ("DBContentHandler: ensure_branch %s", (branch))
         cursor = self.cnn.cursor ()
 
@@ -197,12 +228,16 @@ class DBContentHandler (ContentHandler):
             
         cursor.close ()
 
+        profiler_stop ("Ensuring branch %s for repository %d", (branch, self.repo_id))
+
         return branch_id
     
     def commit (self, commit):
         if commit.revision in self.__get_repository_commits ():
             return
 
+        profiler_start ("New commit %s for repository %d", (commit.revision, self.repo_id))
+        
         log = DBLog (None, commit)
         log.repository_id = self.repo_id
 
@@ -233,29 +268,29 @@ class DBContentHandler (ContentHandler):
             dbaction = DBAction (None, action.type)
 
             if action.f2 is not None:
-                if self.file_cache.has_key (action.f1.path):
-                    file = self.file_cache[action.f1.path]
-                    printdbg ("DBContentHandler: found %s in cache file_id = %d (%s)", (action.f1.path, file.id, file.file_name))
+                if action.f1.path in self.file_cache:
+                    file_id = self.file_cache[action.f1.path]
+                    printdbg ("DBContentHandler: found %s in cache file_id = %d", (action.f1.path, file_id))
                 else:
-                    file = self.__ensure_path (action.f1.path)
+                    file_id = self.__ensure_path (action.f1.path)
 
                 # TODO: Replace actions!!!
                 if action.type == 'V':
                     # Rename the node
-                    self.file_cache[action.f2.path] = file
+                    self.file_cache[action.f2.path] = file_id
                     dbaction.old_path = action.f2.path
-                    printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f2.path, file.id, file.file_name))
+                    printdbg ("DBContentHandler: update cache %s = %d", (action.f2.path, file_id))
                 else:
-                    self.file_cache[action.f1.path] = file
-                    printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f1.path, file.id, file.file_name))
+                    self.file_cache[action.f1.path] = file_id
+                    printdbg ("DBContentHandler: update cache %s = %d", (action.f1.path, file_id))
             else:
-                if self.file_cache.has_key (action.f1.path):
-                    file = self.file_cache[action.f1.path]
-                    printdbg ("DBContentHandler: found %s in cache file_id = %d", (action.f1.path, file.id))
+                if action.f1.path in self.file_cache:
+                    file_id = self.file_cache[action.f1.path]
+                    printdbg ("DBContentHandler: found %s in cache file_id = %d", (action.f1.path, file_id))
                 else:
-                    file = self.__ensure_path (action.f1.path)
-                    self.file_cache[action.f1.path] = file
-                    printdbg ("DBContentHandler: update cache %s = %d (%s)", (action.f1.path, file.id, file.file_name))
+                    file_id = self.__ensure_path (action.f1.path)
+                    self.file_cache[action.f1.path] = file_id
+                    printdbg ("DBContentHandler: update cache %s = %d", (action.f1.path, file_id))
 
             if action.branch in self.branch_cache:
                 branch_id = self.branch_cache[action.branch]
@@ -263,15 +298,15 @@ class DBContentHandler (ContentHandler):
                 branch_id = self.__ensure_branch (action.branch)
 
             if branch_id not in self.heads:
-                self.heads[branch_id] = [file.id]
+                self.heads[branch_id] = [file_id]
                 dbaction.head = True
             else:
-                if file.id not in self.heads[branch_id]:
-                    self.heads[branch_id].append (file.id)
+                if file_id not in self.heads[branch_id]:
+                    self.heads[branch_id].append (file_id)
                     dbaction.head = True
                 
             dbaction.commit_id = log.id
-            dbaction.file_id = file.id
+            dbaction.file_id = file_id
             dbaction.branch_id = branch_id
 
             self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.old_path,
@@ -280,11 +315,18 @@ class DBContentHandler (ContentHandler):
         if len (self.actions) >= self.MAX_ACTIONS:
             printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
             self.__insert_many ()
+
+        profiler_stop ("New commit %s for repository %d", (commit.revision, self.repo_id))
             
     def end (self):
         # flush pending inserts
         printdbg ("DBContentHandler: flushing pensing inserts")
         self.__insert_many ()
+
+        cursor = self.cnn.cursor ()
+        cursor.execute (statement ("DROP index tree_filename on tree"))
+        cursor.close ()
+        
         self.cnn.close ()
         self.cnn = None
             
