@@ -45,10 +45,6 @@ class DBContentHandler (ContentHandler):
     def begin (self):
         self.cnn = self.db.connect ()
 
-        cursor = self.cnn.cursor ()
-        cursor.execute (statement ("CREATE index tree_filename on tree(file_name)", self.db.place_holder))
-        cursor.close ()
-        
         self.commits = []
         self.actions = []
         self.heads = {}
@@ -322,11 +318,6 @@ class DBContentHandler (ContentHandler):
         # flush pending inserts
         printdbg ("DBContentHandler: flushing pensing inserts")
         self.__insert_many ()
-
-        cursor = self.cnn.cursor ()
-        cursor.execute (statement ("DROP index tree_filename on tree"))
-        cursor.close ()
-        
         self.cnn.close ()
         self.cnn = None
             

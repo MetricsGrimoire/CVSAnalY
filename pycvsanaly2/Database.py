@@ -263,6 +263,7 @@ class SqliteDatabase (Database):
                             "file_name varchar(255)," +
                             "repository_id integer" +
                             ")")
+            cursor.execute ("CREATE index tree_filename on tree(file_name)")
         except pysqlite2.dbapi2.OperationalError:
             raise TableAlreadyExists
         except:
@@ -334,6 +335,7 @@ class MysqlDatabase (Database):
                             "parent integer," +
                             "file_name varchar(255)," +
                             "repository_id INT," +
+                            "INDEX (file_name)," +
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" +
                             ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE branches (" +

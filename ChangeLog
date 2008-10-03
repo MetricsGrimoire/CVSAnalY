@@ -1,6 +1,14 @@
 2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Database.py:
+
+	Create the index for file_name on table tree when creating the
+	table and don't remove it.
+	
+2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
 
 	Several performance improvements in the paths handling:
 	  - Only store the file_id in the file cache, we don't actually
