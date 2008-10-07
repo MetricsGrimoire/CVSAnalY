@@ -23,6 +23,7 @@ class Commit:
                           'date'         : None,
                           'lines'        : None, 
                           'actions'      : [],
+                          'branch'       : None,
                           'message'      : "",
                           'composed_rev' : False }
         

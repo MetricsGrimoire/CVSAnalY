@@ -288,10 +288,12 @@ class DBContentHandler (ContentHandler):
                     self.file_cache[action.f1.path] = file_id
                     printdbg ("DBContentHandler: update cache %s = %d", (action.f1.path, file_id))
 
-            if action.branch in self.branch_cache:
-                branch_id = self.branch_cache[action.branch]
+            branch = commit.branch or action.branch
+                    
+            if branch in self.branch_cache:
+                branch_id = self.branch_cache[branch]
             else:
-                branch_id = self.__ensure_branch (action.branch)
+                branch_id = self.__ensure_branch (branch)
 
             if branch_id not in self.heads:
                 self.heads[branch_id] = [file_id]

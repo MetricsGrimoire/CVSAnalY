@@ -167,9 +167,9 @@ if __name__ == '__main__':
             for action in commit.actions:
                 print "%s %s " % (action.type, action.f1.path),
                 if action.f2 is not None:
-                    print "(%s) on branch %s" % (action.f2.path, action.branch)
+                    print "(%s) on branch %s" % (action.f2.path, commit.branch or action.branch)
                 else:
-                    print "on branch %s" % (action.branch)
+                    print "on branch %s" % (commit.branch or action.branch)
             print "Message"
             print commit.message
 

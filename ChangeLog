@@ -1,3 +1,13 @@
+2008-10-07  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/Parser.py:
+	* pycvsanaly2/Repository.py:
+
+	For the SCMs where it's not possible to commit in more than one
+	branch at the same time (in the same commit) we can just associate
+	the branch to the commit instead of to every action.
+	
 2008-10-03  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/AsyncQueue.py:
