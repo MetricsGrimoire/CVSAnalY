@@ -29,14 +29,24 @@ from Repository import Commit, Action, File
 
 class GitParser (Parser):
 
+    class GitCommit:
+
+        def __init__ (self, commit, parents):
+            self.commit = commit
+            self.parents = parents
+
+        def is_my_child (self, git_commit):
+            return git_commit.parents and self.commit.revision in git_commit.parents
+    
     patterns = {}
-    patterns['commit'] = re.compile ("^commit[ \t]+(.*)$")
+    patterns['commit'] = re.compile ("^commit[ \t]+([^ ]+)( ([^\(]+))?( \((.*)\))?$")
     patterns['author'] = re.compile ("^Author:[ \t]+(.*)[ \t]+<(.*)>$")
     patterns['committer'] = re.compile ("^Commit:[ \t]+(.*)[ \t]+<(.*)>$")
     patterns['date'] = re.compile ("^CommitDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
     patterns['file'] = re.compile ("^([MAD])[ \t]+(.*)$")
     patterns['file-moved'] = re.compile ("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
-    patterns['ignore'] = [re.compile ("^AuthorDate: .*$")]
+    patterns['branch'] = re.compile ("refs/remotes/origin/([^,]*)")
+    patterns['ignore'] = [re.compile ("^AuthorDate: .*$"), re.compile ("^Merge: .*$")]
     patterns['diffstat'] = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
 
     def __init__ (self):
@@ -46,6 +56,8 @@ class GitParser (Parser):
         
         # Parser context
         self.commit = None
+        self.branch_stack = None
+        self.branches = []
 
     def __get_added_removed_lines (self, revision):
         if self.git is None:
@@ -74,16 +86,15 @@ class GitParser (Parser):
             
         return None
 
-    def __get_branch_for_revision (self, revision):
-        # TODO
-        return "trunk"
-
     def flush (self):
-        if self.commit is None:
-            return
-        
-        self.handler.commit (self.commit)
-        self.commit = None
+        if self.branches:
+            self._unpack_branch_stack ()
+
+    def _unpack_branch_stack (self):
+        branch, stack = self.branches.pop (0)
+        for commit in stack:
+            commit.commit.branch = branch
+            self.handler.commit (commit.commit)
 
     def parse_line (self, line):
         if line is None or line == '':
@@ -97,9 +108,33 @@ class GitParser (Parser):
         # Commit
         match = self.patterns['commit'].match (line)
         if match:
-            self.flush ()
             self.commit = Commit ()
             self.commit.revision = match.group (1)
+
+            parents = match.group (3)
+            if parents:
+                parents = parents.split ()
+            git_commit = self.GitCommit (self.commit, parents)
+            
+            decorate = match.group (5)
+            branch = None
+            if decorate:
+                m = re.search (self.patterns['branch'], decorate)
+                if m:
+                    branch = m.group (1)
+
+            if branch is not None:
+                self.branch_stack = []
+                self.branches.insert (0, (branch, self.branch_stack))
+            elif len (self.branches) >= 2:
+                for branch, stack in self.branches[1:]:
+                    if git_commit.is_my_child (stack[-1]):
+                        self._unpack_branch_stack ()
+                        self.branch_stack = stack
+                        break
+
+            self.branch_stack.append (git_commit)
+                    
             if self.config.lines:
                 self.commit.lines = self.__get_added_removed_lines (self.commit.revision)
 
@@ -140,8 +175,6 @@ class GitParser (Parser):
             action.type = match.group (1)
             action.f1 = f
 
-            action.branch = self.__get_branch_for_revision (self.commit.revision)
-            
             self.commit.actions.append (action)
             self.handler.file (f)
         
@@ -165,8 +198,6 @@ class GitParser (Parser):
             action.f1 = f1
             action.f2 = f2
 
-            action.branch = self.__get_branch_for_revision (self.commit.revision)
-            
             self.commit.actions.append (action)
             self.handler.file (f1)
 

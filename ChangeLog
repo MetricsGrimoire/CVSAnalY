@@ -1,5 +1,11 @@
 2008-10-07  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/GitParser.py:
+
+	Rework the git parser to support branches.
+	
+2008-10-07  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/DBContentHandler.py:
 	* pycvsanaly2/Parser.py:
 	* pycvsanaly2/Repository.py:
