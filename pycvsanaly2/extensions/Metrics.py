@@ -577,6 +577,11 @@ class Metrics (Extension):
             query += 'WHERE actions.commit_id = scmlog.id '
             query += 'AND actions.file_id = tree.id '
             query += 'AND tree.parent = -1 '
+            if repo.get_uri ().startswith ('https://svn.apache.org/repos/asf'):
+                # Workaround for apache, we are not interested in the
+                # incubator stuff because we have a lot of problems when
+                # tryinbg to update stuff from it
+                query += 'AND tree.filename <> "incubator" '
             if not self.config.metrics_all:
                 query += 'AND tree.id not in (SELECT file_id from actions '
                 query += 'WHERE type = "D" and head) '

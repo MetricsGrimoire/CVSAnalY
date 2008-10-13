@@ -1,3 +1,9 @@
+2008-10-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Workaround to avoid stuff from the incubator apache repository.
+	
 2008-10-07  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/GitParser.py:
