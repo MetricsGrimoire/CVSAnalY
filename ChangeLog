@@ -1,3 +1,9 @@
+2008-10-13  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Fix a typo.
+
 2008-10-13  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

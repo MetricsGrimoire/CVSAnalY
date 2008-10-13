@@ -581,7 +581,7 @@ class Metrics (Extension):
                 # Workaround for apache, we are not interested in the
                 # incubator stuff because we have a lot of problems when
                 # tryinbg to update stuff from it
-                query += 'AND tree.filename <> "incubator" '
+                query += 'AND tree.file_name <> "incubator" '
             if not self.config.metrics_all:
                 query += 'AND tree.id not in (SELECT file_id from actions '
                 query += 'WHERE type = "D" and head) '
