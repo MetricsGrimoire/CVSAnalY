@@ -128,8 +128,6 @@ def create_parser_from_logfile (uri):
 
         assert p is not None
         
-        p.set_logfile (uri)
-
         return p
 
     printerr ("Error: path %s doesn't look like a valid log file", (uri))
@@ -147,7 +145,5 @@ def create_parser_from_repository (repo):
     else:
         printerr ("Error: Unsupported repository type: %s", (repo.get_type ()))
         return None
-
-    p.set_repository (repo)
 
     return p

@@ -1,5 +1,19 @@
 2008-10-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/Log.py:
+
+	Classes for handling reading and writing from/to logs
+
+	* pycvsanaly2/Parser.py:
+	* pycvsanaly2/ParserFactory.py:
+	* pycvsanaly2/main.py:
+
+	Change the way the parser is fed, the parser don't read the log
+	anymore, it's read from the main who feeds the parser using the
+	new LogReader.
+	
+2008-10-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/BzrParser.py:
 	* pycvsanaly2/CVSParser.py:
 	* pycvsanaly2/GitParser.py:

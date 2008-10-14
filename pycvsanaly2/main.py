@@ -37,6 +37,7 @@ from Database import (create_database, TableAlreadyExists, AccessDenied, Databas
                       DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
 		      DatabaseException)
 from DBContentHandler import DBContentHandler
+from Log import LogReader, LogWriter
 from ExtensionsManager import ExtensionsManager, InvalidExtension, InvalidDependency
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
@@ -196,7 +197,10 @@ def main (argv):
     if config.debug:
         import repositoryhandler.backends
         repositoryhandler.backends.DEBUG = True
-        
+
+    reader = LogReader ()
+
+    # Create repository
     path = uri_to_filename (uri)
     if path is not None:
         try:
@@ -210,6 +214,8 @@ def main (argv):
     else:
         repo = create_repository ('svn', uri)
 
+    reader.set_repo (repo, path or uri)
+
     if lines is not None:
         config.lines = lines
     else:
@@ -222,15 +228,14 @@ def main (argv):
             printout ("Warning: lines added/removed will be disabled since "
                       "diffstat command was not found in path")
 
+    # Create parser
     if config.repo_logfile is not None:
         parser = create_parser_from_logfile (config.repo_logfile)
-        parser.set_repository (repo)
+        reader.set_logfile (config.repo_logfile)
     else:
         parser = create_parser_from_repository (repo)
-        if path is not None:
-            parser.set_uri (path)
-        else:
-            parser.set_uri (uri)
+
+    parser.set_repository (repo)
 
     if parser is None:
         printerr ("Failed to create parser")
@@ -297,9 +302,22 @@ def main (argv):
 
     cnn.close ()
 
+    # Start the parsing process
+    def new_line (line, user_data):
+        parser, writer = user_data
+        
+        parser.feed (line)
+        writer and writer.add_line (line)
+
+    writer = None
+    if config.save_logfile is not None:
+        writer = LogWriter (config.save_logfile)
+        
     printout ("Parsing log for %s (%s)", (uri, repo.get_type ()))
     parser.set_content_handler (DBContentHandler (db))
-    parser.run ()
+    reader.start (new_line, (parser, writer))
+    parser.end ()
+    writer and writer.close ()
 
     # Run extensions
     printout ("Executing extensions")
