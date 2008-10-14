@@ -1,5 +1,12 @@
 2008-10-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Another approach for the incubator workaround since it seems the
+	old one is not enough.
+	
+2008-10-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/Log.py:
 
 	Classes for handling reading and writing from/to logs

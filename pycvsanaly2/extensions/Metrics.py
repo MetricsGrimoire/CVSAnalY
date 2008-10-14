@@ -644,6 +644,13 @@ class Metrics (Extension):
                 relative_path = get_path_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder).strip ('/')
                 printdbg ("File path %s is relative path %s on revision %s", (filepath, relative_path, rev))
                 profiler_stop ("Getting path for the given revision")
+
+            # Workaround for apache, we are not interested in the
+            # incubator stuff because we have a lot of problems when
+            # tryinbg to update stuff from it
+            if repo.get_uri ().startswith ('https://svn.apache.org/repos/asf') and \
+               relative_path.startswith ('incubator'):
+                continue
                 
             if revision != current_revision:
                 try:
