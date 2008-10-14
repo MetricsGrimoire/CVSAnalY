@@ -96,7 +96,7 @@ class GitParser (Parser):
             commit.commit.branch = branch
             self.handler.commit (commit.commit)
 
-    def parse_line (self, line):
+    def _parse_line (self, line):
         if line is None or line == '':
             return
 

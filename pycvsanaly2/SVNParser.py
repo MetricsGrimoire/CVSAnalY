@@ -151,7 +151,7 @@ class SVNParser (Parser):
 
         return branch
             
-    def parse_line (self, line):
+    def _parse_line (self, line):
         if not line:
             if self.state == SVNParser.FILES:
                 self.state = SVNParser.MESSAGE

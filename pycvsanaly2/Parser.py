@@ -74,7 +74,7 @@ class Parser:
     def flush (self):
         pass
         
-    def parse_line (self):
+    def _parse_line (self):
         raise NotImplementedError
 
     def _logreader (self, repo, queue):
@@ -101,7 +101,7 @@ class Parser:
                 save_log.add_line (data)
                 
             self.n_line += 1
-            self.parse_line (data.strip ('\n'))
+            self._parse_line (data.strip ('\n'))
 
         if self.repo is not None:
             self.handler.repository (self.repo.get_uri ())

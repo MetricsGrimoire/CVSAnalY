@@ -67,7 +67,7 @@ class BzrParser (Parser):
         self.commit = None
         self.state = BzrParser.COMMIT
         
-    def parse_line (self, line):
+    def _parse_line (self, line):
         if line is None or line == '':
             return
 

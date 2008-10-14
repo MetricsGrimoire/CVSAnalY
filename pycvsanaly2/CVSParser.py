@@ -73,7 +73,7 @@ class CVSParser (Parser):
             self.file_added_on_branch = None
             self.file = None
 
-    def parse_line (self, line):
+    def _parse_line (self, line):
         if not line:
             if self.commit is not None and self.commit.message:
                 self.commit.message += '\n'

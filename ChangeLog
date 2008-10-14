@@ -1,3 +1,13 @@
+2008-10-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/BzrParser.py:
+	* pycvsanaly2/CVSParser.py:
+	* pycvsanaly2/GitParser.py:
+	* pycvsanaly2/SVNParser.py:
+	* pycvsanaly2/Parser.py:
+
+	Mark parse_line method as "private".
+	
 2008-10-13  Santiago Dueñas Domínguez  <sduenas@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
