@@ -21,7 +21,6 @@ class Commit:
                           'committer'    : None,
                           'author'       : None,
                           'date'         : None,
-                          'lines'        : None, 
                           'actions'      : [],
                           'branch'       : None,
                           'message'      : "",

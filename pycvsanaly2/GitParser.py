@@ -22,8 +22,6 @@ import re
 import time
 import datetime
 
-from subprocess import Popen, PIPE
-from FindProgram import find_program
 from Parser import Parser
 from Repository import Commit, Action, File
 
@@ -49,44 +47,14 @@ class GitParser (Parser):
     patterns['local-branch'] = re.compile ("refs/heads/([^,]*)")
     patterns['stash'] = re.compile ("refs/stash")
     patterns['ignore'] = [re.compile ("^AuthorDate: .*$"), re.compile ("^Merge: .*$")]
-    patterns['diffstat'] = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
 
     def __init__ (self):
         Parser.__init__ (self)
 
-        self.git = None
-        
         # Parser context
         self.commit = None
         self.branch_stack = None
         self.branches = []
-
-    def __get_added_removed_lines (self, revision):
-        if self.git is None:
-            self.git = find_program ('git')
-            
-        cmd = [self.git, 'show', '--shortstat', revision]
-        env = os.environ.copy ().update ({'LC_ALL' : 'C'})
-        pipe = Popen (cmd, shell=False, stdin=PIPE, stdout=PIPE, close_fds=True, env=env, cwd=self.uri)
-        out = pipe.communicate ()[0]
-
-        lines = out.split ('\n')
-        lines.reverse ()
-        for line in lines:
-            m = self.patterns['diffstat'].match (line)
-            if m is None:
-                continue
-
-            added = removed = 0
-            if m.group (1) is not None:
-                added = int (m.group (2))
-
-            if m.group (3) is not None:
-                removed = int (m.group (4))
-
-            return (added, removed)
-            
-        return None
 
     def flush (self):
         if self.branches:
@@ -166,9 +134,6 @@ class GitParser (Parser):
                 else:
                     self.branches.insert (0, (branch, self.branch_stack))
             self.branch_stack.append (git_commit)
-                    
-            if self.config.lines:
-                self.commit.lines = self.__get_added_removed_lines (self.commit.revision)
 
             return
 

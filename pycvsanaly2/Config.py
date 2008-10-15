@@ -30,7 +30,6 @@ class Config:
                        'profile'      : False,
                        'repo_logfile' : None,
                        'save_logfile' : None, 
-                       'lines'        : True,
                        'db_driver'    : 'sqlite',
                        'db_user'      : 'operator',
                        'db_password'  : None, 
@@ -77,10 +76,6 @@ class Config:
             pass
         try:
             self.save_logfile = config.save_logfile
-        except:
-            pass
-        try:
-            self.lines = config.lines
         except:
             pass
         try:

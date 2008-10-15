@@ -20,14 +20,12 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from ContentHandler import ContentHandler
-from Config import Config
 from utils import printerr, printout
 
 class Parser:
 
     def __init__ (self):
         self.handler = ContentHandler ()
-        self.config = Config ()
         self.repo = None
         
         self.n_line = 0
@@ -76,8 +74,6 @@ if __name__ == '__main__':
             print "rev: %s, committer: %s, date: %s" % (commit.revision, commit.committer, commit.date)
             if commit.author is not None:
                 print "Author: %s" % (commit.author)
-            if commit.lines is not None:
-                print "Lines: %d+, %d-" % (commit.lines[0], commit.lines[1])
             print "files: ",
             for action in commit.actions:
                 print "%s %s " % (action.type, action.f1.path),
@@ -107,7 +103,6 @@ if __name__ == '__main__':
         p = create_parser_from_repository (repo)
         reader.set_repo (repo, path)
 
-    p.config.lines = False
     p.set_content_handler (StdoutContentHandler ())
     reader.start (new_line, p)
     p.end ()

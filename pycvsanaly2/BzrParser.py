@@ -24,8 +24,8 @@ import datetime
 from Parser import Parser
 from Repository import Commit, Action, File
 
-# TODO: Added/Removed lines
-#       Add debug messages
+# TODO: Add debug messages
+#       Branches stuff
 
 class BzrParser (Parser):
 

@@ -65,9 +65,6 @@ Options:
   -q, --quiet                    Run silently, only print error messages
       --profile                  Enable profiling mode
   -f, --config-file              Use a custom configuration file
-      --with-lines=yes/no/auto   Get lines added/removed per commit (auto). Disabled by default 
-                                 only for SVN repositories because of performance reasons.
-
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
       --extensions=ext1,ext2,    List of extensions to run        
@@ -90,7 +87,7 @@ def main (argv):
     short_opts = "hVgqf:l:s:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
-                 "repo-logfile=", "save-logfile=", "with-lines=", "db-user=", "db-password=",
+                 "repo-logfile=", "save-logfile=", "db-user=", "db-password=",
                  "db-hostname=", "db-database=", "db-driver=", "extensions=", "metrics-all"]
 
     # Default options
@@ -105,7 +102,6 @@ def main (argv):
     driver = None
     logfile = None
     save_logfile = None
-    lines = None
     extensions = None
     metrics_all = None
 
@@ -130,11 +126,6 @@ def main (argv):
             profile = True
         elif opt in ("-f", "--config-file"):
             configfile = value
-        elif opt in ("--with-lines", ):
-            if value == 'yes' or value == 'Yes':
-                lines = True
-            elif value == 'no' or value == 'No':
-                lines = False
         elif opt in ("-u", "--db-user"):
             user = value
         elif opt in ("-p", "--db-password"):
@@ -215,18 +206,6 @@ def main (argv):
         repo = create_repository ('svn', uri)
 
     reader.set_repo (repo, path or uri)
-
-    if lines is not None:
-        config.lines = lines
-    else:
-        if repo.get_type () == 'svn':
-            config.lines = False
-
-    if config.lines and repo.get_type () == 'svn':
-        if find_program ("diffstat") is None:
-            config.lines = False
-            printout ("Warning: lines added/removed will be disabled since "
-                      "diffstat command was not found in path")
 
     # Create parser
     if config.repo_logfile is not None:

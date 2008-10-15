@@ -42,7 +42,7 @@ class DBLog:
 
     id_counter = 1
 
-    __insert__ = "INSERT INTO scmlog (id, rev, committer, author, date, lines_added, lines_removed, message, composed_rev, repository_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    __insert__ = "INSERT INTO scmlog (id, rev, committer, author, date, message, composed_rev, repository_id) values (?, ?, ?, ?, ?, ?, ?, ?)"
     
     def __init__ (self, id, commit):
         if id is None:
@@ -58,12 +58,6 @@ class DBLog:
         else:
             self.author = None
 
-        if commit.lines is not None:
-            self.lines_added = commit.lines[0]
-            self.lines_removed = commit.lines[1]
-        else:
-            self.lines_added = self.lines_removed = 0
-            
         self.date = commit.date
         self.message = to_utf8 (commit.message)
         self.composed_rev = commit.composed_rev
@@ -238,8 +232,6 @@ class SqliteDatabase (Database):
                             "committer integer," +
                             "author integer," +
                             "date datetime," +
-                            "lines_added integer," +
-                            "lines_removed integer," +
                             "message varchar," +
                             "composed_rev bool," + 
                             "repository_id integer" +
@@ -321,8 +313,6 @@ class MysqlDatabase (Database):
                             "committer INT," +
                             "author INT," +
                             "date datetime," +
-                            "lines_added int," +
-                            "lines_removed int," +
                             "message longtext," +
                             "composed_rev bool," +
                             "repository_id INT," +

@@ -253,8 +253,7 @@ class DBContentHandler (ContentHandler):
             author = None
             
         self.commits.append ((log.id, log.rev, committer, author, log.date,
-                              log.lines_added, log.lines_removed, log.message,
-                              log.composed_rev, log.repository_id))
+                              log.message, log.composed_rev, log.repository_id))
 
         printdbg ("DBContentHandler: commit: %d rev: %s", (log.id, log.rev))
         renamed_from = None

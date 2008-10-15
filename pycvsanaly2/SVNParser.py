@@ -23,12 +23,6 @@ import os
 import re
 import datetime
 
-import repositoryhandler
-from repositoryhandler.backends.watchers import DIFF
-from subprocess import Popen, PIPE
-
-from FindProgram import find_program
-
 from Parser import Parser
 from Repository import Commit, Action, File
 from utils import printout, printdbg
@@ -46,62 +40,13 @@ class SVNParser (Parser):
     patterns['file'] = re.compile ("^[ ]+([MADR]) (.*)$")
     patterns['file-moved'] = re.compile ("^[ ]+([MADR]) (.*) \(from (.*):([0-9]+)\)$")
     patterns['separator'] = re.compile ("^[-]+$")
-    patterns['diffstat'] = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
     
     def __init__ (self):
         Parser.__init__ (self)
 
-        self.diffstat = None
-        
         # Parser context
         self.state = SVNParser.COMMIT
         self.commit = None
-
-    def __get_added_removed_lines (self, revision):
-        global _diff
-
-        if self.diffstat is None:
-            self.diffstat = find_program ('diffstat')
-
-        _diff = ""
-        def diff_line (data, user_data):
-            global _diff
-            _diff += data
-
-        revs = []
-        revs.append ("%d" % (revision - 1))
-        revs.append ("%d" % (revision))
-        env = os.environ.copy ().update ({'LC_ALL' : 'C'})
-        pipe = Popen (self.diffstat, shell=False, stdin=PIPE, stdout=PIPE, close_fds=True, env=env)
-        wid = self.repo.add_watch (DIFF, diff_line)
-        try:
-            self.repo.diff (self.repo.get_uri (), revs = revs)
-        except repositoryhandler.Command.CommandError, e:
-            printerr ("Error running svn diff command: %s", (str (e)))
-            self.repo.remove_watch (DIFF, wid)
-            return None
-
-        out = pipe.communicate (_diff)[0]
-        self.repo.remove_watch (DIFF, wid)
-
-        lines = out.split ('\n')
-        lines.reverse ()
-
-        for line in lines:
-            m = self.patterns['diffstat'].match (line)
-            if m is None:
-                continue
-
-            added = removed = 0
-            if m.group (1) is not None:
-                added = int (m.group (2))
-
-            if m.group (3) is not None:
-                removed = int (m.group (4))
-
-            return (added, removed)
-            
-        return None
 
     def __convert_commit_actions (self, commit):
         # We detect here files that have been moved or
@@ -183,9 +128,6 @@ class SVNParser (Parser):
             commit.committer = match.group (2)
             commit.date = datetime.datetime (int (match.group (3)), int (match.group (4)), int (match.group (5)),
                                              int (match.group (6)), int (match.group (7)), int (match.group (8)))
-            if self.config.lines:
-                commit.lines = self.__get_added_removed_lines (int (commit.revision))
-                
             self.commit = commit
             self.handler.committer (commit.committer)
             

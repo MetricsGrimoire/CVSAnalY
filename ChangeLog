@@ -1,5 +1,28 @@
 2008-10-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/Cache.py:
+
+	New module to store global temp stuff
+
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/Repository.py
+	* pycvsanaly2/Parser.py:
+	* pycvsanaly2/CVSParser.py:
+	* pycvsanaly2/SVNParser.py:
+	* pycvsanaly2/GitParser.py:
+	* pycvsanaly2/BzrParser.py:
+	* pycvsanaly2/Database.py:
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/extensions/CommitsLOC.py:
+
+	Move added/removed lines per commit feature to a new extension,
+	since it's only supported by CVS and it's a very heavy task to be
+	carried out in the main parsing process for the repos that don't
+	support it.
+	
+2008-10-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/main.py:
 	* pycvsanaly2/ExtensionsManager.py:
 	* pycvsanaly2/extensions/FilePaths.py:

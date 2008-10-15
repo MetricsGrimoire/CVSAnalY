@@ -24,6 +24,7 @@ import datetime
 
 from Parser import Parser
 from Repository import Commit, Action, File
+from Cache import Cache
 
 class CVSParser (Parser):
 
@@ -41,6 +42,8 @@ class CVSParser (Parser):
         Parser.__init__ (self)
 
         self.root_path = ""
+        self.lines = {}
+        self.cache = Cache ()
         
         # Parser context
         self.file = None
@@ -73,6 +76,9 @@ class CVSParser (Parser):
             self.file_added_on_branch = None
             self.file = None
 
+        # Save lines inof in the Cache
+        self.cache.insert ('cvs-lines', self.lines)
+        
     def _parse_line (self, line):
         if not line:
             if self.commit is not None and self.commit.message:
@@ -161,8 +167,10 @@ class CVSParser (Parser):
             commit.date = datetime.datetime (int (match.group (1)), int (match.group (2)), int (match.group (3)),
                                              int (match.group (4)), int (match.group (5)), int (match.group (6)))
 
-            if self.config.lines and match.group (10) is not None:
-                commit.lines = (int (match.group (11)), int (match.group (12)))
+            if match.group (10) is not None:
+                self.lines[commit.revision] = (int (match.group (11)), int (match.group (12)))
+            else:
+                self.lines[commit.revision] = (0, 0)
 
             action = Action ()
             act = match.group (9)
