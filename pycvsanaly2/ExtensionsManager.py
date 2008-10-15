@@ -50,17 +50,17 @@ class ExtensionsManager:
                     except:
                         raise InvalidDependency (ext, dep)
 
-    def run_extension (self, name, extension, repo, db):
+    def run_extension (self, name, extension, repo, uri, db):
         printout ("Executing extension %s", (name))
         try:
-            extension.run (repo, db)
+            extension.run (repo, uri, db)
         except ExtensionRunError, e:
             printerr ("Error running extension %s: %s", (name, e.message))
             return False
 
         return True
                     
-    def run_extensions (self, repo, db):
+    def run_extensions (self, repo, uri, db):
         done = []
         for name, extension in [(ext, self.exts[ext] ()) for ext in self.exts]:
             if name in done:
@@ -70,7 +70,7 @@ class ExtensionsManager:
             result = True
             # Run dependencies first
             for dep in extension.deps:
-                result = self.run_extension (dep, self.exts[dep] (), repo, db)
+                result = self.run_extension (dep, self.exts[dep] (), repo, uri, db)
                 done.append (dep)
                 if not result:
                     break
@@ -79,5 +79,5 @@ class ExtensionsManager:
                 printout ("Skipping extension %s since one or more of its dependencies failed", (name))
                 continue
                     
-            self.run_extension (name, extension, repo, db)
+            self.run_extension (name, extension, repo, uri, db)
     

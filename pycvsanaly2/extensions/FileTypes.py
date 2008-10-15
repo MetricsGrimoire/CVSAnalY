@@ -92,7 +92,7 @@ class FileTypes (Extension):
 
         return files
         
-    def run (self, repo, db):
+    def run (self, repo, uri, db):
         self.db = db
         
         cnn = self.db.connect ()

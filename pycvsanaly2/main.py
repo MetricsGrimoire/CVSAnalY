@@ -321,5 +321,5 @@ def main (argv):
 
     # Run extensions
     printout ("Executing extensions")
-    emg.run_extensions (repo, db)
+    emg.run_extensions (repo, uri, db)
 

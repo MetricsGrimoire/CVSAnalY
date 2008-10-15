@@ -1,5 +1,17 @@
 2008-10-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/ExtensionsManager.py:
+	* pycvsanaly2/extensions/FilePaths.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+	* pycvsanaly2/extensions/Metrics.py:
+	* pycvsanaly2/extensions/__init__.py:
+
+	Pass the given uri to the extensions. It'll be needed for future
+	extensions.
+	
+2008-10-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
 	* pycvsanaly2/GitParser.py:
 
 	Ignore not merged local branches and stash branches. Unpack all

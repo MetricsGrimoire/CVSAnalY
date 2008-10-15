@@ -33,7 +33,7 @@ class Extension:
 
     deps = []
     
-    def run (self, repo, db):
+    def run (self, repo, uri, db):
         raise NotImplementedError
 
 _extensions = {}

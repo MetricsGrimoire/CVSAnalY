@@ -120,7 +120,7 @@ class FilePaths (Extension):
 
         return paths
     
-    def run (self, repo, db):
+    def run (self, repo, uri, db):
         self.db = db
 
         cnn = self.db.connect ()

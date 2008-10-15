@@ -533,7 +533,7 @@ class Metrics (Extension):
         cursor.executemany (statement (self.__insert__, self.db.place_holder), self.metrics)
         self.metrics = []
         
-    def run (self, repo, db):
+    def run (self, repo, uri, db):
         profiler_start ("Running Metrics extension")
         
         self.db = db
