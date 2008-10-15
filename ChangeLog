@@ -1,3 +1,13 @@
+2008-10-15  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/GitParser.py:
+
+	Ignore not merged local branches and stash branches. Unpack all
+	branches when we find that the curent commit is the parent of such
+	branches, instead of unpacking only the first one we find. Take
+	into account also that the current commit can be both the last
+	commit of a branch and the parent of another one.
+	
 2008-10-14  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:

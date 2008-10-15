@@ -46,6 +46,8 @@ class GitParser (Parser):
     patterns['file'] = re.compile ("^([MAD])[ \t]+(.*)$")
     patterns['file-moved'] = re.compile ("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
     patterns['branch'] = re.compile ("refs/remotes/origin/([^,]*)")
+    patterns['local-branch'] = re.compile ("refs/heads/([^,]*)")
+    patterns['stash'] = re.compile ("refs/stash")
     patterns['ignore'] = [re.compile ("^AuthorDate: .*$"), re.compile ("^Merge: .*$")]
     patterns['diffstat'] = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
 
@@ -92,8 +94,12 @@ class GitParser (Parser):
 
     def _unpack_branch_stack (self):
         branch, stack = self.branches.pop (0)
+        # Ignore local and stash branches
+        if branch[1] != "remote":
+            return
+        
         for commit in stack:
-            commit.commit.branch = branch
+            commit.commit.branch = branch[0]
             self.handler.commit (commit.commit)
 
     def _parse_line (self, line):
@@ -119,20 +125,46 @@ class GitParser (Parser):
             decorate = match.group (5)
             branch = None
             if decorate:
+                # Remote branch
                 m = re.search (self.patterns['branch'], decorate)
                 if m:
-                    branch = m.group (1)
+                    branch = (m.group (1), "remote")
+                else:
+                    # Local Branch
+                    m = re.search (self.patterns['local-branch'], decorate)
+                    if m:
+                        branch = (m.group (1), "local")
+                        # If local branch was merged we just ignore this decoration
+                        if self.branch_stack and git_commit.is_my_child (self.branch_stack[-1]):
+                            branch = None
+                    else:
+                        # Stash
+                        m = re.search (self.patterns['stash'], decorate)
+                        if m:
+                            branch = ("stash", "stash")
 
-            if branch is not None:
-                self.branch_stack = []
-                self.branches.insert (0, (branch, self.branch_stack))
-            elif len (self.branches) >= 2:
-                for branch, stack in self.branches[1:]:
+            if len (self.branches) >= 2:
+                # If current commit is the start point of a new branch
+                # we have to look at all the current branches since
+                # we haven't inserted the new branch yet.
+                # If not, look at all other branches excluding the current one
+                if branch is not None:
+                    branches = [b for b in self.branches]
+                else:
+                    branches = self.branches[1:]
+
+                for b, stack in branches:
                     if git_commit.is_my_child (stack[-1]):
                         self._unpack_branch_stack ()
                         self.branch_stack = stack
-                        break
 
+            if branch is not None:
+                self.branch_stack = []
+                # Insert master always at the end
+                if branch == ('master', 'remote'):
+                    self.branches.append ((branch, self.branch_stack))
+                else:
+                    self.branches.insert (0, (branch, self.branch_stack))
             self.branch_stack.append (git_commit)
                     
             if self.config.lines:
