@@ -37,6 +37,7 @@ class SVNParser (Parser):
 
     patterns = {}
     patterns['commit'] = re.compile ("^r(\d*) \| (.*) \| (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d) ([+-]\d\d\d\d) \(.*\) \| (.*) line")
+    patterns['paths'] = re.compile ("^Changed paths:$")
     patterns['file'] = re.compile ("^[ ]+([MADR]) (.*)$")
     patterns['file-moved'] = re.compile ("^[ ]+([MADR]) (.*) \(from (.*):([0-9]+)\)$")
     patterns['separator'] = re.compile ("^[-]+$")
@@ -98,7 +99,7 @@ class SVNParser (Parser):
             
     def _parse_line (self, line):
         if not line:
-            if self.state == SVNParser.FILES:
+            if self.state == SVNParser.COMMIT or self.state == SVNParser.FILES:
                 self.state = SVNParser.MESSAGE
             elif self.state == SVNParser.MESSAGE:
                 self.commit.message += '\n'
@@ -136,6 +137,15 @@ class SVNParser (Parser):
             printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
             return
 
+        # Files
+        if self.state == SVNParser.COMMIT:
+            if self.patterns['paths'].match (line):
+                self.state = SVNParser.FILES
+            else:
+                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
+
+            return
+        
         # Message
         if self.state == SVNParser.MESSAGE:
             self.commit.message += line + '\n'
@@ -145,6 +155,10 @@ class SVNParser (Parser):
         # File moved/copied/replaced
         match = self.patterns['file-moved'].match (line)
         if match:
+            if self.state != SVNParser.FILES:
+                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
+                return
+            
             f1 = File ()
             f1.path = match.group (2)
 
@@ -161,17 +175,15 @@ class SVNParser (Parser):
             self.commit.actions.append (action)
             self.handler.file (f1)
 
-            if self.state == SVNParser.COMMIT:
-                self.state = SVNParser.FILES
-            elif self.state != SVNParser.FILES:
-                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
-                return
-
             return
 
         # File
         match = self.patterns['file'].match (line)
         if match:
+            if self.state != SVNParser.FILES:
+                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
+                return
+            
             path = match.group (2)
 
             if path != '/':
@@ -189,13 +201,5 @@ class SVNParser (Parser):
 
                 self.commit.actions.append (action)
                 self.handler.file (f)
-            
-            if self.state == SVNParser.COMMIT:
-                self.state = SVNParser.FILES
-            elif self.state != SVNParser.FILES:
-                printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
-                return
 
             return
-        
-
