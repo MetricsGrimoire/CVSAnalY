@@ -24,6 +24,8 @@ from utils import printerr, printout
 
 class Parser:
 
+    CONTENT_ORDER = ContentHandler.ORDER_REVISION
+
     def __init__ (self):
         self.handler = ContentHandler ()
         self.repo = None
@@ -44,7 +46,7 @@ class Parser:
 
     def feed (self, data):
         if self.n_line == 0:
-            self.handler.begin ()
+            self.handler.begin (self.CONTENT_ORDER)
 
             if self.repo is not None:
                 self.handler.repository (self.repo.get_uri ())
@@ -71,14 +73,16 @@ if __name__ == '__main__':
     class StdoutContentHandler (ContentHandler):
         def commit (self, commit):
             print "Commit"
-            print "rev: %s, committer: %s, date: %s" % (commit.revision, commit.committer, commit.date)
+            print "rev: %s, committer: %s <%s>, date: %s" % (commit.revision, commit.committer.name, commit.committer.email, commit.date)
             if commit.author is not None:
-                print "Author: %s" % (commit.author)
+                print "Author: %s <%s>" % (commit.author.name, commit.author.email)
+            if commit.tags is not None:
+                print "Tags: %s" % (str (commit.tags))
             print "files: ",
             for action in commit.actions:
-                print "%s %s " % (action.type, action.f1.path),
+                print "%s %s " % (action.type, action.f1),
                 if action.f2 is not None:
-                    print "(%s) on branch %s" % (action.f2.path, commit.branch or action.branch)
+                    print "(%s: %s) on branch %s" % (action.f2, action.rev, commit.branch or action.branch)
                 else:
                     print "on branch %s" % (commit.branch or action.branch)
             print "Message"

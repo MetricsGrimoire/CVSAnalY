@@ -36,7 +36,7 @@ from ParserFactory import create_parser_from_logfile, create_parser_from_reposit
 from Database import (create_database, TableAlreadyExists, AccessDenied, DatabaseNotFound,
                       DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
 		      DatabaseException)
-from DBContentHandler import DBContentHandler
+from DBProxyContentHandler import DBProxyContentHandler
 from Log import LogReader, LogWriter
 from ExtensionsManager import ExtensionsManager, InvalidExtension, InvalidDependency
 from Config import Config, ErrorLoadingConfig
@@ -293,7 +293,7 @@ def main (argv):
         writer = LogWriter (config.save_logfile)
         
     printout ("Parsing log for %s (%s)", (uri, repo.get_type ()))
-    parser.set_content_handler (DBContentHandler (db))
+    parser.set_content_handler (DBProxyContentHandler (db))
     reader.start (new_line, (parser, writer))
     parser.end ()
     writer and writer.close ()

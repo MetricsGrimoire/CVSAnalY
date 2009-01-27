@@ -23,9 +23,19 @@ class Commit:
                           'date'         : None,
                           'actions'      : [],
                           'branch'       : None,
+                          'tags'         : None,
                           'message'      : "",
                           'composed_rev' : False }
-        
+
+    def __getinitargs__(self):
+        return ()
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__ (self, dict):
+        self.__dict__.update (dict)
+    
     def __getattr__ (self, name):
         return self.__dict__[name]
         
@@ -51,8 +61,18 @@ class Action:
         self.__dict__ = { 'type'   : None,
                           'branch' : None,
                           'f1'     : None,
-                          'f2'     : None }
+                          'f2'     : None,
+                          'rev'    : None}
 
+    def __getinitargs__(self):
+        return ()
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__ (self, dict):
+        self.__dict__.update (dict)
+        
     def __getattr__ (self, name):
         return self.__dict__[name]
 
@@ -63,22 +83,31 @@ class Action:
         return self.type == other.type and \
             self.f1 == other.f1 and \
             self.f2 == other.f2 and \
-            self.branch == other.branch
+            self.branch == other.branch and \
+            self.rev == other.rev
     
     def __ne__ (self, other):
         return self.type != other.type or \
             self.f1 != other.f1 or \
             self.f2 != other.f2 or \
-            self.branch != other.branch
+            self.branch != other.branch or \
+            self.rev != other.rev
     
-class File:
-    def __init__ (self):
-        self.__dict__ = { 'path'  : None,
-                          'type'  : None,
-                          'size'  : None,
-                          'cdate' : None,
-                          'mdate' : None }
 
+class Person:
+    def __init__ (self):
+        self.__dict__ = { 'name'  : None,
+                          'email' : None }
+
+    def __getinitargs__(self):
+        return ()
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__ (self, dict):
+        self.__dict__.update (dict)
+        
     def __getattr__ (self, name):
         return self.__dict__[name]
 
@@ -86,7 +115,51 @@ class File:
         self.__dict__[name] = value
 
     def __eq__ (self, other):
-        return self.path == other.path
-
+        return self.name == other.name
+    
     def __ne__ (self, other):
-        return self.path != other.path
+        return self.name != other.name
+
+if __name__ == '__main__':
+    from cPickle import dump, load
+    import datetime
+
+    c = Commit ()
+    c.revision = '25'
+    c.committer = 'carlosgc'
+    c.date = datetime.datetime.now ()
+    c.message = "Modified foo files"
+    
+    for i in range (5):
+        a = Action ()
+        a.type = 'M'
+        a.branch = 'trunk'
+        a.f1 = '/trunk/foo-%d' % (i + 1)
+        a.rev = '25'
+
+        c.actions.append (a)
+
+    f = open ("/tmp/commits", "wb")
+    dump (c, f, -1)
+    f.close ()
+
+    f = open ("/tmp/commits", "rb")
+    commit = load (f)
+    f.close ()
+
+    print "Commit"
+    print "rev: %s, committer: %s, date: %s" % (commit.revision, commit.committer, commit.date)
+    if commit.author is not None:
+        print "Author: %s" % (commit.author)
+    print "files: ",
+    for action in commit.actions:
+        print "%s %s " % (action.type, action.f1),
+        if action.f2 is not None:
+            print "(%s: %s) on branch %s" % (action.f2, action.rev, commit.branch or action.branch)
+        else:
+            print "on branch %s" % (commit.branch or action.branch)
+    print "Message"
+    print commit.message
+
+
+    

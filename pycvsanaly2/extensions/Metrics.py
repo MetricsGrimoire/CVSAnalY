@@ -23,22 +23,76 @@
 # This extension calculates some metrics for all the different
 # versions of all the files stored in the control version system.
 #
-# It needs the FilePaths extension to be called first.
 
-from repositoryhandler.backends import create_repository
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.Config import Config
-from pycvsanaly2.utils import (printdbg, printerr, printout, remove_directory,
-                               get_path_for_revision, path_is_deleted_for_revision)
+from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from tempfile import mkdtemp
+from FilePaths import FilePaths
 from xml.sax import handler as xmlhandler, make_parser
 import os
 import commands
 import re
+
+class Repository:
+
+    def __init__ (self, db, cursor, repo, rootdir):
+        self.db = db
+        self.cursor = cursor
+        self.repo = repo
+        self.rootdir = rootdir
+        
+        uri = repo.get_uri ()
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
+        self.repo_id = cursor.fetchone ()[0]
+        
+    def get_repo_id (self):
+        return self.repo_id
+        
+    def checkout (self, path, rev):
+        raise NotImplementedError
+
+class SVNRepository (Repository):
+
+    def __init__ (self, db, cursor, repo, rootdir):
+        Repository.__init__ (self, db, cursor, repo, rootdir)
+        self.tops = {}
+        
+        self.repo.checkout ('.', self.rootdir, newdir=".", rev='0')
+
+    def checkout (self, path, rev):
+        # FIXME: projects where rootdir != topdir
+        top = path.strip ('/').split ('/')[0]
+        
+        # skip tags dir
+        if top == 'tags':
+            return
+        
+        last_rev = self.tops.get (top, 0)
+        if last_rev != rev:
+            self.repo.update (os.path.join (self.rootdir, top), rev=rev, force=True)
+            self.tops[top] = rev
+
+class CVSRepository (Repository):
+
+    def __init__ (self, db, cursor, repo, rootdir):
+        Repository.__init__ (self, db, cursor, repo, rootdir)
+
+    def checkout (self, path, rev):
+        self.repo.checkout (path, self.rootdir, rev=rev)
+
+        
+def create_repository (db, cursor, repo, rootdir):
+    if repo.get_type () == 'svn':
+        return SVNRepository (db, cursor, repo, rootdir)
+    elif repo.get_type () == 'cvs':
+        return CVSRepository (db, cursor, repo, rootdir)
+    else:
+        raise NotImplementedError
 
 class ProgramNotFound (Extension):
 
@@ -393,11 +447,7 @@ def create_file_metrics (path):
 
 class Metrics (Extension):
 
-    deps = ['FilePaths', 'FileTypes']
-
-    # How many times it'll retry
-    # when an update or chekcout fails
-    RETRIES = 1
+    deps = ['FileTypes']
 
     # Insert query
     __insert__ = 'INSERT INTO metrics (id, file_id, commit_id, lang, sloc, loc, ncomment, ' + \
@@ -490,42 +540,6 @@ class Metrics (Extension):
         
         return metrics
 
-    def __checkout (self, repo, uri, rootdir, newdir = None, rev = None):
-        count = 0
-
-        if newdir is not None:
-            file_path = os.path.join (rootdir, newdir)
-        else:
-            file_path = os.path.join (rootdir, uri)
-        
-        while self.RETRIES - count >= 0:
-            repo.checkout (uri, rootdir, newdir=newdir, rev=rev)
-                
-            try:
-                new_rev = repo.get_last_revision (file_path)
-                if rev == new_rev:
-                    break
-                printout ("Warning: checkout %s@%s failed in try %d: got %s.", (uri, rev, count + 1, new_rev))
-            except Exception, e:
-                printout ("Warning: checkout %s@%s failed in try %d: %s", (uri, rev, count + 1, str (e)))
-            
-            count += 1
-
-    def __update (self, repo, uri, rev):
-        count = 0
-
-        while self.RETRIES - count >= 0:
-            repo.update (uri, rev=rev, force=True)
-            try:
-                new_rev = repo.get_last_revision (uri)
-                if rev == new_rev:
-                    break
-                printout ("Warning: update %s@%s failed in try %d: got %s.", (uri, rev, count + 1, new_rev))
-            except Exception, e:
-                printout ("Warning: update %s@%s failed in try %d: %s", (uri, rev, count + 1, str (e)))
-
-            count += 1
-
     def __insert_many (self, cursor):
         if not self.metrics:
             return
@@ -538,6 +552,8 @@ class Metrics (Extension):
         
         self.db = db
 
+        fp = FilePaths (db)
+        
         cnn = self.db.connect ()
         id_counter = 1
         metrics = []
@@ -559,69 +575,43 @@ class Metrics (Extension):
         read_cursor = cnn.cursor ()
         write_cursor = cnn.cursor ()
 
-        uri = repo.get_uri ()
-        type = repo.get_type ()
-        read_cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
-        repoid = read_cursor.fetchone ()[0]
-
         # Temp dir for the checkouts
         tmpdir = mkdtemp ()
+
+        try:
+            rp = create_repository (db, read_cursor, repo, tmpdir)
+        except Exception, e:
+            printerr ("Error creating repository %s. Exception: %s", (repo.get_uri (), str (e)))
             
-        # SVN needs the first revision
-        if type == 'svn':
-            topdirs = []
-                
-            # Get top level dirs of the repo
-            query =  'SELECT tree.file_name, tree.id, MIN(scmlog.rev) '
-            query += 'FROM scmlog, actions, tree '
-            query += 'WHERE actions.commit_id = scmlog.id '
-            query += 'AND actions.file_id = tree.id '
-            query += 'AND tree.parent = -1 '
-            if repo.get_uri ().startswith ('https://svn.apache.org/repos/asf'):
-                # Workaround for apache, we are not interested in the
-                # incubator stuff because we have a lot of problems when
-                # tryinbg to update stuff from it
-                query += 'AND tree.file_name <> "incubator" '
-            if not self.config.metrics_all:
-                query += 'AND tree.id not in (SELECT file_id from actions '
-                query += 'WHERE type = "D" and head) '
-            query += 'AND scmlog.repository_id = ? '
-            query += 'GROUP BY tree.id;'
-                
-            read_cursor.execute (statement (query, db.place_holder), (repoid,))
-                
-            for topdir, topdir_id, first_rev in read_cursor.fetchall ():
-                topdirs.append ((topdir, first_rev))
-                aux_cursor = cnn.cursor ()
-                aux_topdir = get_path_for_revision (topdir, topdir_id, first_rev, aux_cursor, db.place_holder).strip ('/')
-                aux_cursor.close ()
-                try:
-                    profiler_start ("Checking out toplevel %s", (topdir,))
-                    self.__checkout (repo, aux_topdir, tmpdir, newdir=topdir, rev=first_rev)
-                    profiler_stop ("Checking out toplevel %s", (topdir,))
-                except Exception, e:
-                    msg = 'SVN checkout first rev (%s) failed. Error: %s' % (str (first_rev), 
-                                                                                 str (e))
-                    raise ExtensionRunError (msg)
-                
-            printdbg ('SVN checkout first rev finished')
-
+        repoid = rp.get_repo_id ()
+            
         # Obtain files and revisions
-        query =  'SELECT rev, path, a.commit_id, a.file_id, composed_rev '
-        query += 'FROM scmlog s, actions a, file_paths f, file_types t '
-        query += 'WHERE a.commit_id=s.id '
-        query += 'AND a.file_id=f.id '
-        query += 'AND a.file_id=t.file_id '
-        query += 'AND a.type in ("M", "A") '
-        query += 'AND t.type in ("code", "unknown") '
-        if not self.config.metrics_all:
-            query += 'AND a.head '
-        query += 'AND s.repository_id=? '
-        query += 'ORDER BY s.date DESC'
-
-        current_revision = None
+        if self.config.metrics_all:
+            query =  'SELECT rev, a.commit_id, f.id, composed_rev '
+            query += 'FROM scmlog s, actions a, files f, file_types ft '
+            query += 'WHERE a.commit_id = s.id '
+            query += 'AND f.id = ft.file_id '
+            query += 'AND ((a.type in ("A", "M") AND f.id = a.file_id) '
+            query += 'OR (a.type = "R" and f.id = (select to_id from file_copies where a.id = action_id))) '
+            query += 'AND ft.type in ("code", "unknown") '
+            query += 'AND s.repository_id = ? '
+            query += 'ORDER BY a.commit_id'
+        else:
+            query =  'SELECT rev, a.commit_id, f.id, composed_rev '
+            query += 'FROM scmlog s, files f, file_types ft, actions a, '
+            query += '(SELECT file_id, max(commit_id) commit_id from actions group by file_id) ma '
+            query += 'WHERE ma.commit_id = s.id '
+            query += 'AND a.commit_id = ma.commit_id '
+            query += 'AND f.id = ft.file_id '
+            query += 'AND f.id = ma.file_id '
+            query += 'AND a.type <> "D" '
+            query += 'AND ((a.type <> "R" AND f.id = a.file_id) '
+            query += 'OR (a.type = "R" and f.id = (select to_id from file_copies where a.id = action_id))) '
+            query += 'AND s.repository_id = ? '
+            query += 'group by rev, a.commit_id, f.id order by a.commit_id'
+            
         read_cursor.execute (statement (query, db.place_holder), (repoid,))
-        for revision, filepath, commit_id, file_id, composed in read_cursor.fetchall ():
+        for revision, commit_id, file_id, composed in read_cursor.fetchall ():
             if (file_id, commit_id) in metrics:
                 continue
                 
@@ -629,53 +619,23 @@ class Metrics (Extension):
                 rev = revision.split ("|")[0]
             else:
                 rev = revision
-                    
-            relative_path = filepath
-                
-            if type != 'cvs': # There aren't moved or renamed paths in CVS
-                profiler_start ("Check if the path has been deleted")
-                deleted = path_is_deleted_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder)
-                profiler_stop ("Check if the path has been deleted")
-                if deleted:
-                    printdbg ("Path %s is deleted in revision %s, skipping", (relative_path, rev))
-                    continue
-                    
-                profiler_start ("Getting path for the given revision")
-                relative_path = get_path_for_revision (relative_path, file_id, rev, read_cursor, db.place_holder).strip ('/')
-                printdbg ("File path %s is relative path %s on revision %s", (filepath, relative_path, rev))
-                profiler_stop ("Getting path for the given revision")
 
-            # Workaround for apache, we are not interested in the
-            # incubator stuff because we have a lot of problems when
-            # tryinbg to update stuff from it
-            if repo.get_uri ().startswith ('https://svn.apache.org/repos/asf') and \
-               relative_path.startswith ('incubator'):
+            aux_cursor = cnn.cursor ()
+            relative_path = fp.get_path (aux_cursor, file_id, commit_id, repoid).strip ("/")
+            printdbg ("Path for %d at %s -> %s", (file_id, rev, relative_path))
+            aux_cursor.close ()
+
+            if repo.get_type () == 'svn' and relative_path == 'tags':
                 continue
-                
-            if revision != current_revision:
-                try:
-                    if type == 'svn':
-                        for topdir, first_rev in topdirs:
-                            if relative_path == topdir and rev == first_rev:
-                                # We already have such revision from the initial checkout
-                                continue
-                            if not relative_path.startswith (topdir):
-                                continue
-                            printdbg ("Updating tree %s to revision %s", (topdir, rev))
-                            profiler_start ("Updating tree %s to revision %s", (topdir, rev))
-                            self.__update (repo, os.path.join (tmpdir, topdir), rev=rev)
-                            profiler_stop ("Updating tree %s to revision %s", (topdir, rev))
-                    else:
-                        printdbg ("Checking out %s @ %s", (relative_path, rev))
-                        profiler_start ("Checking out %s @ %s", (relative_path, rev))
-                        self.__checkout (repo, relative_path, tmpdir, rev=rev)
-                        profiler_stop ("Checking out %s @ %s", (relative_path, rev))
-                except Exception, e:
-                    printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
-            
-                current_revision = revision
 
+            try:
+                printdbg ("Checking out %s @ %s", (relative_path, rev))
+                rp.checkout (relative_path, rev)
+            except Exception, e:
+                printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
+            
             checkout_path = os.path.join (tmpdir, relative_path)
+            # FIXME: is this still possible?
             if os.path.isdir (checkout_path):
                 continue
 

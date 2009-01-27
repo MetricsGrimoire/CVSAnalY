@@ -23,7 +23,7 @@ import time
 import datetime
 
 from Parser import Parser
-from Repository import Commit, Action, File
+from Repository import Commit, Action, Person
 
 class GitParser (Parser):
 
@@ -45,6 +45,7 @@ class GitParser (Parser):
     patterns['file-moved'] = re.compile ("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
     patterns['branch'] = re.compile ("refs/remotes/origin/([^,]*)")
     patterns['local-branch'] = re.compile ("refs/heads/([^,]*)")
+    patterns['tag'] = re.compile ("tag: refs/tags/([^,]*)")
     patterns['stash'] = re.compile ("refs/stash")
     patterns['ignore'] = [re.compile ("^AuthorDate: .*$"), re.compile ("^Merge: .*$")]
 
@@ -110,6 +111,10 @@ class GitParser (Parser):
                         m = re.search (self.patterns['stash'], decorate)
                         if m:
                             branch = ("stash", "stash")
+                # Tag
+                m = re.search (self.patterns['tag'], decorate)
+                if m:
+                    self.commit.tags = [m.group (1)]
 
             if len (self.branches) >= 2:
                 # If current commit is the start point of a new branch
@@ -140,7 +145,9 @@ class GitParser (Parser):
         # Committer
         match = self.patterns['committer'].match (line)
         if match:
-            self.commit.committer = match.group (1)
+            self.commit.committer = Person ()
+            self.commit.committer.name = match.group (1)
+            self.commit.committer.email = match.group (2)
             self.handler.committer (self.commit.committer)
 
             return
@@ -148,7 +155,9 @@ class GitParser (Parser):
         # Author
         match = self.patterns['author'].match (line)
         if match:
-            self.commit.author = match.group (1)
+            self.commit.author = Person ()
+            self.commit.author.name = match.group (1)
+            self.commit.author.email = match.group (2)
             self.handler.author (self.commit.author)
 
             return
@@ -165,38 +174,30 @@ class GitParser (Parser):
         # File
         match = self.patterns['file'].match (line)
         if match:
-            f = File ()
-            f.path = match.group (2)
-
             action = Action ()
             action.type = match.group (1)
-            action.f1 = f
+            action.f1 = match.group (2)
 
             self.commit.actions.append (action)
-            self.handler.file (f)
+            self.handler.file (action.f1)
         
             return
 
         # File moved/copied
         match = self.patterns['file-moved'].match (line)
         if match:
-            f1 = File ()
-            f1.path = match.group (3)
-
-            f2 = File ()
-            f2.path = match.group (2)
-
             action = Action ()
             type = match.group (1)
             if type == 'R':
                 action.type = 'V'
             else:
                 action.type = type
-            action.f1 = f1
-            action.f2 = f2
+            action.f1 = match.group (3)
+            action.f2 = match.group (2)
+            action.rev = self.commit.revision
 
             self.commit.actions.append (action)
-            self.handler.file (f1)
+            self.handler.file (action.f1)
 
             return
 

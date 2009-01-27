@@ -19,10 +19,15 @@
 
 class ContentHandler:
 
+    (
+        ORDER_REVISION,
+        ORDER_FILE
+    ) = range (2)
+
     def __init__ (self):
         pass
 
-    def begin (self):
+    def begin (self, order=None):
         pass
     
     def repository (self, uri):

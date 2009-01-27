@@ -17,156 +17,143 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
-                                  statement, DBFile)
-from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
+if __name__ == '__main__':
+    import sys
+    sys.path.insert (0, "../../")
+
+from pycvsanaly2.Database import statement
 from pycvsanaly2.utils import to_utf8
+from pycvsanaly2.profile import profiler_start, profiler_stop
 
-class DBFilePath:
+class FilePaths:
 
-    id_counter = 1
+    class Adj:
 
-    __insert__ = "INSERT INTO file_paths (id, file_id, path) values (?, ?, ?)"
+        def __init__ (self):
+            self.files = {}
+            self.adj = {}
 
-    def __init__ (self, id, path, file_id):
-        if id is None:
-            self.id = DBFilePath.id_counter
-            DBFilePath.id_counter += 1
-        else:
-            self.id = id
-
-        self.path = to_utf8 (path)
-        self.file_id = file_id
-
-class FilePaths (Extension):
-
-    def __init__ (self):
-        self.db = None
     
-    def __create_table (self, cnn):
-        cursor = cnn.cursor ()
+    __shared_state = { 'rev' : None,
+                       'adj' : None,
+                       'db'  : None}
 
-        if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
-            
-            try:
-                cursor.execute ("CREATE TABLE file_paths (" +
-                                "id integer primary key," +
-                                "file_id integer," +
-                                "path varchar" +
-                                ")")
-            except pysqlite2.dbapi2.OperationalError:
-                cursor.close ()
-                raise TableAlreadyExists
-            except:
-                raise
-        elif isinstance (self.db, MysqlDatabase):
-            import _mysql_exceptions
+    def __init__ (self, db):
+        self.__dict__ = self.__shared_state
+        self.__dict__['db'] = db
 
-            try:
-                cursor.execute ("CREATE TABLE file_paths (" +
-                                "id INT primary key," +
-                                "file_id integer," +
-                                "path mediumtext," + 
-                                "FOREIGN KEY (file_id) REFERENCES tree(id)" +
-                                ") CHARACTER SET=utf8")
-            except _mysql_exceptions.OperationalError, e:
-                if e.args[0] == 1050:
-                    cursor.close ()
-                    raise TableAlreadyExists
-                raise
-            except:
-                raise
-            
-        cnn.commit ()
-        cursor.close ()
+    def __get_adj_for_revision (self, cursor, repo_id, commit_id):
+        db = self.__dict__['db']
 
-    def get_path_from_id (self, cnn, file_id):
-        retval = []
-
-        def get_file (cursor, fid):
-            cursor.execute (statement ("SELECT id, parent, file_name from tree where id = ?", self.db.place_holder), (fid,))
-            
-            try:
-                (id, parent, file_name) = cursor.fetchone ()
-            except TypeError:
-                return None
-            
-            return DBFile (id, file_name, parent)
+        profiler_start ("Getting adjacency matrix for commit %d", (commit_id,))
         
-        def build_path (cursor, node):
-            if node is None or node.id == -1:
-                return True
+        adj = FilePaths.Adj ()
 
-            retval.insert (0, node.file_name)
-            return build_path (cursor, get_file (cursor, node.parent))
-
-        cursor = cnn.cursor ()
-        node = get_file (cursor, file_id)
-
-        if build_path (cursor, node):
-            cursor.close ()
-            return '/'.join (retval)
-
-        cursor.close ()
+        query = "select files.id, files.file_name, new_file_name from files " + \
+                "LEFT JOIN (select fv.file_id ffid, new_file_name " + \
+                "from (select file_id, max(commit_id) md " + \
+                "from actions_file_names where commit_id <= ? " + \
+                "and type = 'V' group by file_id) fv, actions_file_names af " + \
+                "where af.commit_id = fv.md and " + \
+                "af.file_id = fv.file_id) new_names " + \
+                "ON files.id = new_names.ffid and repository_id = ?"
         
-        return None
-
-    def __get_paths_for_repository (self, repo_id, cursor):
-        query = "SELECT fp.file_id from file_paths fp, tree t " + \
-                "WHERE t.id = fp.file_id and t.repository_id = ?"
-        cursor.execute (statement (query, self.db.place_holder), (repo_id,))
-        paths = [res[0] for res in cursor.fetchall ()]
-
-        return paths
-    
-    def run (self, repo, uri, db):
-        self.db = db
-
-        cnn = self.db.connect ()
-
-        cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
-        repo_id = cursor.fetchone ()[0]
-
-        # If table does not exist, the list of paths is empty,
-        # otherwise it will be filled within the except block below
-        paths = []
-        
-        try:
-            self.__create_table (cnn)
-        except TableAlreadyExists:
-            cursor.execute (statement ("SELECT max(id) from file_paths", db.place_holder))
-            id = cursor.fetchone ()[0]
-            if id is not None:
-                DBFilePath.id_counter = id + 1
-
-            paths = self.__get_paths_for_repository (repo_id, cursor)
-        except Exception, e:
-            raise ExtensionRunError (str (e))
-
-        cursor.execute (statement ("SELECT id from tree where repository_id = ?", db.place_holder), (repo_id,))
-        write_cursor = cnn.cursor ()
+        profiler_start ("Getting files for commit %d", (commit_id,))
+        cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
+        profiler_stop ("Getting files for commit %d", (commit_id,))
         rs = cursor.fetchmany ()
+        files = {}
         while rs:
-            files = []
-
-            for id in rs:
-                if id[0] in paths:
-                    continue
-                path = self.get_path_from_id (cnn, id[0])
-                if path is not None:
-                    files.append (DBFilePath (None, path, id[0]))
-
-            file_paths = [(file.id, file.file_id, file.path) for file in files]
-            write_cursor.executemany (statement (DBFilePath.__insert__, self.db.place_holder), file_paths)
-
+            for id, file_name, rev_name in rs:
+                files[id] = rev_name or file_name
             rs = cursor.fetchmany ()
-            
-        cnn.commit ()
-        write_cursor.close ()
-        cursor.close ()
-        cnn.close ()
+        adj.files = files
 
-register_extension ("FilePaths", FilePaths)
-                     
+        query = "select file_links.parent_id, file_links.file_id " + \
+                "from (select fl.file_id file_id, max(commit_id) md " + \
+                "from file_links fl, files f " + \
+                "where fl.file_id = f.id and f.repository_id = ? and " + \
+                "fl.commit_id <= ? and fl.file_id not in " + \
+                "(select file_id from actions where type in " + \
+                "('D', 'R') and commit_id <= ?) group by fl.file_id) f, file_links " + \
+                "where file_links.file_id = f.file_id and " + \
+                "file_links.commit_id = f.md order by 1"
+
+        profiler_start ("Getting file links for commit %d", (commit_id,))
+        cursor.execute (statement (query, db.place_holder), (repo_id, commit_id, commit_id))
+        profiler_stop ("Getting file links for commit %d", (commit_id,))
+        rs = cursor.fetchmany ()
+        adj_ = {}
+        tops = []
+        while rs:
+            for f1, f2 in rs:
+                adj_[f2] = f1
+            rs = cursor.fetchmany ()
+        adj.adj = adj_
+
+        profiler_stop ("Getting adjacency matrix for commit %d", (commit_id,))
+
+        return adj
+
+    def __build_path (self, file_id, adj):
+        if file_id not in adj.adj:
+            return None
+
+        profiler_start ("Building path for file %d", (file_id,))
+        
+        tokens = []
+        id = file_id
+        
+        while id != -1:
+            tokens.insert (0, adj.files[id])
+            id = adj.adj[id]
+
+        profiler_stop ("Building path for file %d", (file_id,))
+
+        return "/" + "/".join (tokens)
+    
+    def get_path (self, cursor, file_id, commit_id, repo_id):
+        db = self.__dict__['db']
+
+        profiler_start ("Getting path for file %d at commit %d", (file_id, commit_id))
+
+        if commit_id == self.__dict__['rev']:
+            adj = self.__dict__['adj']
+        else:
+            del self.__dict__['adj']
+            self.__dict__['rev'] = commit_id
+            adj = self.__get_adj_for_revision (cursor, repo_id, commit_id)
+            self.__dict__['adj'] = adj
+
+        path = self.__build_path (file_id, adj)
+        
+        profiler_stop ("Getting path for file %d at commit %d", (file_id, commit_id))
+
+        return path
+
+
+if __name__ == '__main__':
+    import sys
+    from pycvsanaly2.Database import create_database
+    from pycvsanaly2.Config import Config
+
+    db = create_database ('sqlite', sys.argv[1])
+    cnn = db.connect ()
+
+    fp = FilePaths (db)
+
+    config = Config ()
+    config.profile = True
+
+    cursor = cnn.cursor ()
+    cursor.execute ("select s.id, file_id from scmlog s, actions a where s.id = a.commit_id")
+    old_id = -1
+    for id, file_id in cursor.fetchall ():
+        if old_id != id:
+            print "Commit ",id
+            old_id = id
+        print fp.get_path (cursor, file_id, id, 1)
+
+    cursor.close ()
+    
+    cnn.close ()

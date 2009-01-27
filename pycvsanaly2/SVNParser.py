@@ -24,7 +24,7 @@ import re
 import datetime
 
 from Parser import Parser
-from Repository import Commit, Action, File
+from Repository import Commit, Action, Person
 from utils import printout, printdbg
 
 class SVNParser (Parser):
@@ -40,7 +40,7 @@ class SVNParser (Parser):
     patterns['paths'] = re.compile ("^Changed paths:$")
     patterns['file'] = re.compile ("^[ ]+([MADR]) (.*)$")
     patterns['file-moved'] = re.compile ("^[ ]+([MADR]) (.*) \(from (.*):([0-9]+)\)$")
-    patterns['separator'] = re.compile ("^[-]+$")
+    patterns['separator'] = re.compile ("^------------------------------------------------------------------------$")
     
     def __init__ (self):
         Parser.__init__ (self)
@@ -57,7 +57,7 @@ class SVNParser (Parser):
 
         def find_action (actions, type, path):
             for action in actions:
-                if action.type == type and action.f1.path == path:
+                if action.type == type and action.f1 == path:
                     return action
             
             return None
@@ -68,22 +68,32 @@ class SVNParser (Parser):
             if action.f2 is not None:
                 # Move or copy action
                 if action.type == 'A':
-                    del_action = find_action (commit.actions, 'D', action.f2.path)
+                    del_action = find_action (commit.actions, 'D', action.f2)
                     if del_action is not None and del_action not in remove_actions:
                         # FIXME: See http://research.libresoft.es/cgi-bin/trac.cgi/wiki/Tools/CvsanalyRevamped#Filesmovedandcopiedinthesamerevision
-                        printdbg ("SVN Parser: File %s has been renamed to %s", (action.f2.path, action.f1.path))
+                        printdbg ("SVN Parser: File %s has been renamed to %s", (action.f2, action.f1))
                         action.type = 'V'
                         remove_actions.append (del_action)
                     else:
                         action.type = 'C'
-                        printdbg ("SVN Parser: File %s has been copied to %s", (action.f2.path, action.f1.path))
+                        printdbg ("SVN Parser: File %s has been copied to %s", (action.f2, action.f1))
+
+                        # Try to guess if it was a tag
+                        # Yes, with svn we are always guessing :-/
+                        tag = self.__guess_tag_from_path (action.f1)
+                        if tag is not None and action.f1 == '/tags/%s' % (tag):
+                            if commit.tags is None:
+                                commit.tags = []
+
+                            commit.tags.append (tag)
+                            
                 elif action.type == 'R':
                     # TODO
-                    printdbg ("SVN Parser: File %s replaced to %s", (action.f2.path, action.f1.path))
+                    printdbg ("SVN Parser: File %s replaced to %s", (action.f2, action.f1))
                     pass
 
         for action in remove_actions:
-            printdbg ("SVN Parser: Removing action %s %s", (action.type, action.f1.path))
+            printdbg ("SVN Parser: Removing action %s %s", (action.type, action.f1))
             commit.actions.remove (action)
 
     def __guess_branch_from_path (self, path):
@@ -96,6 +106,17 @@ class SVNParser (Parser):
             branch = 'trunk'
 
         return branch
+
+    def __guess_tag_from_path (self, path):
+        if not path.startswith ("/tags"):
+            return None
+        
+        try:
+            tag = path.split ('/')[2]
+        except:
+            return None
+
+        return tag
             
     def _parse_line (self, line):
         if not line:
@@ -126,12 +147,20 @@ class SVNParser (Parser):
         if match and self.state == SVNParser.COMMIT:
             commit = Commit ()
             commit.revision = match.group (1)
-            commit.committer = match.group (2)
+            
+            commit.committer = Person ()
+            commit.committer.name = match.group (2)
+            
             commit.date = datetime.datetime (int (match.group (3)), int (match.group (4)), int (match.group (5)),
                                              int (match.group (6)), int (match.group (7)), int (match.group (8)))
             self.commit = commit
             self.handler.committer (commit.committer)
             
+            return
+        elif match and self.state == SVNParser.MESSAGE:
+            # It seems a piece of a log message has been copied as
+            # part of the commit message
+            self.commit.message += line + '\n'
             return
         elif match and self.state != SVNParser.COMMIT:
             printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
@@ -159,21 +188,16 @@ class SVNParser (Parser):
                 printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
                 return
             
-            f1 = File ()
-            f1.path = match.group (2)
-
-            f2 = File ()
-            f2.path = match.group (3)
-            
             action = Action ()
             action.type = match.group (1)
-            action.f1 = f1
-            action.f2 = f2
+            action.f1 = match.group (2)
+            action.f2 = match.group (3)
+            action.rev = match.group (4)
 
-            action.branch = self.__guess_branch_from_path (f1.path)
+            action.branch = self.__guess_branch_from_path (action.f1)
 
             self.commit.actions.append (action)
-            self.handler.file (f1)
+            self.handler.file (action.f1)
 
             return
 
@@ -190,16 +214,13 @@ class SVNParser (Parser):
                 # path == '/' is probably a properties change in /
                 # not interesting for us, ignoring
 
-                f = File ()
-                f.path = path
-                
                 action = Action ()
                 action.type = match.group (1)
-                action.f1 = f
+                action.f1 = path
 
-                action.branch = self.__guess_branch_from_path (f.path)
+                action.branch = self.__guess_branch_from_path (path)
 
                 self.commit.actions.append (action)
-                self.handler.file (f)
+                self.handler.file (path)
 
             return

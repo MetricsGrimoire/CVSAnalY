@@ -60,6 +60,7 @@ class CVSLineCounter (LineCounter):
         LineCounter.__init__ (self, repo, uri)
         from pycvsanaly2.Cache import Cache
 
+        # FIXME: incremental
         self.lines = Cache ().lookup ('cvs-lines')
     
     def get_lines_for_revision (self, revision):
@@ -68,7 +69,7 @@ class CVSLineCounter (LineCounter):
 class SVNLineCounter (LineCounter):
 
     
-    diffstat_pattern = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
+    diffstat_pattern = re.compile ("^ \d+ file[s]? changed(, (\d+) insertion[s]?\(\+\))?(, (\d+) deletion[s]?\(\-\))?$")
     
     def __init__ (self, repo, uri):
         LineCounter.__init__ (self, repo, uri)

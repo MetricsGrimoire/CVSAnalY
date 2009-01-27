@@ -1,4 +1,4 @@
-# Copyright (C) 2007 LibreSoft
+# Copyright (C) 2008 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +17,17 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
+import os
+
 from ContentHandler import ContentHandler
-from Database import DBRepository, DBLog, DBFile, DBAction, DBBranch, DBPerson, statement
+from Database import (DBRepository, DBLog, DBFile, DBFileLink, DBAction,
+                      DBFileCopy, DBBranch, DBPerson, DBTag, DBTagRev,
+                      statement)
 from profile import profiler_start, profiler_stop
-from utils import printdbg
+from utils import printdbg, printout, to_utf8
+
+class FileNotInCache (Exception):
+    '''File is not in Cache'''
 
 class DBContentHandler (ContentHandler):
 
@@ -31,185 +38,96 @@ class DBContentHandler (ContentHandler):
 
         self.db = db
         self.cnn = None
+        self.cursor = None
         
         self.file_cache = {}
-        self.commit_cache = None
+        self.revision_cache = {}
+        self.moves_cache = {}
         self.branch_cache = {}
-        self.heads_cache = None
+        self.tags_cache = {}
         self.people_cache = {}
+
+        # TODO: deletes cache
 
     def __del__ (self):
         if self.cnn is not None:
             self.cnn.close ()
 
-    def begin (self):
+    def begin (self, order=None):
         self.cnn = self.db.connect ()
+
+        self.cursor = self.cnn.cursor ()
 
         self.commits = []
         self.actions = []
-        self.heads = {}
 
     def repository (self, uri):
-        cursor = self.cnn.cursor ()
+        cursor = self.cursor
         cursor.execute (statement ("SELECT id from repositories where uri = ?", self.db.place_holder), (uri,))
         self.repo_id = cursor.fetchone ()[0]
-        cursor.close ()
-
-    def __get_repository_commits (self):
-        if self.commit_cache is not None:
-            return self.commit_cache
-
-        profiler_start ("Getting commits for repository %d", (self.repo_id,))
-        
-        cursor = self.cnn.cursor ()
-        cursor.execute (statement ("SELECT rev from scmlog where repository_id = ?", self.db.place_holder), (self.repo_id,))
-        res = cursor.fetchall ()
-        self.commit_cache = [rev[0] for rev in res]
-        cursor.close ()
-
-        profiler_stop ("Getting commits for repository %d", (self.repo_id,))
-        
-        return self.commit_cache
-
-    def __get_heads (self):
-        if self.heads_cache is not None:
-            return self.heads_cache
-
-        profiler_start ("Getting heads for repository %d", (self.repo_id,))
-        
-        cursor = self.cnn.cursor ()
-        query =  "SELECT a.id, a.file_id, a.branch_id from actions a, scmlog s "
-        query += "where a.commit_id = s.id and head and repository_id = ?"
-        cursor.execute (statement (query, self.db.place_holder), (self.repo_id,))
-        self.heads_cache = []
-        for action_id, file_id, branch_id in cursor.fetchall ():
-            self.heads_cache.append ((action_id, file_id, branch_id))
-        cursor.close ()
-
-        profiler_stop ("Getting heads for repository %d", (self.repo_id,))
-        
-        return self.heads_cache
-
-    def __update_heads (self, cursor):
-        heads = self.__get_heads ()
-
-        if not heads:
-            return
-
-        profiler_start ("Updating heads for repository %d", (self.repo_id,))
-        
-        old_heads = []
-        for action_id, file_id, branch_id in [item for item in heads]:
-            if file_id in self.heads.get (branch_id, []):
-                old_heads.append (action_id)
-                heads.remove ((action_id, file_id, branch_id))
-
-        if not old_heads:
-            profiler_stop ("Updating heads for repository %d", (self.repo_id,))
-            return
-        
-        query = "UPDATE actions set head = ? where id in ("
-        query += ",".join (['?' for item in old_heads])
-        query += ")"
-        old_heads.insert (0, False)
-        cursor.execute (statement (query, self.db.place_holder), (old_heads))
-
-        profiler_stop ("Updating heads for repository %d", (self.repo_id,))
 
     def __insert_many (self):
-        cursor = self.cnn.cursor ()
+        cursor = self.cursor
 
-        # Update the heads before inserting actions
-        self.__update_heads (cursor)
-        
         if self.actions:
+            actions = [(a.id, a.type, a.file_id, a.commit_id, a.branch_id) for a in self.actions]
             profiler_start ("Inserting actions for repository %d", (self.repo_id,))
-            cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), self.actions)
+            cursor.executemany (statement (DBAction.__insert__, self.db.place_holder), actions)
             self.actions = []
             profiler_stop ("Inserting actions for repository %d", (self.repo_id,))
         if self.commits:
+            commits = [(c.id, c.rev, c.committer, c.author, c.date, c.message, c.composed_rev, c.repository_id) for c in self.commits]
             profiler_start ("Inserting commits for repository %d", (self.repo_id,))
-            cursor.executemany (statement (DBLog.__insert__, self.db.place_holder), self.commits)
+            cursor.executemany (statement (DBLog.__insert__, self.db.place_holder), commits)
             self.commits = []
             profiler_stop ("Inserting commits for repository %d", (self.repo_id,))
 
         profiler_start ("Committing inserts for repository %d", (self.repo_id,))
-        cursor.close ()
         self.cnn.commit ()
         profiler_stop ("Committing inserts for repository %d", (self.repo_id,))
         
-    def __ensure_path (self, path):
-        profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
-        printdbg ("DBContentHandler: ensure_path %s", (path))
-        tokens = path.strip ('/').split ('/')
-
-        cursor = self.cnn.cursor ()
+    def __add_new_file_and_link (self, file_name, parent_id, commit_id):
+        dbfile = DBFile (None, file_name)
+        dbfile.repository_id = self.repo_id
+        self.cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (dbfile.id, dbfile.file_name, dbfile.repository_id))
         
-        parent = -1
-        node = None
-        for i, token in enumerate (tokens):
-            rpath = '/' + '/'.join (tokens[:i + 1])
-            printdbg ("DBContentHandler: rpath: %s", (rpath,))
-            if rpath in self.file_cache:
-                node_id = self.file_cache[rpath]
-                printdbg ("DBContentHandler: found %s in cache file_id = %d", (rpath, node_id))
-                printdbg ("DBContentHandler: parent = %d", (node_id))
-                parent = node_id
+        dblink = DBFileLink (None, parent_id, dbfile.id)
+        dblink.commit_id = commit_id
+        self.cursor.execute (statement (DBFileLink.__insert__, self.db.place_holder), (dblink.id, dblink.parent, dblink.child, dblink.commit_id))
 
-                continue
+        return dbfile.id
 
-            profiler_start ("Looking for path %s parent %d for repository %d", (token, parent, self.repo_id))
-            cursor.execute (statement ("SELECT id from tree where file_name = ? AND parent = ? AND repository_id = ?", self.db.place_holder),
-                            (token, parent, self.repo_id))
-            rs = cursor.fetchone ()
-            profiler_stop ("Looking for path %s parent %d for repository %d", (token, parent, self.repo_id))
-            if not rs:
-                node = DBFile (None, token, parent)
-                node.repository_id = self.repo_id
-                profiler_start ("Inserting path %s parent %d for repository %d", (token, parent, self.repo_id))
-                cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (node.id, node.parent, node.file_name, node.repository_id))
-                profiler_stop ("Inserting path %s parent %d for repository %d", (token, parent, self.repo_id))
-                self.file_cache[rpath] = node.id
-                node_id = node.id
-            else:
-                node_id = rs[0]
-
-            parent = node_id 
-
-        assert node_id is not None
-
-        cursor.close ()
-        printdbg ("DBContentHandler: path ensured %s = %d", (path, node_id))
-        profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id))
-        
-        return node_id
+    def __add_new_copy (self, dbfilecopy):
+        self.cursor.execute (statement (DBFileCopy.__insert__, self.db.place_holder),
+                             (dbfilecopy.id, dbfilecopy.to_id, dbfilecopy.from_id,
+                              dbfilecopy.from_commit, dbfilecopy.new_file_name, dbfilecopy.action_id))
 
     def __ensure_person (self, person):
-        profiler_start ("Ensuring person %s for repository %d", (person, self.repo_id))
-        printdbg ("DBContentHandler: ensure_person %s", (person))
-        cursor = self.cnn.cursor ()
+        profiler_start ("Ensuring person %s for repository %d", (person.name, self.repo_id))
+        printdbg ("DBContentHandler: ensure_person %s <%s>", (person.name, person.email))
+        cursor = self.cursor
 
-        cursor.execute (statement ("SELECT id from people where name = ?", self.db.place_holder), (person,))
+        name = to_utf8 (person.name)
+        email = person.email
+        cursor.execute (statement ("SELECT id from people where name = ?", self.db.place_holder), (name,))
         rs = cursor.fetchone ()
         if not rs:
             p = DBPerson (None, person)
-            cursor.execute (statement (DBPerson.__insert__, self.db.place_holder), (p.id, p.name))
+            cursor.execute (statement (DBPerson.__insert__, self.db.place_holder), (p.id, p.name, email))
             person_id = p.id
         else:
             person_id = rs[0]
 
-        self.people_cache[person] = person_id
+        self.people_cache[name] = person_id
 
-        cursor.close ()
-
-        profiler_stop ("Ensuring person %s for repository %d", (person, self.repo_id))
+        profiler_stop ("Ensuring person %s for repository %d", (person.name, self.repo_id))
 
         return person_id
 
     def __ensure_branch (self, branch):
         profiler_start ("Ensuring branch %s for repository %d", (branch, self.repo_id))
         printdbg ("DBContentHandler: ensure_branch %s", (branch))
-        cursor = self.cnn.cursor ()
+        cursor = self.cursor
 
         cursor.execute (statement ("SELECT id from branches where name = ?", self.db.place_holder), (branch,))
         rs = cursor.fetchone ()
@@ -222,70 +140,255 @@ class DBContentHandler (ContentHandler):
             
         self.branch_cache[branch] = branch_id
             
-        cursor.close ()
-
         profiler_stop ("Ensuring branch %s for repository %d", (branch, self.repo_id))
 
         return branch_id
-    
-    def commit (self, commit):
-        if commit.revision in self.__get_repository_commits ():
-            return
 
+    def __ensure_tag (self, tag):
+        profiler_start ("Ensuring tag %s for repository %d", (tag, self.repo_id))
+        printdbg ("DBContentHandler: ensure_tag %s", (tag))
+        cursor = self.cursor
+
+        cursor.execute (statement ("SELECT id from tags where name = ?", self.db.place_holder), (tag,))
+        rs = cursor.fetchone ()
+        if not rs:
+            t = DBTag (None, tag)
+            cursor.execute (statement (DBTag.__insert__, self.db.place_holder), (t.id, t.name))
+            tag_id = t.id
+        else:
+            tag_id = rs[0]
+
+        profiler_stop ("Ensuring tag %s for repository %d", (tag, self.repo_id))
+
+        return tag_id
+
+    def __get_file_from_moves_cache (self, path):
+        # Path is not in the cache, but it should
+        # Look if any of its parents was moved
+        current_path = path
+        while current_path not in self.file_cache:
+            found = False
+            for new_path in self.moves_cache.keys ():
+                if not current_path.startswith (new_path):
+                    continue
+
+                current_path = current_path.replace (new_path, self.moves_cache[new_path], 1)
+                found = True
+            
+            if not found:
+                raise FileNotInCache
+
+        return self.file_cache[current_path]
+
+    def __get_parent_from_copies_cache (self, path):
+        parent_path = os.path.dirname (path)
+        if parent_path == '/':
+            return -1
+
+        try:
+            return self.file_cache[parent_path][0]
+        except KeyError:
+            pass
+
+        current_path = parent_path
+        while current_path not in self.file_cache:
+            found = False
+            for new_path in self.copies_cache:
+                if not current_path.startswith (new_path):
+                    continue
+
+                current_path = new_path
+                found = True
+
+            if not found:
+                raise FileNotInCache
+
+        # Unknown path: Ensure parent_path
+        # TODO
+
+    def __ensure_path (self, path, commit_id):
+        profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
+        printdbg ("DBContentHandler: ensure_path %s", (path))
+        tokens = path.strip ('/').split ('/')
+
+        parent = -1
+        node_id = None
+        for i, token in enumerate (tokens):
+            rpath = '/' + '/'.join (tokens[:i + 1])
+            printdbg ("DBContentHandler: rpath: %s", (rpath,))
+            try:
+                node_id, parent_id = self.file_cache[rpath] #self.__get_file_for_path (rpath)
+                parent = node_id
+                
+                continue
+            except:
+                pass
+
+            # Rpath not in cache, add it
+
+            node_id = self.__add_new_file_and_link (token, parent, commit_id)
+            parent_id = parent
+            parent = node_id
+
+        assert node_id is not None
+
+        printdbg ("DBContentHandler: path ensured %s = %d (%d)", (path, node_id, parent_id))
+        profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id))
+
+        return node_id, parent_id
+            
+    def __get_file_for_path (self, path, commit_id):
+        printdbg ("DBContentHandler: Looking for path %s in cache", (path,))
+
+        # First of all look at the cache
+        try:
+            return self.file_cache[path]
+        except KeyError:
+            pass
+        
+        # It's not in the cache look now at moves cache
+        try:
+            retval = self.__get_file_from_moves_cache (path)
+            printdbg ("DBContentHandler: Found %s in moves cache", (path,))
+            self.file_cache[path] = retval
+            return retval
+        except FileNotInCache:
+            return self.__ensure_path (path, commit_id)
+
+    def commit (self, commit):
         profiler_start ("New commit %s for repository %d", (commit.revision, self.repo_id))
         
         log = DBLog (None, commit)
         log.repository_id = self.repo_id
-
-        if log.committer in self.people_cache:
-            committer = self.people_cache[log.committer]
+        self.revision_cache[commit.revision] = log.id
+                       
+        committer = to_utf8 (commit.committer.name)
+        author = commit.author is not None and to_utf8 (commit.author.name) or None
+        
+        if committer in self.people_cache:
+            log.committer = self.people_cache[committer]
         else:
-            committer = self.__ensure_person (log.committer)
+            log.committer = self.__ensure_person (commit.committer)
 
-        if log.author == log.committer:
-            author = committer
-        elif log.author is not None:
-            if log.author in self.people_cache:
-                author = self.people_cache[log.author]
+        if author == committer:
+            log.author = log.committer
+        elif author is not None:
+            if author in self.people_cache:
+                log.author = self.people_cache[author]
             else:
-                author = self.__ensure_person (log.author)
-        else:
-            author = None
-            
-        self.commits.append ((log.id, log.rev, committer, author, log.date,
-                              log.message, log.composed_rev, log.repository_id))
+                log.author = self.__ensure_person (commit.author)
+
+        self.commits.append (log)
 
         printdbg ("DBContentHandler: commit: %d rev: %s", (log.id, log.rev))
-        renamed_from = None
+
+        # TODO: sort actions? R, A, D, M, V, C
         
         for action in commit.actions:
             printdbg ("DBContentHandler: Action: %s", (action.type))
             dbaction = DBAction (None, action.type)
+            dbaction.commit_id = log.id
 
-            if action.f2 is not None:
-                if action.f1.path in self.file_cache:
-                    file_id = self.file_cache[action.f1.path]
-                    printdbg ("DBContentHandler: found %s in cache file_id = %d", (action.f1.path, file_id))
-                else:
-                    file_id = self.__ensure_path (action.f1.path)
+            if action.type == 'A':
+                # New file
+                path = action.f1
+                parent_path = os.path.dirname (path)
+                file_name = os.path.basename (path)
 
-                # TODO: Replace actions!!!
-                if action.type == 'V':
-                    # Rename the node
-                    self.file_cache[action.f2.path] = file_id
-                    dbaction.old_path = action.f2.path
-                    printdbg ("DBContentHandler: update cache %s = %d", (action.f2.path, file_id))
+                if parent_path == '/':
+                    parent_id = -1
                 else:
-                    self.file_cache[action.f1.path] = file_id
-                    printdbg ("DBContentHandler: update cache %s = %d", (action.f1.path, file_id))
+                    parent_id, pparent_id = self.__get_file_for_path (parent_path, log.id)
+                    self.file_cache[parent_path] = (parent_id, pparent_id)
+
+                file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+                self.file_cache[path] = (file_id, parent_id)
+            elif action.type in ('D', 'M'):
+                file_id = self.__get_file_for_path (action.f1, log.id)[0]
+            elif action.type == 'V':
+                path = action.f1
+                new_parent_path = os.path.dirname (path)
+                new_file_name = os.path.basename (path)
+
+                old_path = action.f2
+                # FIXME deletes cache
+                file_id, parent_id = self.__get_file_for_path (old_path, log.id)
+                
+                dbfilecopy = DBFileCopy (None, file_id)
+                dbfilecopy.action_id = dbaction.id
+                dbfilecopy.from_commit = self.revision_cache.get (action.rev, None)
+
+                if new_parent_path == '/':
+                    new_parent_id = -1
+                else:
+                    new_parent_id = self.__get_file_for_path (new_parent_path, log.id)[0]
+                if new_parent_id != parent_id:
+                    # It's not a simple rename, but a move operation
+                    # we have to write down the new link
+                    parent_id = new_parent_id
+                    dblink = DBFileLink (None, parent_id, file_id)
+                    dblink.commit_id = log.id
+                    self.cursor.execute (statement (DBFileLink.__insert__, self.db.place_holder),
+                                         (dblink.id, dblink.parent, dblink.child, dblink.commit_id))
+                    self.moves_cache[path] = old_path
+                    
+                self.file_cache[path] = (file_id, parent_id)
+                
+                # Move/rename is a special case of copy. There's not a new file_id
+                dbfilecopy.from_id = file_id
+                dbfilecopy.new_file_name = new_file_name
+                self.__add_new_copy (dbfilecopy)
+            elif action.type == 'C':
+                path = action.f1
+                parent_path = os.path.dirname (path)
+                file_name = os.path.basename (path)
+
+                from_file_id = self.__get_file_for_path (action.f2, log.id)[0]
+                
+                if parent_path == '/':
+                    parent_id = -1
+                else:
+                    parent_id = self.__get_file_for_path (parent_path, log.id)[0]
+                        
+                file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+                self.file_cache[path] = (file_id, parent_id)
+
+                dbfilecopy = DBFileCopy (None, file_id)
+                dbfilecopy.from_id = from_file_id
+                dbfilecopy.action_id = dbaction.id
+                dbfilecopy.from_commit = self.revision_cache.get (action.rev, None)
+                self.__add_new_copy (dbfilecopy)
+            elif action.type == 'R':
+                # Replace action: Path has been removed and
+                # a new one has been added with the same path
+                path = action.f1
+                file_name = os.path.basename (path)
+
+                # TODO: replaced from f2!!!
+                # The replace action is over the old file_id
+                file_id, parent_id = self.__get_file_for_path (path, log.id)
+                
+                # Remove the old references
+                dirpath = path.rstrip ("/") + "/"
+                for cpath in self.file_cache.keys ():
+                    if cpath.startswith (dirpath):
+                        del (self.file_cache[cpath])
+
+                # Add the new path
+                new_file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+                self.file_cache[path] = (new_file_id, parent_id)
+
+                # Register the action in the copies table in order to
+                # be able to know which file replaced this file
+                dbfilecopy = DBFileCopy (None, new_file_id)
+                dbfilecopy.from_id = file_id
+                dbfilecopy.action_id = dbaction.id
+                dbfilecopy.from_commit = None # FIXME
+                self.__add_new_copy (dbfilecopy)
             else:
-                if action.f1.path in self.file_cache:
-                    file_id = self.file_cache[action.f1.path]
-                    printdbg ("DBContentHandler: found %s in cache file_id = %d", (action.f1.path, file_id))
-                else:
-                    file_id = self.__ensure_path (action.f1.path)
-                    self.file_cache[action.f1.path] = file_id
-                    printdbg ("DBContentHandler: update cache %s = %d", (action.f1.path, file_id))
+                assert "Unknown action type %s" % (action.type)
+
+            dbaction.file_id = file_id
 
             branch = commit.branch or action.branch
                     
@@ -293,47 +396,41 @@ class DBContentHandler (ContentHandler):
                 branch_id = self.branch_cache[branch]
             else:
                 branch_id = self.__ensure_branch (branch)
-
-            if branch_id not in self.heads:
-                self.heads[branch_id] = [file_id]
-                dbaction.head = True
-            else:
-                if file_id not in self.heads[branch_id]:
-                    self.heads[branch_id].append (file_id)
-                    dbaction.head = True
-                
-            dbaction.commit_id = log.id
-            dbaction.file_id = file_id
+                    
             dbaction.branch_id = branch_id
+            
+            self.actions.append (dbaction)
 
-            self.actions.append ((dbaction.id, dbaction.type, dbaction.file_id, dbaction.old_path,
-                                  dbaction.commit_id, dbaction.branch_id, dbaction.head))
+        # Tags
+        if commit.tags is not None:
+            tag_revs = []
+            for tag in commit.tags:
+                if tag in self.tags_cache:
+                    tag_id = self.tags_cache[tag]
+                else:
+                    tag_id = self.__ensure_tag (tag)
+                    
+                db_tagrev = DBTagRev (None)
+                tag_revs.append ((db_tagrev.id, tag_id, log.id))
+
+            self.cursor.executemany (statement (DBTagRev.__insert__, self.db.place_holder), tag_revs)
 
         if len (self.actions) >= self.MAX_ACTIONS:
             printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
             self.__insert_many ()
 
         profiler_stop ("New commit %s for repository %d", (commit.revision, self.repo_id))
-            
+
     def end (self):
         # flush pending inserts
-        printdbg ("DBContentHandler: flushing pensing inserts")
+        printdbg ("DBContentHandler: flushing pending inserts")
         self.__insert_many ()
+        self.cursor.close ()
         self.cnn.close ()
         self.cnn = None
-            
-        
-if __name__ == '__main__':
-    import sys
-    from ParserFactory import create_parser
-    from Database import create_database
 
-    p = create_parser (sys.argv[1])
-    db = create_database ('sqlite', '/tmp/cvsanaly')
-    cnn = db.connect ()
-    cursor = cnn.cursor ()
-    db.create_tables (cursor)
-    cursor.close ()
-    p.set_content_handler (DBContentHandler (cnn))
-    p.run ()
-    cnn.close ()
+
+
+
+        
+            

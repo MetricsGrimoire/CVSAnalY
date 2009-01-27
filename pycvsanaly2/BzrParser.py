@@ -22,7 +22,7 @@ import time
 import datetime
 
 from Parser import Parser
-from Repository import Commit, Action, File
+from Repository import Commit, Action, Person
 
 # TODO: Add debug messages
 #       Branches stuff
@@ -99,7 +99,9 @@ class BzrParser (Parser):
         # Committer
         match = self.patterns['committer'].match (line)
         if match:
-            self.commit.committer = match.group (1)
+            self.commit.committer = Person ()
+            self.commit.committer.name = match.group (1)
+            self.commit.committer.email = match.group (2)
             self.handler.committer (self.commit.committer)
 
             return
@@ -107,7 +109,9 @@ class BzrParser (Parser):
         # Author
         match = self.patterns['author'].match (line)
         if match:
-            self.commit.author = match.group (1)
+            self.commit.author = Person ()
+            self.commit.author.name = match.group (1)
+            self.commit.author.email = match.group (2)
             self.handler.author (self.commit.author)
 
             return        
@@ -161,9 +165,6 @@ class BzrParser (Parser):
         elif self.state == BzrParser.ADDED or \
              self.state == BzrParser.MODIFIED or \
              self.state == BzrParser.REMOVED:
-            f = File ()
-            f.path = line.strip ()
-
             action = Action ()
             if self.state == BzrParser.ADDED:
                 action.type = 'A'
@@ -171,27 +172,21 @@ class BzrParser (Parser):
                 action.type = 'M'
             elif self.state == BzrParser.REMOVED:
                 action.type = 'D'
-            action.f1 = f
+            action.f1 = line.strip ()
 
             self.commit.actions.append (action)
-            self.handler.file (f)
+            self.handler.file (action.f1)
         elif self.state == BzrParser.RENAMED:
             m = re.compile ("^[ \t]+(.*) => (.*)$").match (line)
             if not m:
                 return
 
-            f1 = File ()
-            f1.path = m.group (2)
-
-            f2 = File ()
-            f2.path = m.group (1)
-
             action = Action ()
             action.type = 'V'
-            action.f1 = f1
-            action.f2 = f2
+            action.f1 = m.group (2)
+            action.f2 = m.group (1)
             
             self.commit.actions.append (action)
-            self.handler.file (f1)
+            self.handler.file (action.f1)
         else:
             self.state = BzrParser.UNKNOWN

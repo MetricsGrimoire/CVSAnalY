@@ -23,11 +23,14 @@ import re
 import datetime
 
 from Parser import Parser
-from Repository import Commit, Action, File
+from ContentHandler import ContentHandler
+from Repository import Commit, Action, Person
 from Cache import Cache
 
 class CVSParser (Parser):
 
+    CONTENT_ORDER = ContentHandler.ORDER_FILE
+    
     patterns = {}
     patterns['file'] = re.compile ("^RCS file: (.*)$")
     patterns['revision'] = re.compile ("^revision ([\d\.]*)$")
@@ -35,6 +38,7 @@ class CVSParser (Parser):
         re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: ([^;]*);(  lines: \+(\d+) -(\d+);?)?")
     patterns['branches'] = re.compile ("^branches:  ([\d\.]*);$")
     patterns['branch'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+)0\.([0-9]+)$")
+    patterns['tag'] = re.compile ("^[ \b\t]+(.*): (([0-9]+\.)+([0-9]+))$")
     patterns['rev-separator'] = re.compile ("^[-]+$")
     patterns['file-separator'] = re.compile ("^[=]+$")
     
@@ -50,6 +54,7 @@ class CVSParser (Parser):
         self.file_added_on_branch = None
         self.commit = None
         self.branches = None
+        self.tags = None
         self.rev_separator = None
         self.file_separator = None
 
@@ -76,9 +81,9 @@ class CVSParser (Parser):
             self.file_added_on_branch = None
             self.file = None
 
-        # Save lines inof in the Cache
+        # Save lines info in the Cache
         self.cache.insert ('cvs-lines', self.lines)
-        
+
     def _parse_line (self, line):
         if not line:
             if self.commit is not None and self.commit.message:
@@ -117,11 +122,10 @@ class CVSParser (Parser):
             path = path[len (self.root_path):]
             path = path[:path.rfind (',')]
             
-            f = File ()
-            f.path = path
-            self.file = f
+            self.file = path
 
             self.branches = {}
+            self.tags = {}
             self.commit = None
             self.file_separator = None
 
@@ -133,6 +137,21 @@ class CVSParser (Parser):
             self.branches[match.group (2) + match.group (4)] = match.group (1)
             
             return
+
+        # Tag (Keep this always after Branch pattern)
+        match = self.patterns['tag'].match (line)
+        if match:
+            revision = match.group (2)
+
+            # We are ignoring 1.1.1.1 revisions,
+            # so in case there's a tag pointing to that
+            # revision we have to redirect it to 1.1 revision
+            if revision == '1.1.1.1':
+                revision = '1.1'
+                
+            self.tags.setdefault (revision, []).append (match.group (1))
+
+            return
         
         # Revision
         match = self.patterns['revision'].match (line)
@@ -140,11 +159,14 @@ class CVSParser (Parser):
             if self.commit is not None:
                 self.handler.commit (self.commit)
 
+            revision = match.group (1)
+                
             commit = Commit ()
             # composed rev: revision + | + file path
             # to make sure revision is unique
             commit.composed_rev = True
-            commit.revision = "%s|%s" % (match.group (1), self.file.path)
+            commit.revision = "%s|%s" % (revision, self.file)
+            commit.tags = self.tags.get (revision, None)
             self.commit = commit
 
             self.rev_separator = None
@@ -160,8 +182,9 @@ class CVSParser (Parser):
             if revision == '1.1.1.1':
                 self.commit = None
                 return
-            
-            commit.committer = match.group (8)
+
+            commit.committer = Person ()
+            commit.committer.name = match.group (8)
             self.handler.committer (commit.committer)
             
             commit.date = datetime.datetime (int (match.group (1)), int (match.group (2)), int (match.group (3)),
@@ -176,7 +199,7 @@ class CVSParser (Parser):
             act = match.group (9)
             if act == 'dead':
                 action.type = 'D'
-                self.file.path = self.file.path.replace ('/Attic', '')
+                self.file = self.file.replace ('/Attic', '')
                 commit.revision = commit.revision.replace ('/Attic', '')
             elif revision == '1.1':
                 action.type = 'A'
@@ -234,3 +257,4 @@ class CVSParser (Parser):
                 self.commit.message += self.file_separator + '\n'
                 self.file_separator = None
             self.commit.message += line + '\n'
+

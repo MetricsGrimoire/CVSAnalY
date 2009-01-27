@@ -1,3 +1,56 @@
+2008-01-27  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/Database.py:
+	* pycvsanaly2/Repository.py:
+	* pycvsanaly2/BzrParser.py:
+	* pycvsanaly2/CVSParser.py:
+	* pycvsanaly2/SVNParser.py:
+	* pycvsanaly2/GitParser.py:
+	* pycvsanaly2/ContentHandler.py:
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/DBProxyContentHandler.py:
+	* pycvsanaly2/DBTempLog.py:
+	* pycvsanaly2/extensions/CommitsLOC.py:
+	* pycvsanaly2/extensions/FilePaths.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+	* pycvsanaly2/extensions/Metrics.py:
+	* pycvsanaly2/utils.py:
+	* pycvsanaly2/main.py:
+
+	Major rework of the file paths handling. The tree table has been
+	replaced by both files and files_links tables, moving from a tree
+	approach (one table where every record is a tree node with a
+	pointer to its parent) to a graph approach (one table containing
+	the vertices and other with the edges). That allows us to build
+	the adjacency matrix with only two queries instead of the recursive
+	queries needed by the tree approach.
+	FilePaths extension has been removed. It's now a class used by the
+	Metrics extensions to build the paths. All other extensions have
+	been adapted to the new file handling stuff.
+
+	There are some other improvements in this rework too:
+
+	 - Log parsing is still done in cronological order, but instead
+	   of passing the data directly to the content handler, now we use
+	   a proxy content handler that serializes such data storing it
+	   into a temporal table. When the whole log has been parsed the
+	   proxy content handler reads the temp table in reverse order
+	   sending the data to the real database content handler. This two
+	   phases approach is, surprisingly, as fast (or even faster) than
+	   the old one, mainly because db content handler don't have to do
+	   and cache so many things now. In addition, thanks to this new
+	   approach, we don't have to trust commit dates anymore, since we
+	   are parsing in the 'right' order. Hopefully it will help to
+	   properly implement the incremental stuff (which is broken right
+	   now, btw)
+
+	 - Repository tags are now stored in the database too.
+	
+	 - The email of the committers/authors is also stored in the
+	   people table when it's known (git and bzr)
+
+	 - Some warnings have been fixed in the SVN parser.
+	
 2008-10-20  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/SVNParser.py:
