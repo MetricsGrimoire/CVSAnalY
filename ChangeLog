@@ -1,3 +1,9 @@
+2008-01-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Skip silently tags directory for svn repos in metrics extension.
+	
 2008-01-27  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/Database.py:

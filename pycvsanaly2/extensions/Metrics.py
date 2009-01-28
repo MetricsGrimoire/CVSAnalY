@@ -40,6 +40,10 @@ import re
 
 class Repository:
 
+    class SkipFileException (Exception):
+        '''Raised when the file has not been checked out because
+        it should be skipped'''
+    
     def __init__ (self, db, cursor, repo, rootdir):
         self.db = db
         self.cursor = cursor
@@ -70,7 +74,7 @@ class SVNRepository (Repository):
         
         # skip tags dir
         if top == 'tags':
-            return
+            raise Repository.SkipFileException
         
         last_rev = self.tops.get (top, 0)
         if last_rev != rev:
@@ -631,12 +635,15 @@ class Metrics (Extension):
             try:
                 printdbg ("Checking out %s @ %s", (relative_path, rev))
                 rp.checkout (relative_path, rev)
+            except Repository.SkipFileException:
+                continue
             except Exception, e:
                 printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
             
             checkout_path = os.path.join (tmpdir, relative_path)
             # FIXME: is this still possible?
             if os.path.isdir (checkout_path):
+                printdbg ("Skipping file %s", (relative_path,))
                 continue
 
             if not os.path.exists (checkout_path):
