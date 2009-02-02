@@ -1,10 +1,17 @@
-2008-01-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+2009-02-02  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/main.py:
+
+	Change default db driver to mysql since it's the recommended one.
+	
+2009-01-28  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Skip silently tags directory for svn repos in metrics extension.
 	
-2008-01-27  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
+2009-01-27  Carlos Garcia Campos  <carlosgc@gsyc.escet.urjc.es>
 
 	* pycvsanaly2/Database.py:
 	* pycvsanaly2/Repository.py:

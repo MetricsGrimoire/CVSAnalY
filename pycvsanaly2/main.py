@@ -1,4 +1,4 @@
-# Copyright (C) 2006 LibreSoft
+# Copyright (C) 2006-2009 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ Main funcion of cvsanaly. Fun starts here!
 
 @author:       Alvaro Navarro, Carlos Garcia Campos
 @organization: LibreSoft
-@copyright:    LibreSoft
+@copyright:    LibreSoft (C) 2006-2009 LibreSoft
 @license:      GNU GPL version 2 or any later version
 @contact:      libresoft-tools-devel@lists.morfeo-project.org
 """
@@ -45,7 +45,7 @@ from FindProgram import find_program
 
 # Some stuff about the project
 version = "2.0"
-author = "(C) 2004,2008 %s <%s>" % ("LibreSoft", "libresoft-tools-devel@lists.morfeo-project.org")
+author = "(C) 2004-2009 %s <%s>" % ("LibreSoft", "libresoft-tools-devel@lists.morfeo-project.org")
 name = "cvsanaly2 %s - LibreSoft Group http://www.libresoft.es" % (version)
 credits = "%s \n%s\n" % (name, author)
 
@@ -71,7 +71,7 @@ Options:
 
 Database:
 
-      --db-driver                Output database driver [sqlite|mysql|postgres] (sqlite)
+      --db-driver                Output database driver [mysql|sqlite] (mysql)
   -u, --db-user                  Database user name (operator)
   -p, --db-password              Database user password
   -d, --db-database              Database name (cvsanaly)

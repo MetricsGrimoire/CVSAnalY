@@ -30,13 +30,13 @@ class Config:
                        'profile'      : False,
                        'repo_logfile' : None,
                        'save_logfile' : None, 
-                       'db_driver'    : 'sqlite',
+                       'db_driver'    : 'mysql',
                        'db_user'      : 'operator',
                        'db_password'  : None, 
                        'db_database'  : 'cvsanaly',
                        'db_hostname'  : 'localhost',
                        'extensions'   : [],
-                       # Metrics xxtension options
+                       # Metrics extension options
                        'metrics_all'  : False}
     
     def __init__ (self):
