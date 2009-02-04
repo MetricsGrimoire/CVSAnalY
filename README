@@ -1,23 +1,19 @@
 Requirements
 ------------
+
 CVSAnalY needs the following dependencies:
 
-    * cvs
-    * subversion
-
-Optional dependencies for plugins:
-
-    * python-2.x-MySQLdb
-    * mysql-server
-    * gnuplot
-    * ploticus
-    * apache
-    * mod_php
-    * php5
+    * Repository Handler
+    * cvs (optional, for CVS support)
+    * subversion (optional, for SVN support)
+    * git (optional, for Git support)
+    * Python MySQLDB (optional but recommended)
+    * Python SQLite (optional)
 
 Install
 -------
-You can install cvsanaly running setup.py script:
+
+You can install cvsanaly2 running setup.py script:
 
     # python setup.py install
 
@@ -25,36 +21,24 @@ If you don't have root privileges, add to your $PATH the directory which contain
 
     $ export PATH=$PATH:$HOME/cvsanaly/
 
-You are ready to use cvsanaly!
+You are ready to use cvsanaly2!
 
-Running cvsanaly
-----------------
+Running cvsanaly2
+-----------------
 
 For the impatients: just checkout (from svn or cvs) to obtain a local
-version of your repository, and then run cvsanaly:
+version of your repository, and then run cvsanaly2:
 
     $ cd project/
-    ~/project$ cvsanaly 
+    ~/project$ cvsanaly2 
 
 More options, and a more detailed info about the options, can be
-learnt by running "cvsanaly --help"
-
-Analysis
---------
-
-After feeding the database with information, CVSAnalY performs several
-analysis on that data:
-
-- generations:
-
-    Analysis on who has been working in the project. Data produced
-    can be feed to gnuplot's splot for visualization
-
+learnt by running "cvsanaly2 --help"
 
 Credits
 -------
 
-CVSAnalY has been developed by the GSyC/LibreSoft group at the
+CVSAnalY is developed by the GSyC/LibreSoft group at the
 Universidad Rey Juan Carlos in Móstoles, near Madrid (Spain). It is
 part of a wider research on libre software engineering, aimed to gain
 knowledge on how libre software is developed and maintained.
@@ -72,12 +56,13 @@ The GSyC/LibreSoft group:
 Main authors
 ------------
 
-Gregorio Robles                 <grex at gsyc.escet.urjc.es>
-Alvaro Navarro                  <anavarro at gsyc.escet.urjc.es>
+Carlos Garcia Campos            <carlosgc at gsyc.es>
 
 Contributors
 ------------
 
+Gregorio Robles                 <grex at gsyc.escet.urjc.es>
+Alvaro Navarro                  <anavarro at gsyc.escet.urjc.es>
 Jesus M. Gonzalez-Barahona      <jgb at gsyc.escet.urjc.es>
 Israel Herraiz                  <herraiz at gsyc.escet.urjc.es>
 Juan Jose Amor                  <jjamor at gsyc.escet.urjc.es>
