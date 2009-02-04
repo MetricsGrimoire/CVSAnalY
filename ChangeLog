@@ -1,5 +1,16 @@
 2009-02-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* AUTHORS:
+	* setup.py:
+	* TODO:
+	* MANIFEST.in:
+	* pycvsanaly2/*:
+	* db/*
+	
+	Merge cvsanaly2 branch.
+	
+2009-02-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
+	
 	* setup.py:
 	* NEWS:
 

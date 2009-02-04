@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 # Copyright (C) 2006 Alvaro Navarro Clemente
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,27 +18,26 @@
 #
 # Authors : Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
 
+
 """
-Installer
+Point of entry to the main module of the program.
 
 @author:       Alvaro Navarro
 @organization: Grupo de Sistemas y Comunicaciones, Universidad Rey Juan Carlos
 @copyright:    Universidad Rey Juan Carlos (Madrid, Spain)
 @license:      GNU GPL version 2 or any later version
-@contact:      libresoft-tools-devel@lists.morfeo-project.org
+@contact:      anavarro@gsyc.escet.urjc.es
 """
 
-import commands
-import os
+import sys
+import pycvsanaly2.main
 
-from distutils.core import setup
-
-setup(name = "cvsanaly2",
-      version = "1.99.90 (2.0.0-beta1)",
-      author =  "LibreSoft",
-      author_email = "libresoft-tools-devel@lists.morfeo-project.org",
-      description = "An analysis tool for your source code repository",
-      url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
-      packages = ['pycvsanaly2', 'pycvsanaly2.extensions'],
-      scripts = ["cvsanaly2"])
+if __name__ == "__main__":
+    try:
+        retval = pycvsanaly2.main.main (sys.argv[1:])
+        sys.exit (retval)
+    except KeyboardInterrupt:
+        print "\n\nReceived Ctrl-C or other break signal. Exiting."
+        sys.exit (0)
+        
 
