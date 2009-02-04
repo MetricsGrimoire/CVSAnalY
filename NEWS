@@ -1,3 +1,45 @@
+================
+cvsanaly 1.99.90
+================
+
+This is the first relase of cvsanaly2 (2.0.0-beta1), a complete rework
+of CVSAnalY. 
+
+New Features:
+
+    * Support for MySQL and SQLite, althought MySQL is the recommended
+      one (and default option) because it gives better
+      performance. SQLite is recommended for debuging or for small
+      projects. 
+    * Improved file handling. The whole history is stored in the
+      repository so that the files tree can be rebuilt for any
+      given revision. It's possible to get the path of any file at any
+      given revision even if it (or any of its parents) has been moved
+      or renamed.
+    * Committer and Author fields for systems like git and bzr that
+      differenciate between them.
+    * Option to save the logfile into a local path while parsing.
+    * Tags and branches support.
+    * Additional information not contained in the repository log can
+      be optionally added to the database by using extensions. At the
+      moment there are three extensions available: FileTypes,
+      CommitsLOC and Metrics.
+    * Multiple repositories can be analyzed using a single database.
+    * New database design which fits much better with all source code
+      management systems.
+    * Configuration file support.
+    * New code design, more efficient and extensible.
+    * Better performance, it's quite faster performing the whole
+      analysis proccess.
+    * New and improved log parsers with support for CVS, SVN and
+      Git. There's also a preliminary Bazaar support.
+
+Thanks to all contributors:
+
+    Santiago Dueñas
+    Israel Herraiz
+    Luis Cañas
+
 ==============
 cvsanaly 1.1.0
 ==============
