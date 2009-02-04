@@ -33,7 +33,7 @@ import os
 from distutils.core import setup
 
 setup(name = "cvsanaly",
-      version = "1.0.1",
+      version = "1.1.0",
       author =  "LibreSoft",
       author_email = "anavarro@gsyc.es",
       description = "An analysis tool for your CVS and Subversion repository",

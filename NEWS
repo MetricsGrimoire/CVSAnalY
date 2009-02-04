@@ -1,4 +1,23 @@
 ==============
+cvsanaly 1.1.0
+==============
+
+New features and improvements:
+
+    * Rework command line options (keeping backward compatibility)
+      (#284, #288, Carlos Garcia Campos)
+
+Bug Fixes:
+
+    * Do not identify SVN logfiles that contain CVS-like strings as
+      CVS (Israel Herraiz)
+    * Fix handling of removed files in CVS repos (Israel Herraiz)
+    * Fix several data inconsistencies in database (#268, Israel Herraiz)
+    * Install man page using python distutils (Israel Herraiz)
+    * Create repository objects based on logfile instead of checkout
+      dir when a logfile is provided (#247, Carlos Garcia Campos)
+
+==============
 cvsanaly 1.0.1
 ==============
 
