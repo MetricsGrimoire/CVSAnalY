@@ -1,0 +1,8 @@
+2009-02-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* Makefile:
+	* cvsanaly.texi:
+	* fdl.texi:
+	* version.texi:
+
+	Add documentation files. 

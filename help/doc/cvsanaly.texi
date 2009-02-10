@@ -1,0 +1,163 @@
+\input texinfo                @c -*- Texinfo -*-
+@c %**start of header
+
+@setfilename cvsanaly.texi
+@include version.texi
+
+
+@settitle GNU @code{CVSAnalY}
+@setchapternewpage odd
+@c Combine the variable and function indices:
+@syncodeindex vr fn
+@c Combine the program and concept indices:
+@syncodeindex pg cp
+@c %**end of header
+
+@copying
+This file documents the @code{CVSAnalY} tool, which extracts information
+out of source code repository logs and stores it into a database. 
+
+This is Edition @value{EDITION}, last updated @value{UPDATED},
+of @cite{The CVSAnalY Manual}, for @code{CVSAnalY} version
+@value{VERSION}.
+
+Copyright @copyright{} 2009
+LibreSoft
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections.
+@end quotation
+@end copying
+
+@iftex
+@shorttitlepage CVSAnalY
+@end iftex
+@titlepage
+@title CVSAnalY
+@subtitle A tool to analyze software repositories.
+@subtitle @code{CVSAnalY} Version @value{VERSION}
+@subtitle @value{UPDATED-MONTH}
+@author Carlos Garcia Campos
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@sp 2
+Published by LibreSoft
+@end titlepage
+
+@summarycontents
+@contents
+
+@ifnottex
+@node Top, Overview, (dir), (dir)
+@top @code{CVSAnalY}
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Overview::                        Overview of @code{CVSAnalY}.
+* Installation::                    How to install @code{CVSAnalY}.
+* Usage::                           Running @code{CVSAnalY}.
+* The configuration file::          The @code{CVSAnalY} configuration file.
+* Database::                        The design of the database.
+* FAQ::                             Frequently Asked Questions
+* GNU Free Documentation License::  License for copying this manual
+@end menu
+
+@node Overview, Installation, Top, Top
+@comment  node-name,  next,  previous,  up
+@chapter Overview of @code{CVSAnalY}
+
+The @code{CVSAnalY} tool extracts information out of source code
+repository logs and stores it into a database.
+
+@node Installation, Usage, Overview, Top
+@chapter How to install @code{CVSAnalY}
+
+@code{CVSAnaly} uses the standard Python Distutils. First of all you
+should install all the dependencies. 
+
+@itemize @bullet
+
+@item 
+Python MySQLDB: there should be packages for your operating system, so
+you should be able to install it as any other software. In Debian
+systems the package is @code{python-mysqldb}
+
+@example
+@group
+# apt-get install python-mysqldb
+@end group
+@end example
+
+@item
+Repository Handler: it's, like @code{CVSAnalY}, part of the LibreSoft
+tools
+set@footnote{@url{https://forge.morfeo-project.org/projects/libresoft-tools/}}. 
+You will probably have to install it from sources. Here is an example
+assuming Repository Hanlder 0.2 is used and the tarball has been already
+downloaded.
+
+@example
+@group
+$ tar xvjf repositoryhandler-0.2.tar.bz2
+$ cd repositoryhandler-0.2
+$ ./configure
+$ make
+# make install
+@end group
+@end example
+
+@item 
+Python SQLiteDB: it's optional, required only to use SQLite instead
+MySQL as database system. It's also usually available in most of the
+operating systems. 
+
+@item
+Other dependencies (CVS, SVN and Git) are actually optional, although
+required depending on the type of repository you want to analyze. It's
+recommended to install of them. 
+
+@end itemize
+
+We are now ready to install @code{CVSAnalY}.
+
+@example
+@group
+$ tar xvzf cvsanaly2-@value{VERSION}.tar.gz
+$ cd cvsanaly2-@value{VERSION}
+# python setup.py install
+@end group
+@end example
+
+You can also use @code{CVSAnalY} without installing it, just by running
+the @code{cvsanaly} command from the directory sources. 
+
+@example
+@group
+$ cd cvsanaly2-@value{VERSION}
+$ ./cvsanaly --help
+@end group
+@end example
+
+@node Usage, The configuration file, Installation, Top
+@chapter Running @code{CVSAnalY}
+
+@node The configuration file, Database, Usage, Top
+@chapter The @code{CVSAnalY} configuration file
+
+@node Database, FAQ, The configuration file, Top
+@chapter The design of the database
+
+@node FAQ, GNU Free Documentation License, Database, Top
+@chapter Frequently Asked Questions
+
+@raisesections
+@include fdl.texi
+@lowersections
+
+@bye
