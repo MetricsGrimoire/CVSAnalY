@@ -140,12 +140,139 @@ the @code{cvsanaly} command from the directory sources.
 @example
 @group
 $ cd cvsanaly2-@value{VERSION}
-$ ./cvsanaly --help
+$ ./cvsanaly2 --help
 @end group
 @end example
 
 @node Usage, The configuration file, Installation, Top
 @chapter Running @code{CVSAnalY}
+
+Once @code{CVSAnalY} is installed you can use it just by running the
+executable @command{cvsanaly2}@footnote{It's called cvsanaly2 to avoid conflicts 
+with old (incompatible) cvsanaly 1.x)}
+
+@noindent
+The syntax to run @command{cvsanaly2} is the following:
+
+@example
+cvsanaly2 [options] [URI]
+@end example
+
+@noindent
+Analyze the given URI. An URI can be a checked out local path directory, 
+or a remote URL pointing to a repository. If URI is omitted,
+the current working directory will be used as a checked out
+directory. The type of the repository will be automatically detected, so
+the only information you have to provide about the repository is this 
+URI. @code{CVSAnalY} doesn't run checkouts, so if the repository doesn't
+support remote retrieving of the log, a checked out directory must be
+provided.
+The repository log will be parsed and stored in a
+database. @code{CVSAnalY} doesn't expect to have all privileges on the
+database server, so the database should be created before running
+@code{CVSAnalY} or it will fail. This is not relevant if you are using
+SQLite since there isn't any server. 
+
+@noindent
+Global options:
+
+@itemize @bullet
+@item 
+-h, --help
+
+Show help information
+
+@item 
+-V, --version
+
+Show the version number of @code{CVSAnalY}
+
+@item
+-g, --debug
+
+Enable debug mode. It shows useful information for debugging like
+the commands that are being executed, the SQL statements, parsing status
+and so on. 
+
+@item
+-q, --quiet
+
+Run silently, only important error messages is printed. 
+
+@item
+--profile
+
+Enable profiling mode. It shows information about how long some tasks
+take to run. 
+
+@item
+-f, --config-file
+
+Use a custom configuration file. @xref{The configuration file}
+
+@item
+-l, --repo-logfile
+
+Use the given log file as the input of the log parser instead of running
+the log command for the repository. 
+
+@item
+-s, --save-logfile
+
+Save the input log information to the given path.
+
+@item
+--extensions
+
+Run the given extensions after the log parsing/storing process. It
+expects a comma-separated list with the name of the extensions to
+run. Dependencies among extensions are automatically resolved by
+@code{CVSAnalY}.
+
+@end itemize
+
+@noindent
+Database specific options:
+
+@itemize @bullet
+@item
+--db-driver
+
+Use the given database system. MySQL (actually @code{mysql}) is the default
+(and recommended) option.
+
+@item
+-u, --db-user
+
+The name of the user to connect to the database system. The given user
+should exist, since @code{CVSAnalY} will not try to create any
+user. This option doesn't make sense if you are using SQLite. The
+default option is @code{operator}. 
+
+@item
+-p, --db-password
+
+The user's password to connect to the database system. If it's not
+provided, you will be prompted to enter it. 
+
+@item
+-d, --db-database
+
+The name of the database. I should exist, since @code{CVSAnalY} will not
+try to create any database. If you are using SQLite, this option might
+be a local path instead of just a name. Default option is
+@code{cvsanaly}.
+
+@item
+-H, --db-hostname
+
+The host name where database system is running. This option doesn't make
+sense when using SQLite. Default option is @code{localhost}.
+@end itemize
+
+@noindent 
+Examples:
+
 
 @node The configuration file, Database, Usage, Top
 @chapter The @code{CVSAnalY} configuration file

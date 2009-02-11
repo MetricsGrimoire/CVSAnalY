@@ -1,5 +1,11 @@
 2009-02-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* cvsanaly.texi:
+
+	Write most of the 'Running CVSAnalY' chapter.
+	
+2009-02-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* Makefile:
 	* cvsanaly.texi:
 	* fdl.texi:
