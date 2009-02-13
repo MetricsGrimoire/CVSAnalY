@@ -1,3 +1,11 @@
+2009-02-13  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Raise ExtensionRunError exception instead of showing an error
+	message when the repository creation fails, since the extension 
+	can't continue without a repository object.
+	
 2009-02-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* NEWS:

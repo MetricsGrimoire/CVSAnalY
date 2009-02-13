@@ -585,7 +585,7 @@ class Metrics (Extension):
         try:
             rp = create_repository (db, read_cursor, repo, tmpdir)
         except Exception, e:
-            printerr ("Error creating repository %s. Exception: %s", (repo.get_uri (), str (e)))
+            raise ExtensionRunError ("Error creating repository %s. Exception: %s", (repo.get_uri (), str (e)))
             
         repoid = rp.get_repo_id ()
             
