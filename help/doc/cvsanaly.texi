@@ -64,8 +64,9 @@ Published by LibreSoft
 * Usage::                           Running @code{CVSAnalY}.
 * The configuration file::          The @code{CVSAnalY} configuration file.
 * Database::                        The design of the database.
-* FAQ::                             Frequently Asked Questions
-* GNU Free Documentation License::  License for copying this manual
+* Extensions::                      @code{CVSAnalY} extensions. 
+* FAQ::                             Frequently Asked Questions.
+* GNU Free Documentation License::  License for copying this manual.
 @end menu
 
 @node Overview, Installation, Top, Top
@@ -273,6 +274,31 @@ sense when using SQLite. Default option is @code{localhost}.
 @noindent 
 Examples:
 
+@itemize @bullet
+
+@item
+Running @code{CVSAnalY} with a CVS repository already checked out using
+MySQL driver.
+
+@example
+@group
+$ cvsanaly2 -u carlos -d gstreamer ~/src/cvs/gstreamer
+@end group
+@end example
+
+@item
+Running @code{CVSAnalY} with a SVN repository using the remote URI and
+SQLite as the databse driver
+
+
+@example
+@group
+$ cvsanaly2 --db-driver sqlite -d ~/db/nautilus.db \
+http://svn.gnome.org/svn/nautilus
+@end group
+@end example
+
+@end itemize
 
 @node The configuration file, Database, Usage, Top
 @chapter The @code{CVSAnalY} configuration file
