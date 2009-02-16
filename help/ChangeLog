@@ -2,6 +2,12 @@
 
 	* doc/cvsanaly.texi:
 
+	Fix a typo.
+	
+2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* doc/cvsanaly.texi:
+
 	Add examples of usage and Extensions chapter.
 	
 2009-02-10  Carlos Garcia Campos  <carlosgc@gsyc.es>

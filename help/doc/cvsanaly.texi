@@ -288,7 +288,7 @@ $ cvsanaly2 -u carlos -d gstreamer ~/src/cvs/gstreamer
 
 @item
 Running @code{CVSAnalY} with a SVN repository using the remote URI and
-SQLite as the databse driver
+SQLite as the database driver
 
 
 @example
