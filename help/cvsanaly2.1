@@ -1,0 +1,119 @@
+.TH CVSANALY2 1 "16 Feb 2009"
+.SH NAME
+\fBCVSAnalY\fP \- A Source Code Repositories Analizer
+.SH SYNOPSIS
+.B cvsanaly2
+.RI [ options ] [ URI ]
+.SH DESCRIPTION
+Analyze the given URI. An URI can be a checked out local path
+directory, or a remote URL pointing to a repository. If URI is omitted,
+the current working directory will be used as a checked out
+directory. The type of the repository will be automatically detected,
+so the only information you have to provide about the repository is this
+URI. CVSAnalY doesn't run checkouts, so if the repository
+doesn't support remote retrieving of the log, a checked out directory must be
+provided.
+.br
+.sp 1
+The repository log will be parsed and stored in a
+database. CVSAnalY doesn't expect to have all privileges on the
+database server, so the database should be created before running
+CVSAnalY or it will fail. This is not relevant if you are using
+SQLite since there isn't any server.
+
+.LP
+.SH OPTIONS
+
+.TP
+\fB\-h \-\-help\fR
+Show help information.
+
+.TP
+\fB\-V, \-\-version\fR
+Show the version number of CVSAnalY.
+
+.TP
+\fB\-g, \-\-debug\fR
+Enable debug mode. It shows useful information for debugging like
+the commands that are being executed, the SQL statements, parsing
+status and so on.
+
+.TP
+\fB\-q, \-\-quiet\fR
+Run silently, only important error messages is printed.
+
+.TP
+\fB\-\-profile\fR
+Enable profiling mode. It shows information about how long some tasks
+take to run.
+
+.TP
+\fB\-f, \-\-config\-file=<filename>\fR
+Use a custom configuration file.
+
+.TP
+\fB\-l, \-\-repo\-logfile=<filename>\fR
+Use the given log file as the input of the log parser instead of
+running the log command for the repository.
+
+.TP
+\fB\-s, \-\-save\-logfile=<filename>\fR
+Save the input log information to the given path.
+
+.TP
+\fB\-\-extensions=extension1,extension2,...\fR
+Run the given extensions after the log parsing/storing
+process. Dependencies among extensions are automatically resolved.
+
+.SH DATABASE OPTIONS
+
+.TP
+\fB\-\-db\-driver=<driver> [default: mysql]\fR
+Use the given database system. Known drivers: sqlite, mysql
+
+.TP
+\fB\-u, \-\-db\-user=<username> [default: operator]\fR
+The name of the user to connect to the database system. The given user
+should exist, since CVSAnalY will not try to create any
+user. This option doesn't make sense if you are using
+SQLite.
+
+.TP
+\fB\-p, \-\-db\-password=<password>\fR
+The user's password to connect to the database system. If it's not
+provided, you will be prompted to enter it.
+
+.TP
+\fB\-d, \-\-db\-database=<dbname> [default: cvsanaly]\fR
+The name of the database. I should exist, since CVSAnalY will
+not try to create any database. If you are using SQLite, this option might
+be a local path instead of just a name.
+
+.TP
+\fB\-H, \-\-db\-hostname=<hostname> [default: localhost]\fR
+The host name where database system is running. This option doesn't
+make sense when using SQLite.
+
+.SH EXAMPLES
+
+.PP
+Running CVSAnalY with a CVS repository already checked out
+using MySQL driver
+.PP
+    $ cvsanaly2 \-u carlos \-d gstreamer ~/src/cvs/gstreamer
+
+.PP
+Running CVSAnalY with a SVN repository using the remote URI and
+SQLite as the database driver
+.PP
+    $ cvsanaly2 \-\-db-driver sqlite \-d ~/db/nautilus.db http://svn.gnome.org/svn/nautilus
+
+.SH MAILING LIST
+.sp
+.B
+libresoft-tools-devel@lists.morfeo-project.org
+
+.SH AUTHOR
+LibreSoft: http://libresoft.es
+
+

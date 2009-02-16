@@ -1,5 +1,11 @@
 2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* cvsanaly2.1:
+
+	Add man page
+	
+2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* doc/cvsanaly.texi:
 
 	Fix a typo.
