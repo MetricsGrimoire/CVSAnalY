@@ -2,6 +2,6 @@ General
 -------
 
 [ ] Add documentation
-[ ] Man page
+[X] Man page
 [ ] Fix incremental stuff
 [ ] Fix OOM problems too big projects
