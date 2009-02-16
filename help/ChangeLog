@@ -1,20 +1,20 @@
 2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
-	* cvsanaly.texi:
+	* doc/cvsanaly.texi:
 
 	Add examples of usage and Extensions chapter.
 	
 2009-02-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
-	* cvsanaly.texi:
+	* doc/cvsanaly.texi:
 
 	Write most of the 'Running CVSAnalY' chapter.
 	
 2009-02-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
-	* Makefile:
-	* cvsanaly.texi:
-	* fdl.texi:
-	* version.texi:
+	* doc/Makefile:
+	* doc/cvsanaly.texi:
+	* doc/fdl.texi:
+	* doc/version.texi:
 
 	Add documentation files. 
