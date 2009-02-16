@@ -39,5 +39,6 @@ setup(name = "cvsanaly2",
       description = "An analysis tool for your source code repository",
       url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
       packages = ['pycvsanaly2', 'pycvsanaly2.extensions'],
+      data_files = [('share/man/man1',['help/cvsanaly2.1'])],
       scripts = ["cvsanaly2"])
 

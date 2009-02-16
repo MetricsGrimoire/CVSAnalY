@@ -1,5 +1,11 @@
 2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* setup.py:
+
+	Install man page.
+	
+2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* TODO:
 
 	Updated.
