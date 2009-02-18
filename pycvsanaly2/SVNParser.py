@@ -41,6 +41,7 @@ class SVNParser (Parser):
     patterns['file'] = re.compile ("^[ ]+([MADR]) (.*)$")
     patterns['file-moved'] = re.compile ("^[ ]+([MADR]) (.*) \(from (.*):([0-9]+)\)$")
     patterns['separator'] = re.compile ("^------------------------------------------------------------------------$")
+    patterns['invalid'] = re.compile ("^r(\d*) \| \(no author\) \| \(no date\) \| 1 line$")
     
     def __init__ (self):
         Parser.__init__ (self)
@@ -120,16 +121,25 @@ class SVNParser (Parser):
             
     def _parse_line (self, line):
         if not line:
-            if self.state == SVNParser.COMMIT or self.state == SVNParser.FILES:
+            if self.commit is not None and self.state == SVNParser.COMMIT or self.state == SVNParser.FILES:
                 self.state = SVNParser.MESSAGE
             elif self.state == SVNParser.MESSAGE:
                 self.commit.message += '\n'
                 
             return
+
+        # Invalid commit. Some svn like asterisk have commits lile this:
+        # r176840 | (no author) | (no date) | 1 line
+        # without any canged path, so I think we can just ignore them
+        if self.patterns['invalid'].match (line):
+            printdbg ("SVN Parser: skipping invalid commit: %s", (line))
+            self.state = SVNParser.COMMIT
+            self.commit = None
+            return
         
         # Separator
         if self.patterns['separator'].match (line):
-            if self.state == SVNParser.COMMIT:
+            if self.commit is None or self.state == SVNParser.COMMIT:
                 return
             elif self.state == SVNParser.MESSAGE or self.state == SVNParser.FILES:
                 # We can go directly from FILES to COMMIT
@@ -137,6 +147,7 @@ class SVNParser (Parser):
                 self.__convert_commit_actions (self.commit)
                 self.handler.commit (self.commit)
                 self.state = SVNParser.COMMIT
+                self.commit = None
             else:
                 printout ("Warning (%d): parsing svn log, unexpected separator", (self.n_line))
                 

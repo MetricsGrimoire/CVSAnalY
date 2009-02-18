@@ -1,3 +1,15 @@
+2009-02-18  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/SVNParser.py:
+
+	Ignore invalid commits. In asterisk we have found commits like
+	this:
+
+	r176840 | (no author) | (no date) | 1 line
+
+	without any changed path. I don't know what it is, but it doesn't
+	seem to be useful at all.
+	
 2009-02-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* setup.py:
