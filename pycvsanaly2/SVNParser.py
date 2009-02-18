@@ -49,6 +49,7 @@ class SVNParser (Parser):
         # Parser context
         self.state = SVNParser.COMMIT
         self.commit = None
+        self.msg_lines = 0
 
     def __convert_commit_actions (self, commit):
         # We detect here files that have been moved or
@@ -118,17 +119,35 @@ class SVNParser (Parser):
             return None
 
         return tag
-            
+
+    def __append_message_line (self, line = None):
+        if self.msg_lines <= 0:
+            printout ("Warning (%d): parsing svn log, unexpected line in message: %s", (self.n_line, line))
+            self.msg_lines = 0
+            return
+        
+        if line is not None:
+            self.commit.message += line
+
+        self.commit.message += '\n'
+        self.msg_lines -= 1
+
     def _parse_line (self, line):
         if not line:
             if self.commit is not None and self.state == SVNParser.COMMIT or self.state == SVNParser.FILES:
                 self.state = SVNParser.MESSAGE
             elif self.state == SVNParser.MESSAGE:
-                self.commit.message += '\n'
+                self.__append_message_line ()
                 
             return
 
-        # Invalid commit. Some svn like asterisk have commits lile this:
+        # Message
+        if self.state == SVNParser.MESSAGE and self.msg_lines > 0:
+            self.__append_message_line (line)
+
+            return
+        
+        # Invalid commit. Some svn repos like asterisk have commits like this:
         # r176840 | (no author) | (no date) | 1 line
         # without any canged path, so I think we can just ignore them
         if self.patterns['invalid'].match (line):
@@ -144,10 +163,14 @@ class SVNParser (Parser):
             elif self.state == SVNParser.MESSAGE or self.state == SVNParser.FILES:
                 # We can go directly from FILES to COMMIT
                 # when there is an empty log message
+                if self.msg_lines > 0:
+                    printout ("Warning (%d): parsing svn log, missing lines in commit message!", (self.n_line))
+                
                 self.__convert_commit_actions (self.commit)
                 self.handler.commit (self.commit)
                 self.state = SVNParser.COMMIT
                 self.commit = None
+                self.msg_lines = 0
             else:
                 printout ("Warning (%d): parsing svn log, unexpected separator", (self.n_line))
                 
@@ -164,6 +187,7 @@ class SVNParser (Parser):
             
             commit.date = datetime.datetime (int (match.group (3)), int (match.group (4)), int (match.group (5)),
                                              int (match.group (6)), int (match.group (7)), int (match.group (8)))
+            self.msg_lines = int (match.group (10))
             self.commit = commit
             self.handler.committer (commit.committer)
             
@@ -184,12 +208,6 @@ class SVNParser (Parser):
             else:
                 printout ("Warning (%d): parsing svn log, unexpected line %s", (self.n_line, line))
 
-            return
-        
-        # Message
-        if self.state == SVNParser.MESSAGE:
-            self.commit.message += line + '\n'
-            
             return
         
         # File moved/copied/replaced

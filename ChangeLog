@@ -2,6 +2,14 @@
 
 	* pycvsanaly2/SVNParser.py:
 
+	Use the number of lines given by the log for the commit message
+	instead of guessing it. It fixes (hopefully) all the parsing
+	warnings in SVN.
+	
+2009-02-18  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/SVNParser.py:
+
 	Ignore invalid commits. In asterisk we have found commits like
 	this:
 
