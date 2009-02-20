@@ -59,7 +59,7 @@ class DBProxyContentHandler (ContentHandler):
 
         self.templog.flush ()
 
-        queue = AsyncQueue ()
+        queue = AsyncQueue (50)
         reader_thread = threading.Thread (target=self.__reader,
                                           args=(self.templog, queue))
         reader_thread.setDaemon (True)
@@ -73,11 +73,13 @@ class DBProxyContentHandler (ContentHandler):
             except TimeOut:
                 continue
             self.db_handler.commit (item)
+            del item
 
         # No threads now, we don't need locks
         while not queue.empty_unlocked ():
             item = queue.get_unlocked ()
             self.db_handler.commit (item)
+            del item
 
         self.db_handler.end ()
         self.templog.clear ()

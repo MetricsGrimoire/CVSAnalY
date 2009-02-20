@@ -33,7 +33,7 @@ class DBTempLog:
 
         self.__create_table ()
         
-        self.queue = AsyncQueue ()
+        self.queue = AsyncQueue (50)
         self.writer_thread = threading.Thread (target=self.__writer,
                                                args=(self.queue,))
         self.writer_thread.setDaemon (True)
@@ -100,7 +100,7 @@ class DBTempLog:
             if not isinstance (commit, Commit):
                 queue.done ()
                 break
-            
+
             io = StringIO ()
             dump (commit, io, -1)
             obj = io.getvalue ()
@@ -108,12 +108,12 @@ class DBTempLog:
 
             commits.append ((commit.revision, commit.date, self.db.to_binary (obj)))
             n_commits += 1
-            del (commit)
+            del commit
 
-            if n_commits == 500:
+            if n_commits == 50:
                 cursor.executemany (statement ("INSERT into _temp_log (rev, date, object) values (?, ?, ?)", self.db.place_holder), commits)
                 cnn.commit ()
-                del (commits)
+                del commits
                 commits = []
                 n_commits = 0
 
@@ -122,11 +122,11 @@ class DBTempLog:
         if commits:
             cursor.executemany (statement ("INSERT into _temp_log (rev, date, object) values (?, ?, ?)", self.db.place_holder), commits)
             cnn.commit ()
-            del (commits)
+            del commits
             
         cursor.close ()
         cnn.close ()
-            
+
     def insert (self, commit):
         self.queue.put (commit)
 

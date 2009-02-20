@@ -1,5 +1,14 @@
 2009-02-20  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBProxyContentHandler.py:
+	* pycvsanaly2/DBTempLog.py:
+
+	Limit the maximun size of the queues used in ProxyContentHandler
+	and TempLog. It saves a lot of memory. Hopefully OOM issues are 
+	fixed now. 
+	
+2009-02-20  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/AsyncQueue.py:
 
 	Add optional queue max size, bloking on put() when the queue reaches
