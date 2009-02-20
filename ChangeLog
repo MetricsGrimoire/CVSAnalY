@@ -1,3 +1,10 @@
+2009-02-20  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/AsyncQueue.py:
+
+	Add optional queue max size, bloking on put() when the queue reaches
+	such a max size.
+	
 2009-02-18  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/SVNParser.py:

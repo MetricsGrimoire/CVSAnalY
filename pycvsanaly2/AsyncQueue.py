@@ -25,10 +25,11 @@ class TimeOut (Exception):
 
 class AsyncQueue:
 
-    def __init__ (self):
-        self._init ()
+    def __init__ (self, maxsize = 0):
+        self._init (maxsize)
         self.mutex = threading.Lock ()
-        self.cond = threading.Condition (self.mutex)
+        self.empty_cond = threading.Condition (self.mutex)
+        self.full_cond = threading.Condition (self.mutex)
         self.finish = threading.Condition (self.mutex)
 
         self.pending_items = 0
@@ -63,48 +64,67 @@ class AsyncQueue:
     def empty_unlocked (self):
         return self._empty ()
 
-    def put (self, item):
-        self.cond.acquire ()
+    def put (self, item, timeout = None):
+        self.full_cond.acquire ()
         try:
+            if timeout is None:
+                while self._full ():
+                    self.full_cond.wait ()
+            else:
+                if timeout < 0:
+                    raise ValueError ("'timeout' must be a positive number")
+                endtime = _time () + timeout
+                while self._full ():
+                    remaining = endtime - _time ()
+                    if remaining <= 0.0:
+                        raise TimeOut
+                    self.full_cond.wait (remaining)
+
             self._put (item)
             self.pending_items += 1
-            self.cond.notify ()
+            self.empty_cond.notify ()
         finally:
-            self.cond.release ()
+            self.full_cond.release ()
 
     def put_unlocked (self, item):
         self._put (item)
 
     def get (self, timeout = None):
-        self.cond.acquire ()
+        self.empty_cond.acquire ()
         try:
             if timeout is None:
                 while self._empty ():
-                    self.cond.wait ()
+                    self.empty_cond.wait ()
             else:
                 if timeout < 0:
-                    raise ValueError("'timeout' must be a positive number")
-                endtime = _time() + timeout
+                    raise ValueError ("'timeout' must be a positive number")
+                endtime = _time () + timeout
                 while self._empty ():
                     remaining = endtime - _time ()
                     if remaining <= 0.0:
                         raise TimeOut
-                    self.cond.wait (remaining)
+                    self.empty_cond.wait (remaining)
+
             item = self._get ()
+            self.full_cond.notify ()
             return item
         finally:
-            self.cond.release ()
+            self.empty_cond.release ()
 
     def get_unlocked (self):
         return self._get ()
 
 
     # Queue implementation
-    def _init (self):
+    def _init (self, maxsize):
+        self.maxsize = maxsize
         self.queue = deque ()
 
     def _empty (self):
         return not self.queue
+
+    def _full (self):
+        return self.maxsize > 0 and len (self.queue) == self.maxsize
 
     def _put (self, item):
         self.queue.append (item)
