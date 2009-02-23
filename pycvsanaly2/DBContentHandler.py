@@ -429,7 +429,62 @@ class DBContentHandler (ContentHandler):
         self.cnn.close ()
         self.cnn = None
 
+if __name__ == '__main__':
+    import sys
+    from cStringIO import StringIO
+    from cPickle import dump, load
+    from Database import create_database, DBRepository
 
+    uri = "http://svn.test-cvsanaly.org/svn/test"
+    
+    db = create_database ('mysql', 'dbcontenthandler', sys.argv[1], None, 'localhost')
+    cnn = db.connect ()
+
+    tables = ['actions', 'branches', 'file_copies', 'file_links', 'files',
+              'people', 'repositories', 'scmlog', 'tag_revisions', 'tags']
+    
+    cursor = cnn.cursor ()
+    for table in tables:
+        query = "delete from %s" % (table)
+        cursor.execute (statement (query, db.place_holder))
+    cursor.close ()
+    cnn.commit ()
+
+    name = uri.rstrip ("/").split ("/")[-1].strip ()
+    cursor = cnn.cursor ()
+    rep = DBRepository (None, uri, name, 'svn')
+    cursor.execute (statement (DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
+    cursor.close ()
+    cnn.commit ()
+    
+    ch = DBContentHandler (db)
+    ch.begin ()
+    ch.repository (uri)
+    
+    cursor = cnn.cursor ()
+
+    i = 0
+    while True:
+        query = "SELECT object from _temp_log order by id desc limit %d, 100" % i
+        i += 100
+        cursor.execute (statement (query, db.place_holder))        
+        rs = cursor.fetchmany ()
+        if not rs:
+            break
+
+        while rs:
+            for t in rs:
+                obj = t[0]
+                io = StringIO (obj)
+                commit = load (io)
+                io.close ()
+                ch.commit (commit)
+            
+            rs = cursor.fetchmany ()
+            
+    ch.end ()
+    cursor.close ()
+    cnn.close ()
 
 
         

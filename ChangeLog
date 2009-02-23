@@ -1,3 +1,9 @@
+2009-02-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Add tests for DBContentHandler.
+	
 2009-02-20  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/DBProxyContentHandler.py:
