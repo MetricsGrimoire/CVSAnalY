@@ -28,6 +28,8 @@ from cPickle import dump, load
 
 class DBTempLog:
 
+    INTERVAL_SIZE = 100
+    
     def __init__ (self, db):
         self.db = db
 
@@ -140,18 +142,26 @@ class DBTempLog:
             query = "SELECT object from _temp_log order by id desc"
         else:
             query = "SELECT object from _temp_log order by date asc"
-        
-        cursor.execute (statement (query, self.db.place_holder))
-        rs = cursor.fetchmany ()
-        while rs:
-            for t in rs:
-                obj = t[0]
-                io = StringIO (obj)
-                commit = load (io)
-                io.close ()
-                cb (commit)
 
+        i = 0
+        while True:
+            # We need to split the query to save memory
+            q = "%s limit %d, %d" % (query, i, self.INTERVAL_SIZE)
+            i += self.INTERVAL_SIZE
+            cursor.execute (statement (q, self.db.place_holder))
             rs = cursor.fetchmany ()
+            if not rs:
+                break
+            
+            while rs:
+                for t in rs:
+                    obj = t[0]
+                    io = StringIO (obj)
+                    commit = load (io)
+                    io.close ()
+                    cb (commit)
+
+                rs = cursor.fetchmany ()
 
         cursor.close ()
         cnn.close ()

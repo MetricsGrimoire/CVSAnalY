@@ -1,5 +1,11 @@
 2009-02-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBTempLog.py:
+
+	Split the temp_log query into several queries to save memory.
+	
+2009-02-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/DBContentHandler.py:
 
 	Add tests for DBContentHandler.
