@@ -41,13 +41,12 @@ class DBContentHandler (ContentHandler):
         self.cursor = None
         
         self.file_cache = {}
-        self.revision_cache = {}
         self.moves_cache = {}
+        self.deletes_cache = {}
+        self.revision_cache = {}
         self.branch_cache = {}
         self.tags_cache = {}
         self.people_cache = {}
-
-        # TODO: deletes cache
 
     def __del__ (self):
         if self.cnn is not None:
@@ -162,6 +161,10 @@ class DBContentHandler (ContentHandler):
 
         return tag_id
 
+    def __move_path_to_deletes_cache (self, path):
+        self.deletes_cache[path] = self.file_cache[path]
+        del (self.file_cache[path])
+
     def __get_file_from_moves_cache (self, path):
         # Path is not in the cache, but it should
         # Look if any of its parents was moved
@@ -180,32 +183,6 @@ class DBContentHandler (ContentHandler):
 
         return self.file_cache[current_path]
 
-    def __get_parent_from_copies_cache (self, path):
-        parent_path = os.path.dirname (path)
-        if parent_path == '/':
-            return -1
-
-        try:
-            return self.file_cache[parent_path][0]
-        except KeyError:
-            pass
-
-        current_path = parent_path
-        while current_path not in self.file_cache:
-            found = False
-            for new_path in self.copies_cache:
-                if not current_path.startswith (new_path):
-                    continue
-
-                current_path = new_path
-                found = True
-
-            if not found:
-                raise FileNotInCache
-
-        # Unknown path: Ensure parent_path
-        # TODO
-
     def __ensure_path (self, path, commit_id):
         profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
         printdbg ("DBContentHandler: ensure_path %s", (path))
@@ -217,7 +194,7 @@ class DBContentHandler (ContentHandler):
             rpath = '/' + '/'.join (tokens[:i + 1])
             printdbg ("DBContentHandler: rpath: %s", (rpath,))
             try:
-                node_id, parent_id = self.file_cache[rpath] #self.__get_file_for_path (rpath)
+                node_id, parent_id = self.file_cache[rpath]
                 parent = node_id
                 
                 continue
@@ -225,10 +202,11 @@ class DBContentHandler (ContentHandler):
                 pass
 
             # Rpath not in cache, add it
-
             node_id = self.__add_new_file_and_link (token, parent, commit_id)
             parent_id = parent
             parent = node_id
+
+            self.file_cache[rpath] = (node_id, parent_id)
 
         assert node_id is not None
 
@@ -237,7 +215,7 @@ class DBContentHandler (ContentHandler):
 
         return node_id, parent_id
             
-    def __get_file_for_path (self, path, commit_id):
+    def __get_file_for_path (self, path, commit_id, old = False):
         printdbg ("DBContentHandler: Looking for path %s in cache", (path,))
 
         # First of all look at the cache
@@ -253,7 +231,20 @@ class DBContentHandler (ContentHandler):
             self.file_cache[path] = retval
             return retval
         except FileNotInCache:
-            return self.__ensure_path (path, commit_id)
+            pass
+
+        # If it's an old file (that is, the path has been
+        # taken from the "from" part of an action that
+        # has two paths) it might be deletes or replaced
+        if old:
+            try:
+                return self.deletes_cache[path]
+            except KeyError:
+                pass
+        
+        # It hasen't been moved (or any of its parents)
+        # so it was copied at some point
+        return self.__ensure_path (path, commit_id)
 
     def commit (self, commit):
         profiler_start ("New commit %s for repository %d", (commit.revision, self.repo_id))
@@ -298,21 +289,22 @@ class DBContentHandler (ContentHandler):
                 if parent_path == '/':
                     parent_id = -1
                 else:
-                    parent_id, pparent_id = self.__get_file_for_path (parent_path, log.id)
-                    self.file_cache[parent_path] = (parent_id, pparent_id)
+                    parent_id = self.__get_file_for_path (parent_path, log.id)[0]
 
                 file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
                 self.file_cache[path] = (file_id, parent_id)
-            elif action.type in ('D', 'M'):
+            elif action.type == 'M':
                 file_id = self.__get_file_for_path (action.f1, log.id)[0]
+            elif action.type == 'D':
+                file_id = self.__get_file_for_path (action.f1, log.id)[0]
+                self.__move_path_to_deletes_cache (action.f1)
             elif action.type == 'V':
                 path = action.f1
                 new_parent_path = os.path.dirname (path)
                 new_file_name = os.path.basename (path)
 
                 old_path = action.f2
-                # FIXME deletes cache
-                file_id, parent_id = self.__get_file_for_path (old_path, log.id)
+                file_id, parent_id = self.__get_file_for_path (old_path, log.id, True)
                 
                 dbfilecopy = DBFileCopy (None, file_id)
                 dbfilecopy.action_id = dbaction.id
@@ -343,12 +335,13 @@ class DBContentHandler (ContentHandler):
                 parent_path = os.path.dirname (path)
                 file_name = os.path.basename (path)
 
-                from_file_id = self.__get_file_for_path (action.f2, log.id)[0]
+                from_file_id = self.__get_file_for_path (action.f2, log.id, True)[0]
                 
                 if parent_path == '/':
                     parent_id = -1
                 else:
                     parent_id = self.__get_file_for_path (parent_path, log.id)[0]
+                    
                         
                 file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
                 self.file_cache[path] = (file_id, parent_id)
@@ -364,15 +357,20 @@ class DBContentHandler (ContentHandler):
                 path = action.f1
                 file_name = os.path.basename (path)
 
-                # TODO: replaced from f2!!!
                 # The replace action is over the old file_id
                 file_id, parent_id = self.__get_file_for_path (path, log.id)
+                self.__move_path_to_deletes_cache (path)
                 
+                if action.f2 is not None:
+                    from_file_id = self.__get_file_for_path (action.f2, log.id, True)[0]
+                else:
+                    from_file_id = file_id
+                    
                 # Remove the old references
                 dirpath = path.rstrip ("/") + "/"
                 for cpath in self.file_cache.keys ():
                     if cpath.startswith (dirpath):
-                        del (self.file_cache[cpath])
+                        self.__move_path_to_deletes_cache (cpath)
 
                 # Add the new path
                 new_file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
@@ -381,9 +379,9 @@ class DBContentHandler (ContentHandler):
                 # Register the action in the copies table in order to
                 # be able to know which file replaced this file
                 dbfilecopy = DBFileCopy (None, new_file_id)
-                dbfilecopy.from_id = file_id
+                dbfilecopy.from_id = from_file_id
                 dbfilecopy.action_id = dbaction.id
-                dbfilecopy.from_commit = None # FIXME
+                dbfilecopy.from_commit = self.revision_cache.get (action.rev, None)
                 self.__add_new_copy (dbfilecopy)
             else:
                 assert "Unknown action type %s" % (action.type)

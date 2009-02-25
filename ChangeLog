@@ -1,3 +1,11 @@
+2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Make sure we always keep in sync the file cache with the
+	database. Add a deletes cache to store files that have been
+	deleted or replaced but might be still referenced. 
+	
 2009-02-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/DBTempLog.py:
