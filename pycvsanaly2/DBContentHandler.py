@@ -296,8 +296,15 @@ class DBContentHandler (ContentHandler):
             elif action.type == 'M':
                 file_id = self.__get_file_for_path (action.f1, log.id)[0]
             elif action.type == 'D':
-                file_id = self.__get_file_for_path (action.f1, log.id)[0]
-                self.__move_path_to_deletes_cache (action.f1)
+                path = action.f1
+                file_id = self.__get_file_for_path (path, log.id)[0]
+                
+                # Remove the old references
+                dirpath = path.rstrip ("/") + "/"
+                for cpath in self.file_cache.keys ():
+                    if cpath.startswith (dirpath):
+                        self.__move_path_to_deletes_cache (cpath)
+                self.__move_path_to_deletes_cache (path)
             elif action.type == 'V':
                 path = action.f1
                 new_parent_path = os.path.dirname (path)

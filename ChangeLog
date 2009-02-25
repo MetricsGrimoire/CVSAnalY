@@ -1,5 +1,11 @@
 2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBContentHandler.py:
+
+	Move to deletes caches the children of a deleted directory.
+	
+2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Fix Metrics queries.
