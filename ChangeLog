@@ -1,5 +1,11 @@
 2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Fix Metrics queries.
+	
+2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/Database.py:
 	* pycvsanaly2/extensions/FileTypes.py:
 

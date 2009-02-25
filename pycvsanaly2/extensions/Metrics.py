@@ -590,30 +590,31 @@ class Metrics (Extension):
         repoid = rp.get_repo_id ()
             
         # Obtain files and revisions
+        
+        
         if self.config.metrics_all:
-            query =  'SELECT rev, a.commit_id, f.id, composed_rev '
-            query += 'FROM scmlog s, actions a, files f, file_types ft '
-            query += 'WHERE a.commit_id = s.id '
-            query += 'AND f.id = ft.file_id '
-            query += 'AND ((a.type in ("A", "M") AND f.id = a.file_id) '
-            query += 'OR (a.type = "R" and f.id = (select to_id from file_copies where a.id = action_id))) '
-            query += 'AND ft.type in ("code", "unknown") '
-            query += 'AND s.repository_id = ? '
-            query += 'ORDER BY a.commit_id'
+            query = "select s.rev rev, s.id commit_id, ft.file_id file_id, composed_rev " + \
+                    "from scmlog s, actions a, action_files af, file_types ft " + \
+                    "where s.id = a.commit_id and a.id = af.action_id and " + \
+                    "af.file_id = ft.file_id and ft.type in ('code', 'unknown') " + \
+                    "and a.type in ('A', 'M', 'R') and s.repository_id = ? " + \
+                    "order by s.id"
         else:
-            query =  'SELECT rev, a.commit_id, f.id, composed_rev '
-            query += 'FROM scmlog s, files f, file_types ft, actions a, '
-            query += '(SELECT file_id, max(commit_id) commit_id from actions group by file_id) ma '
-            query += 'WHERE ma.commit_id = s.id '
-            query += 'AND a.commit_id = ma.commit_id '
-            query += 'AND f.id = ft.file_id '
-            query += 'AND f.id = ma.file_id '
-            query += 'AND a.type <> "D" '
-            query += 'AND ((a.type <> "R" AND f.id = a.file_id) '
-            query += 'OR (a.type = "R" and f.id = (select to_id from file_copies where a.id = action_id))) '
-            query += 'AND s.repository_id = ? '
-            query += 'group by rev, a.commit_id, f.id order by a.commit_id'
-            
+            query = "select s.rev rev, s.id commit_id, head.file_id file_id, composed_rev " + \
+                    "from scmlog s, (" + \
+                    "select af.action_id action_id, mlog.file_id file_id, mlog.commit_id commit_id " + \
+                    "from action_files af, file_types ft, (" + \
+                    "select file_id, max(commit_id) commit_id " + \
+                    "from action_files group by file_id" + \
+                    ") mlog where mlog.file_id = af.file_id " + \
+                    "and mlog.commit_id = af.commit_id and " + \
+                    "ft.file_id = mlog.file_id and " + \
+                    "ft.type in ('code', 'unknown') " + \
+                    "and af.action_type in ('A', 'M', 'R')" + \
+                    ") head where head.commit_id = s.id " + \
+                    "and s.repository_id = ? " + \
+                    "order by s.id"
+
         read_cursor.execute (statement (query, db.place_holder), (repoid,))
         for revision, commit_id, file_id, composed in read_cursor.fetchall ():
             if (file_id, commit_id) in metrics:
