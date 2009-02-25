@@ -26,9 +26,9 @@ class DBFileType:
 
     id_counter = 1
 
-    __insert__ = "INSERT INTO file_types (id, file_id, type, commit_id) values (?, ?, ?, ?)"
+    __insert__ = "INSERT INTO file_types (id, file_id, type) values (?, ?, ?)"
 
-    def __init__ (self, id, type, file_id, commit_id):
+    def __init__ (self, id, type, file_id):
         if id is None:
             self.id = DBFileType.id_counter
             DBFileType.id_counter += 1
@@ -37,7 +37,6 @@ class DBFileType:
 
         self.type = to_utf8 (type)
         self.file_id = file_id
-        self.commit_id = commit_id
 
 class FileTypes (Extension):
     
@@ -54,8 +53,7 @@ class FileTypes (Extension):
                 cursor.execute ("CREATE TABLE file_types (" +
                                 "id integer primary key," +
                                 "file_id integer," +
-                                "type varchar," +
-                                "commit_id integer" +
+                                "type varchar" +
                                 ")")
             except pysqlite2.dbapi2.OperationalError:
                 cursor.close ()
@@ -70,9 +68,7 @@ class FileTypes (Extension):
                                 "id INT primary key," +
                                 "file_id integer," +
                                 "type mediumtext," +
-                                "commit_id integer," +
-                                "FOREIGN KEY (file_id) REFERENCES files(id)," +
-                                "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
+                                "FOREIGN KEY (file_id) REFERENCES files(id)" +
                                 ") CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
@@ -116,33 +112,31 @@ class FileTypes (Extension):
         except Exception, e:
             raise ExtensionRunError (str (e))
 
-        query = "select * from ( " + \
-                "select f.id fid, f.file_name fname, a.commit_id acommit " + \
+        query = "select fid, fname from (" + \
+                "select f.id fid, f.file_name fname, f.repository_id rep " + \
                 "from files f, actions a " + \
-                "where f.repository_id = ? " + \
-                "and a.type = 'A' and f.id = a.file_id " + \
+                "where f.id = a.file_id and a.type <> 'R' " + \
                 "UNION " + \
-                "select f.id fid, f.file_name fname, a.commit_id acommit " + \
+                "select f.id fid, f.file_name fname, f.repository_id rep " + \
                 "from files f, actions a, file_copies fc " + \
-                "where repository_id = ? " + \
-                "and a.type = 'R' " + \
-                "and fc.action_id = a.id " + \
-                "and f.id = fc.to_id " + \
-                ") au group by fid,acommit"
-        cursor.execute (statement (query, db.place_holder), (repo_id,repo_id))
+                "where fc.action_id = a.id and fc.to_id = f.id and a.type = 'R'" + \
+                ") fls " + \
+                "where fid not in (select parent_id from file_links) and rep = ?"
+
+        cursor.execute (statement (query, db.place_holder), (repo_id,))
         write_cursor = cnn.cursor ()
         rs = cursor.fetchmany ()
         while rs:
             types = []
 
-            for file_id, file_name, commit_id in rs:
+            for file_id, file_name in rs:
                 if file_id in files:
                     continue
                 
                 type = guess_file_type (file_name)
-                types.append (DBFileType (None, type, file_id, commit_id))
+                types.append (DBFileType (None, type, file_id))
                     
-            file_types = [(type.id, type.file_id, type.type, type.commit_id) for type in types]
+            file_types = [(type.id, type.file_id, type.type) for type in types]
             write_cursor.executemany (statement (DBFileType.__insert__, self.db.place_holder), file_types)
 
             rs = cursor.fetchmany ()
