@@ -295,7 +295,15 @@ class Database:
         raise NotImplementedError
 
     def _create_views (self, cursor):
-        pass
+        view = "create view action_files as " + \
+               "select f.id file_id, a.id action_id, a.type action_type, a.commit_id commit_id " + \
+               "from files f, actions a " + \
+               "where f.id = a.file_id and a.type <> 'R' " + \
+               "UNION " + \
+               "select f.id file_id, a.id action_id, a.type action_type, a.commit_id commit_id " + \
+               "from files f, actions a, file_copies fc " + \
+               "where fc.action_id = a.id and fc.to_id = f.id and a.type = 'R'"
+        cursor.execute (view)
 
     def to_binary (self, data):
         return data

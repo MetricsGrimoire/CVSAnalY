@@ -112,16 +112,11 @@ class FileTypes (Extension):
         except Exception, e:
             raise ExtensionRunError (str (e))
 
-        query = "select fid, fname from (" + \
-                "select f.id fid, f.file_name fname, f.repository_id rep " + \
-                "from files f, actions a " + \
-                "where f.id = a.file_id and a.type <> 'R' " + \
-                "UNION " + \
-                "select f.id fid, f.file_name fname, f.repository_id rep " + \
-                "from files f, actions a, file_copies fc " + \
-                "where fc.action_id = a.id and fc.to_id = f.id and a.type = 'R'" + \
-                ") fls " + \
-                "where fid not in (select parent_id from file_links) and rep = ?"
+        query = "select a.file_id fid, f.file_name fname " + \
+                "from action_files a, files f " + \
+                "where f.id = a.file_id and " + \
+                "a.file_id not in (select parent_id from file_links) " + \
+                "and f.repository_id = ? group by fid, fname"
 
         cursor.execute (statement (query, db.place_holder), (repo_id,))
         write_cursor = cnn.cursor ()

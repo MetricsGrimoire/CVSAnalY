@@ -1,5 +1,13 @@
 2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/Database.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+
+	Use a view to get the files associated to actions independently of
+	the action type.
+	
+2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/FileTypes.py:
 
 	Fix FileTypes query and remove field commit_id from the table
