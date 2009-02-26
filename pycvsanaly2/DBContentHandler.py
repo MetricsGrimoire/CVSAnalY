@@ -206,6 +206,8 @@ class DBContentHandler (ContentHandler):
             parent_id = parent
             parent = node_id
 
+            if path[0] != '/':
+                rpath = rpath.strip ('/')
             self.file_cache[rpath] = (node_id, parent_id)
 
         assert node_id is not None

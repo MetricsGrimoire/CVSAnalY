@@ -1,3 +1,10 @@
+2009-02-26  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Remove the leading '/' when inserting into files cache if the
+	original path doesn't start with '/' (cvs).
+	
 2009-02-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/DBContentHandler.py:
