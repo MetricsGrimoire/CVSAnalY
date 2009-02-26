@@ -2,6 +2,13 @@
 
 	* pycvsanaly2/DBContentHandler.py:
 
+	Do not use the current commit_id for links of old paths, but the
+	'from' commit_id.
+	
+2009-02-26  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
 	Remove the leading '/' when inserting into files cache if the
 	original path doesn't start with '/' (cvs).
 	

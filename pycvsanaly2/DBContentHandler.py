@@ -312,12 +312,14 @@ class DBContentHandler (ContentHandler):
                 new_parent_path = os.path.dirname (path)
                 new_file_name = os.path.basename (path)
 
+                from_commit_id = self.revision_cache.get (action.rev, None)
+                
                 old_path = action.f2
-                file_id, parent_id = self.__get_file_for_path (old_path, log.id, True)
+                file_id, parent_id = self.__get_file_for_path (old_path, from_commit_id, True)
                 
                 dbfilecopy = DBFileCopy (None, file_id)
                 dbfilecopy.action_id = dbaction.id
-                dbfilecopy.from_commit = self.revision_cache.get (action.rev, None)
+                dbfilecopy.from_commit = from_commit_id
 
                 if new_parent_path == '/':
                     new_parent_id = -1
@@ -344,13 +346,13 @@ class DBContentHandler (ContentHandler):
                 parent_path = os.path.dirname (path)
                 file_name = os.path.basename (path)
 
-                from_file_id = self.__get_file_for_path (action.f2, log.id, True)[0]
+                from_commit_id = self.revision_cache.get (action.rev, None)
+                from_file_id = self.__get_file_for_path (action.f2, from_commit_id, True)[0]
                 
                 if parent_path == '/':
                     parent_id = -1
                 else:
                     parent_id = self.__get_file_for_path (parent_path, log.id)[0]
-                    
                         
                 file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
                 self.file_cache[path] = (file_id, parent_id)
@@ -358,7 +360,7 @@ class DBContentHandler (ContentHandler):
                 dbfilecopy = DBFileCopy (None, file_id)
                 dbfilecopy.from_id = from_file_id
                 dbfilecopy.action_id = dbaction.id
-                dbfilecopy.from_commit = self.revision_cache.get (action.rev, None)
+                dbfilecopy.from_commit = from_commit_id
                 self.__add_new_copy (dbfilecopy)
             elif action.type == 'R':
                 # Replace action: Path has been removed and
@@ -371,8 +373,10 @@ class DBContentHandler (ContentHandler):
                 self.__move_path_to_deletes_cache (path)
                 
                 if action.f2 is not None:
-                    from_file_id = self.__get_file_for_path (action.f2, log.id, True)[0]
+                    from_commit_id = self.revision_cache.get (action.rev, None)
+                    from_file_id = self.__get_file_for_path (action.f2, from_commit_id, True)[0]
                 else:
+                    from_commit_id = None
                     from_file_id = file_id
                     
                 # Remove the old references
@@ -390,7 +394,7 @@ class DBContentHandler (ContentHandler):
                 dbfilecopy = DBFileCopy (None, new_file_id)
                 dbfilecopy.from_id = from_file_id
                 dbfilecopy.action_id = dbaction.id
-                dbfilecopy.from_commit = self.revision_cache.get (action.rev, None)
+                dbfilecopy.from_commit = from_commit_id
                 self.__add_new_copy (dbfilecopy)
             else:
                 assert "Unknown action type %s" % (action.type)
