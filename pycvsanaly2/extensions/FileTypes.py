@@ -95,7 +95,7 @@ class FileTypes (Extension):
         cnn = self.db.connect ()
 
         cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
         repo_id = cursor.fetchone ()[0]
         
         files = []

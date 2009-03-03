@@ -25,6 +25,7 @@ import datetime
 
 from Parser import Parser
 from Repository import Commit, Action, Person
+from repositoryhandler.backends import create_repository
 from utils import printout, printdbg
 
 class SVNParser (Parser):
@@ -46,10 +47,17 @@ class SVNParser (Parser):
     def __init__ (self):
         Parser.__init__ (self)
 
+        self.root_path = ''
+        
         # Parser context
         self.state = SVNParser.COMMIT
         self.commit = None
         self.msg_lines = 0
+
+    def set_repository (self, repo, uri):
+        Parser.set_repository (self, repo, uri)
+
+        self.root_path = uri.replace (repo.get_uri (), '')
 
     def __convert_commit_actions (self, commit):
         # We detect here files that have been moved or
@@ -83,7 +91,7 @@ class SVNParser (Parser):
                         # Try to guess if it was a tag
                         # Yes, with svn we are always guessing :-/
                         tag = self.__guess_tag_from_path (action.f1)
-                        if tag is not None and action.f1 == '/tags/%s' % (tag):
+                        if tag is not None:
                             if commit.tags is None:
                                 commit.tags = []
 
@@ -99,6 +107,8 @@ class SVNParser (Parser):
             commit.actions.remove (action)
 
     def __guess_branch_from_path (self, path):
+        path = path[len (self.root_path):]
+
         if path.startswith ("/branches"):
             try:
                 branch = path.split ('/')[2]
@@ -110,6 +120,8 @@ class SVNParser (Parser):
         return branch
 
     def __guess_tag_from_path (self, path):
+        path = path[len (self.root_path):]
+        
         if not path.startswith ("/tags"):
             return None
         

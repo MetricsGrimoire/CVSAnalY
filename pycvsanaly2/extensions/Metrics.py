@@ -44,13 +44,13 @@ class Repository:
         '''Raised when the file has not been checked out because
         it should be skipped'''
     
-    def __init__ (self, db, cursor, repo, rootdir):
+    def __init__ (self, db, cursor, repo, uri, rootdir):
         self.db = db
         self.cursor = cursor
         self.repo = repo
+        self.repo_uri = uri
         self.rootdir = rootdir
         
-        uri = repo.get_uri ()
         cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
         self.repo_id = cursor.fetchone ()[0]
         
@@ -62,14 +62,23 @@ class Repository:
 
 class SVNRepository (Repository):
 
-    def __init__ (self, db, cursor, repo, rootdir):
-        Repository.__init__ (self, db, cursor, repo, rootdir)
+    def __init__ (self, db, cursor, repo, uri, rootdir):
+        Repository.__init__ (self, db, cursor, repo, uri, rootdir)
         self.tops = {}
         
         self.repo.checkout ('.', self.rootdir, newdir=".", rev='0')
 
     def checkout (self, path, rev):
-        # FIXME: projects where rootdir != topdir
+        root = self.repo_uri.replace (self.repo.get_uri (), '').strip ('/')
+
+        if not os.path.isdir (os.path.join (self.rootdir, root)):
+            roots = root.split ('/')
+
+            for i, dummy in enumerate (roots):
+                rpath = '/'.join (roots[:i + 1])
+                self.repo.update (os.path.join (self.rootdir, rpath), rev=rev, force=True)
+        
+        path = path.replace (root, '')
         top = path.strip ('/').split ('/')[0]
         
         # skip tags dir
@@ -78,23 +87,23 @@ class SVNRepository (Repository):
         
         last_rev = self.tops.get (top, 0)
         if last_rev != rev:
-            self.repo.update (os.path.join (self.rootdir, top), rev=rev, force=True)
+            self.repo.update (os.path.join (self.rootdir, root, top), rev=rev, force=True)
             self.tops[top] = rev
 
 class CVSRepository (Repository):
 
-    def __init__ (self, db, cursor, repo, rootdir):
-        Repository.__init__ (self, db, cursor, repo, rootdir)
+    def __init__ (self, db, cursor, repo, uri, rootdir):
+        Repository.__init__ (self, db, cursor, repo, uri, rootdir)
 
     def checkout (self, path, rev):
         self.repo.checkout (path, self.rootdir, rev=rev)
 
         
-def create_repository (db, cursor, repo, rootdir):
+def create_repository (db, cursor, repo, uri, rootdir):
     if repo.get_type () == 'svn':
-        return SVNRepository (db, cursor, repo, rootdir)
+        return SVNRepository (db, cursor, repo, uri, rootdir)
     elif repo.get_type () == 'cvs':
-        return CVSRepository (db, cursor, repo, rootdir)
+        return CVSRepository (db, cursor, repo, uri, rootdir)
     else:
         raise NotImplementedError
 
@@ -583,14 +592,15 @@ class Metrics (Extension):
         tmpdir = mkdtemp ()
 
         try:
-            rp = create_repository (db, read_cursor, repo, tmpdir)
+            rp = create_repository (db, read_cursor, repo, uri, tmpdir)
+        except NotImplementedError:
+            raise ExtensionRunError ("Metrics extension is not supported for %s repositories" % (repo.get_type ()))
         except Exception, e:
-            raise ExtensionRunError ("Error creating repository %s. Exception: %s", (repo.get_uri (), str (e)))
+            raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
         repoid = rp.get_repo_id ()
             
         # Obtain files and revisions
-        
         
         if self.config.metrics_all:
             query = "select s.rev rev, s.id commit_id, ft.file_id file_id, composed_rev " + \
@@ -631,12 +641,14 @@ class Metrics (Extension):
             aux_cursor.close ()
 
             if repo.get_type () == 'svn' and relative_path == 'tags':
+                printdbg ("Skipping file %s", (relative_path,))
                 continue
 
             try:
                 printdbg ("Checking out %s @ %s", (relative_path, rev))
                 rp.checkout (relative_path, rev)
             except Repository.SkipFileException:
+                printdbg ("Skipping file %s", (relative_path,))
                 continue
             except Exception, e:
                 printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))

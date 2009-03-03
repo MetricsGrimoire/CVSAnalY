@@ -28,15 +28,15 @@ class Parser:
 
     def __init__ (self):
         self.handler = ContentHandler ()
-        self.repo = None
+        self.repo_uri = None
         
         self.n_line = 0
 
     def set_content_handler (self, handler):
         self.handler = handler
 
-    def set_repository (self, repo):
-        self.repo = repo
+    def set_repository (self, repo, uri):
+        self.repo_uri = uri
 
     def flush (self):
         pass
@@ -48,8 +48,8 @@ class Parser:
         if self.n_line == 0:
             self.handler.begin (self.CONTENT_ORDER)
 
-            if self.repo is not None:
-                self.handler.repository (self.repo.get_uri ())
+            if self.repo_uri is not None:
+                self.handler.repository (self.repo_uri)
             
         for line in data.splitlines ():
             self.n_line += 1

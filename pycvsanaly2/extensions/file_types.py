@@ -166,6 +166,7 @@ config_files_devel_doc = [
     re.compile('developers$'),
     re.compile('contributors$'),
     re.compile('thanks$'),
+    re.compile('releasing$'),
     re.compile('test$'),
     re.compile('testing$'),
     re.compile('build$'),
@@ -187,6 +188,7 @@ config_files_devel_doc = [
     re.compile('done$'),
     re.compile('\.omf$'), # XML-based format used in GNOME
     re.compile('\.lsm$'),
+    re.compile('^doxyfile$'),
     re.compile('\.kdevprj$'),
     re.compile('\.directory$'),
     re.compile('\.dox$')

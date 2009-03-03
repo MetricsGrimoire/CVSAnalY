@@ -58,9 +58,9 @@ class CVSParser (Parser):
         self.rev_separator = None
         self.file_separator = None
 
-    def set_repository (self, repo):
-        Parser.set_repository (self, repo)
-        
+    def set_repository (self, repo, uri):
+        Parser.set_repository (self, repo, uri)
+
         uri = repo.get_uri ()
         s = uri.rfind (':')
         if s >= 0:

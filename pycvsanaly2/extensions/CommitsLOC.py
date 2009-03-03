@@ -230,7 +230,7 @@ class CommitsLOC (Extension):
         cnn = self.db.connect ()
 
         cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
         repo_id = cursor.fetchone ()[0]
 
         # If table does not exist, the list of commits is empty,

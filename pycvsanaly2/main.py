@@ -202,6 +202,7 @@ def main (argv):
         except Exception, e:
             printerr ("Unknown error creating repository for path %s (%s)", (path, str (e)))
             return 1
+        uri = repo.get_uri_for_path (path)
     else:
         repo = create_repository ('svn', uri)
 
@@ -214,7 +215,7 @@ def main (argv):
     else:
         parser = create_parser_from_repository (repo)
 
-    parser.set_repository (repo)
+    parser.set_repository (repo, uri)
 
     if parser is None:
         printerr ("Failed to create parser")
@@ -265,16 +266,16 @@ def main (argv):
 
     # Add repository to Database
     if db_exists:
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo.get_uri (),))
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
         rep = cursor.fetchone ()
         initialize_ids (db, cursor)
         cursor.close ()
         
     if not db_exists or rep is None:
         # We consider the name of the repo as the last item of the root path
-        name = repo.get_uri ().rstrip ("/").split ("/")[-1].strip ()
+        name = uri.rstrip ("/").split ("/")[-1].strip ()
         cursor = cnn.cursor ()
-        rep = DBRepository (None, repo.get_uri (), name, repo.get_type ())
+        rep = DBRepository (None, uri, name, repo.get_type ())
         cursor.execute (statement (DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
         cursor.close ()
         cnn.commit ()
@@ -292,7 +293,7 @@ def main (argv):
     if config.save_logfile is not None:
         writer = LogWriter (config.save_logfile)
         
-    printout ("Parsing log for %s (%s)", (uri, repo.get_type ()))
+    printout ("Parsing log for %s (%s)", (path or uri, repo.get_type ()))
     parser.set_content_handler (DBProxyContentHandler (db))
     reader.start (new_line, (parser, writer))
     parser.end ()
