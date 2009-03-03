@@ -288,7 +288,7 @@ class DBContentHandler (ContentHandler):
                 parent_path = os.path.dirname (path)
                 file_name = os.path.basename (path)
 
-                if parent_path == '/':
+                if not parent_path or parent_path == '/':
                     parent_id = -1
                 else:
                     parent_id = self.__get_file_for_path (parent_path, log.id)[0]
@@ -321,7 +321,7 @@ class DBContentHandler (ContentHandler):
                 dbfilecopy.action_id = dbaction.id
                 dbfilecopy.from_commit = from_commit_id
 
-                if new_parent_path == '/':
+                if not new_parent_path or new_parent_path == '/':
                     new_parent_id = -1
                 else:
                     new_parent_id = self.__get_file_for_path (new_parent_path, log.id)[0]
@@ -349,7 +349,7 @@ class DBContentHandler (ContentHandler):
                 from_commit_id = self.revision_cache.get (action.rev, None)
                 from_file_id = self.__get_file_for_path (action.f2, from_commit_id, True)[0]
                 
-                if parent_path == '/':
+                if not parent_path or parent_path == '/':
                     parent_id = -1
                 else:
                     parent_id = self.__get_file_for_path (parent_path, log.id)[0]
