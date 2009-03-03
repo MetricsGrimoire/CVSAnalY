@@ -1,5 +1,12 @@
 2009-03-03  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBContentHandler.py:
+
+	Fix infinite loop when a path has been renamed several times to
+	the same name.
+	
+2009-03-03  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Add debug messages when skipping files.

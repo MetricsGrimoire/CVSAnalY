@@ -168,14 +168,17 @@ class DBContentHandler (ContentHandler):
     def __get_file_from_moves_cache (self, path):
         # Path is not in the cache, but it should
         # Look if any of its parents was moved
+        printdbg ("DBContentHandler: looking for path %s in moves cache", (path,))
         current_path = path
+        replaces = []
         while current_path not in self.file_cache:
             found = False
             for new_path in self.moves_cache.keys ():
-                if not current_path.startswith (new_path):
+                if not current_path.startswith (new_path) or new_path in replaces:
                     continue
 
                 current_path = current_path.replace (new_path, self.moves_cache[new_path], 1)
+                replaces.append (new_path)
                 found = True
             
             if not found:
