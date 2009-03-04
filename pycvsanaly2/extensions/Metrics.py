@@ -71,13 +71,17 @@ class SVNRepository (Repository):
     def checkout (self, path, rev):
         root = self.repo_uri.replace (self.repo.get_uri (), '').strip ('/')
 
+        if not path.startswith (root):
+            raise Repository.SkipFileException
+
         if not os.path.isdir (os.path.join (self.rootdir, root)):
             roots = root.split ('/')
 
             for i, dummy in enumerate (roots):
-                rpath = '/'.join (roots[:i + 1])
-                self.repo.update (os.path.join (self.rootdir, rpath), rev=rev, force=True)
-        
+                rpath = os.path.join (self.rootdir, '/'.join (roots[:i + 1]))
+                if not os.path.isdir (rpath):
+                    self.repo.update (rpath, rev=rev, force=True)
+
         path = path.replace (root, '')
         top = path.strip ('/').split ('/')[0]
         
