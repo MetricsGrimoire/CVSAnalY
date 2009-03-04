@@ -41,7 +41,6 @@ from Log import LogReader, LogWriter
 from ExtensionsManager import ExtensionsManager, InvalidExtension, InvalidDependency
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
-from FindProgram import find_program
 
 # Some stuff about the project
 version = "2.0"
