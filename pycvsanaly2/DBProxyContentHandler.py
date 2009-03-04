@@ -21,6 +21,7 @@ from ContentHandler import ContentHandler
 from DBContentHandler import DBContentHandler
 from DBTempLog import DBTempLog
 from AsyncQueue import AsyncQueue, TimeOut
+from utils import printdbg
 import threading
 
 class DBProxyContentHandler (ContentHandler):
@@ -50,7 +51,9 @@ class DBProxyContentHandler (ContentHandler):
         def commit_cb (item):
             queue.put (item)
 
+        printdbg ("DBProxyContentHandler: thread __reader started")
         templog.foreach (commit_cb, self.order)
+        printdbg ("DBProxyContentHandler: thread __reader finished")
         
     def end (self):
         # The log is now in the temp table
@@ -58,6 +61,7 @@ class DBProxyContentHandler (ContentHandler):
         # the real content handler
 
         self.templog.flush ()
+        printdbg ("DBProxyContentHandler: parsing finished, creating thread")
 
         queue = AsyncQueue (50)
         reader_thread = threading.Thread (target=self.__reader,
@@ -72,10 +76,12 @@ class DBProxyContentHandler (ContentHandler):
                 item = queue.get (1)
             except TimeOut:
                 continue
+            printdbg ("DBProxyContentHandler: commit: %s", (item.revision,))
             self.db_handler.commit (item)
             del item
 
         # No threads now, we don't need locks
+        printdbg ("DBProxyContentHandler: thread __reader is finished, continue without locks")
         while not queue.empty_unlocked ():
             item = queue.get_unlocked ()
             self.db_handler.commit (item)

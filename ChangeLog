@@ -1,5 +1,11 @@
 2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBProxyContentHandler.py:
+
+	Add debug messages to ProxyContentHandler.
+	
+2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/main.py:
 
 	Remove unneeded import.
