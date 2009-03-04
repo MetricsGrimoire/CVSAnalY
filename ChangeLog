@@ -1,5 +1,11 @@
 2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Handle Command exceptions due to problems when running commands.
+	
+2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/Command.py:
 
 	Updated from misc. Several error handling improvements.
