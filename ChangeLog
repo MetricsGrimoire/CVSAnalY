@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Do not find programs in PATH more than once.
+	
+2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Handle Command exceptions due to problems when running commands.
 	
 2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>

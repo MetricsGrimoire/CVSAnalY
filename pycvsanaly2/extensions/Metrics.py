@@ -206,11 +206,19 @@ class FileMetricsC (FileMetrics):
     """Measures McCabe's complexity, Halstead's complexity,
     comment and blank lines, using the 'metrics' package by Brian
     Renaud, stored in the Libresoft's subversion repository."""
+
+    kdsi = None
+    halstead = None
+    mccabe = None
     
     def get_CommentsBlank (self):
-        kdsi = find_program ('kdsi')
-        if kdsi is None:
-            raise ProgramNotFound ('kdsi')
+        if self.kdsi is None:
+            kdsi = find_program ('kdsi')
+            if kdsi is None:
+                raise ProgramNotFound ('kdsi')
+            self.kdsi = kdsi
+        else:
+            kdsi = self.kdsi
         
         # Running kdsi
         cmd = Command ([kdsi, self.path])
@@ -234,9 +242,13 @@ class FileMetricsC (FileMetrics):
         return comment_number, comment_lines, blank_lines
 
     def get_HalsteadComplexity (self):
-        halstead = find_program ('halstead')
-        if halstead is None:
-            raise ProgramNotFound ('halstead')
+        if self.halstead is None:
+            halstead = find_program ('halstead')
+            if halstead is None:
+                raise ProgramNotFound ('halstead')
+            self.halstead = halstead
+        else:
+            halstead = self.halstead
         
         # Running halstead
         cmd = Command ([halstead, self.path])
@@ -279,9 +291,13 @@ class FileMetricsC (FileMetrics):
         return halstead_length, halstead_volume, halstead_level, halstead_md
 
     def get_MccabeComplexity (self):
-        mccabe = find_program ('mccabe')
-        if mccabe is None:
-            raise ProgramNotFound ('mccabe')
+        if self.mccabe is None:
+            mccabe = find_program ('mccabe')
+            if mccabe is None:
+                raise ProgramNotFound ('mccabe')
+            self.mccabe = mccabe
+        else:
+            mccabe = self.mccabe
         
         # Running mccabe
         cmd = Command ([mccabe, '-n', self.path])
@@ -330,10 +346,10 @@ class FileMetricsPython (FileMetrics):
     patterns['numComments'] = re.compile ("^[ \b\t]+([0-9]+)[ \b\t]+numComments$")
     patterns['mccabe'] = re.compile ("^[ \b\t]+([0-9]+)[ \b\t]+(.*)$")
     
+    pymetrics = None
+    
     def __init__ (self, path, lang='unknown', sloc=0):
         FileMetrics.__init__ (self, path, lang, sloc)
-
-        self.pymetrics = None
 
     def __ensure_pymetrics (self):
         if self.pymetrics is not None:
@@ -411,6 +427,7 @@ class FileMetricsCCCC (FileMetrics):
     # Abstract class
     
     cccc_lang = None
+    cccc = None
     
     class XMLMetricsHandler (xmlhandler.ContentHandler):
         
@@ -445,9 +462,13 @@ class FileMetricsCCCC (FileMetrics):
         if self.handler is not None:
             return
 
-        cccc = find_program ('cccc')
-        if cccc is None:
-            raise ProgramNotFound ('cccc')
+        if self.cccc is None:
+            cccc = find_program ('cccc')
+            if cccc is None:
+                raise ProgramNotFound ('cccc')
+            self.cccc = cccc
+        else:
+            cccc = self.cccc
 
         tmpdir = mkdtemp ()
 
@@ -513,14 +534,15 @@ _metrics = {
     "cpp"     : FileMetricsCPP,
     "java"    : FileMetricsJava
 }
-    
+
+sloccount = find_program ('sloccount')
+
 def create_file_metrics (path):
     """Measures SLOC and identifies programming language using SlocCount"""
 
     sloc = 0
     lang = 'unknown'
     
-    sloccount = find_program ('sloccount')
     if sloccount is not None:
         cmd = Command ([sloccount, '--wide', '--details', path])
         try:
