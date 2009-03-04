@@ -25,14 +25,22 @@ from signal import SIGINT, SIGTERM
 
 class CommandError (Exception):
 
-    def __init__ (self, msg, returncode = None):
-        Exception.__init__ (self, msg)
+    def __init__ (self, cmd, returncode, error = None):
+        self.cmd = cmd
         self.returncode = returncode
+        self.error = error
+
+    def __str__ (self):
+        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
 
 class CommandRunningError (Exception):
-    def __init__ (self, msg, error):
-        Exception.__init__ (self, msg)
+    
+    def __init__ (self, cmd, error):
+        self.cmd = cmd
         self.error = error
+
+    def __str__(self):
+        return "Error during execution of command %s" % (self.cmd)
 
 class CommandTimeOut (Exception):
     '''Timeout running command'''
@@ -104,11 +112,12 @@ class Command:
 
                 if rlist == wlist == []:
                     if err_data:
-                        raise CommandRunningError ("Error during executioin of %s" % (str (self.cmd)), err_data)
+                        raise CommandRunningError (self.cmd, err_data)
                     if timeout is not None:
                         elapsed += self.SELECT_TIMEOUT
                         if elapsed >= timeout:
                             os.kill (p.pid, SIGTERM)
+                            self.process = None
                             raise CommandTimeOut
                 elif timeout is not None:
                     # reset timeout
@@ -172,24 +181,22 @@ class Command:
         if self.env is not None:
             kws['env'].update (self.env)
 
-        try:
-            self.process = subprocess.Popen (self.cmd, **kws)
-        except OSError, e:
-            raise CommandError (str (e))
+        self.process = subprocess.Popen (self.cmd, **kws)
 
         return self.process
     
     def run_sync (self, stdin = None, timeout = None):
-        self.process = self._get_process ()
+        self._get_process ()
 
-        out = self._read_from_pipes (stdin, timeout = timeout)[0]
+        out, err, ret = self._read_from_pipes (stdin, timeout = timeout)
         
-        self.process = None
+        if ret != 0:
+            raise CommandError (self.cmd, ret, err)
 
         return out
         
     def run (self, stdin = None, parser_out_func = None, parser_error_func = None, timeout = None):
-        self.process = self._get_process ()
+        self._get_process ()
 
         def out_cb (out_chunk, out_data_l):
             out_data = out_data_l[0]
@@ -220,7 +227,13 @@ class Command:
         ret = self._read_from_pipes (stdin, (out_cb, out_data), (err_cb, err_data), timeout)[2]
 
         if ret != 0:
-            raise CommandError ('Error running %s' % self.cmd, ret)
+            raise CommandError (self.cmd, ret)
+
+    def get_pid (self):
+        try:
+            return self.process.pid
+        except:
+            return None
 
 if __name__ == '__main__':
     # Valid command without cwd
@@ -237,9 +250,22 @@ if __name__ == '__main__':
     cmd = Command ('invalid')
     try:
         cmd.run ()
-    except CommandError, e:
+    except Exception, e:
         print 'Command not found (%s)' % (str (e))
 
+    # Command returning non-zero
+    cmd = Command (['diff', '/etc/passwd', '/etc/group'])
+    try:
+        cmd.run_sync ()
+    except CommandError, e:
+        print "Error running command. Error: %s" % (e.error)
+
+    cmd = Command (['cat', '/foo'])
+    try:
+        cmd.run_sync ()
+    except CommandError, e:
+        print "Error running command. Error: %s" % (e.error)
+        
     # Run sync
     cmd = Command (['ls'], '/tmp/')
     print cmd.run_sync ()

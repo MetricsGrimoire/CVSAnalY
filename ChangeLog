@@ -1,5 +1,11 @@
 2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/Command.py:
+
+	Updated from misc. Several error handling improvements.
+	
+2009-03-04  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Skip files that are out of the repository root.
