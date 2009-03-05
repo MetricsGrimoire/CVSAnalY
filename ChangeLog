@@ -1,5 +1,12 @@
 2009-03-05  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/Database.py:
+
+	Remove file_id and commit_id from the promary key of the actions
+	table.
+	
+2009-03-05  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/main.py:
 
 	Remove trailing '/' of the given uri.

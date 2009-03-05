@@ -501,7 +501,7 @@ class MysqlDatabase (Database):
                             "FOREIGN KEY (file_id) REFERENCES files(id)," +
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)," +
                             "FOREIGN KEY (branch_id) REFERENCES branches(id), " +
-                            "PRIMARY KEY (id, file_id, commit_id)" + 
+                            "PRIMARY KEY (id)" + 
                             ") CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE file_copies (" +
                             "id INT primary key," +
