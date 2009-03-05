@@ -203,6 +203,7 @@ def main (argv):
             return 1
         uri = repo.get_uri_for_path (path)
     else:
+        uri = uri.strip ('/')
         repo = create_repository ('svn', uri)
 
     reader.set_repo (repo, path or uri)
