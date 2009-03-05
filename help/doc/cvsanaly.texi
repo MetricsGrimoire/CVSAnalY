@@ -63,10 +63,20 @@ Published by LibreSoft
 * Installation::                    How to install @code{CVSAnalY}.
 * Usage::                           Running @code{CVSAnalY}.
 * The configuration file::          The @code{CVSAnalY} configuration file.
-* Database::                        The design of the database.
+* Database::                        The Database design.
 * Extensions::                      @code{CVSAnalY} extensions. 
 * FAQ::                             Frequently Asked Questions.
 * GNU Free Documentation License::  License for copying this manual.
+
+@detailmenu
+
+The Database design
+
+* Database Overview::               Database schema overview.
+* Database schema details::         @code{CVSAnalY} database schema details.
+* Extensions schema::               @code{CVSAnalY} extensions schema details.
+
+@end detailmenu
 @end menu
 
 @node Overview, Installation, Top, Top
@@ -304,7 +314,90 @@ http://svn.gnome.org/svn/nautilus
 @chapter The @code{CVSAnalY} configuration file
 
 @node Database, FAQ, The configuration file, Top
-@chapter The design of the database
+@chapter The Database design
+
+@menu
+* Database Overview::               Database schema overview.
+* Database schema details::         @code{CVSAnalY} database schema details.
+* Extensions schema::               @code{CVSAnalY} extensions schema details.
+@end menu
+
+@node Database Overview, Database schema details, Database, Database
+@ifnottex
+@heading Database schema overview
+@end ifnottex
+
+The database is dived into two main parts. The first one consists on the
+set of tables that represents the history of the project based on the
+information from the repository log. These tables are filled by
+@code{CVSAnalY} during the parsing process exclusively with the
+information provided by the repository log. This is the main goal of
+@code{CVSAnalY} and, therefore, these tables will always be present in
+the schema independently of how @code{CVSAnalY} was executed or even
+what project has been analyzed. The second part is composed by tables
+created and filled by @code{CVSAnalY} extensions
+(@xref{Extensions}). The information provided by these tables depends on
+every @code{CVSAnalY} Extension, however the main goal is common: to
+complete the @code{CVSAnalY} schema with additional information directly
+related to the existing tables but not provided by the repository log. 
+
+TODO: screenshot
+
+@node Database schema details, Extensions schema, Database Overview, Database
+@section @code{CVSAnalY} database schema details
+
+The main table is scmlog. Every commit in the repository is represented
+by a record in the scmlog table. 
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+rev: It's the revision identifier in the repository. It's always unique
+in every repository. 
+
+@item
+committer_id: Committer identifier, that is, the identifier in the
+database of the person who did the commit.
+
+@item
+author_id: Author identifier. Some source control management systems,
+differentiate the person who did the commit from the person who actually
+made the changes. When not supported by the repository, this field will
+be @code{NULL}.
+
+@item
+date: The date when the commit was done. 
+
+@item
+message: The commit message. 
+
+@item
+composed_rev: it's a boolean to indicate whether the rev field is
+composed or not. This is needed because the rev field must be unique in
+every repository which is not possible in CVS since it uses revision
+numbers per file. The combination of a file path and its revision is
+what make a commit unique in a system like CVS. For this particular case
+the rev field is represented by the concatenation of the revision number, the
+pipe character ('|') and the file path. Here is an example for a CVS
+repository:
+
+@example
+1.1.2.1|/poppler/glib/demo/render.c
+@end example
+
+@item
+repository_id: Identifier in the database of the repository where the
+commit was done. 
+
+@end itemize
+
+
+@node Extensions schema, , Database schema details, Database
+@section @code{CVSAnalY} extensions schema details
+
 
 @node FAQ, GNU Free Documentation License, Database, Top
 @chapter Frequently Asked Questions
