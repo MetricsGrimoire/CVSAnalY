@@ -1,3 +1,10 @@
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Handle exceptions when running sloccount to create the FileMetrics
+	object, skipping the file if something went wrong.
+	
 2009-03-05  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* help/doc/cvsanaly.texi:

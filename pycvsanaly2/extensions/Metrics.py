@@ -773,8 +773,12 @@ class Metrics (Extension):
             if not os.path.exists (checkout_path):
                 printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
                 continue
-                
-            fm = create_file_metrics (checkout_path)
+
+            try:
+                fm = create_file_metrics (checkout_path)
+            except Exception, e:
+                printerr ("Error creating FileMetrics for %s@%s. Exception: %s", (checkout_path, rev, str (e)))
+                continue
                     
             # Measure the file
             printdbg ("Measuring %s @ %s", (checkout_path, rev))
