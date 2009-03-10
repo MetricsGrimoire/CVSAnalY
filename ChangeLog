@@ -1,5 +1,11 @@
 2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Fix checkouts and updates that I broke in a previous commit.
+	
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/Database.py:
 
 	Do not use Exception message attribute since it has been

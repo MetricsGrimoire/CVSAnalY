@@ -68,7 +68,7 @@ class Repository:
         done = False
         while not done:
             try:
-                self.repo.checkout (uri, rootdir, newdir, rev)
+                self.repo.checkout (uri, rootdir, newdir, rev=rev)
                 done = True
             except CommandError, e:
                 if tries > 0:
@@ -84,7 +84,7 @@ class Repository:
         done = False
         while not done:
             try:
-                self.repo.update (uri, rev)
+                self.repo.update (uri, rev=rev, force=force)
                 done = True
             except CommandError, e:
                 if tries > 0:
