@@ -41,6 +41,8 @@ import re
 
 class Repository:
 
+    RETRIES = 3
+    
     class SkipFileException (Exception):
         '''Raised when the file has not been checked out because
         it should be skipped'''
@@ -61,14 +63,46 @@ class Repository:
     def checkout (self, path, rev):
         raise NotImplementedError
 
+    def _checkout_try (self, uri, rootdir, newdir = None, branch = None, rev = None):
+        tries = self.RETRIES
+        done = False
+        while not done:
+            try:
+                self.repo.checkout (uri, rootdir, newdir, rev)
+                done = True
+            except CommandError, e:
+                if tries > 0:
+                    printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
+                    tries -= 1
+                elif tries == 0:
+                    raise e
+            except Exception, e:
+                raise e
+
+    def _update_try (self, uri, rev = None, force = False):
+        tries = self.RETRIES
+        done = False
+        while not done:
+            try:
+                self.repo.update (uri, rev)
+                done = True
+            except CommandError, e:
+                if tries > 0:
+                    printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
+                    tries -= 1
+                elif tries == 0:
+                    raise e
+            except Exception, e:
+                raise e
+
 class SVNRepository (Repository):
 
     def __init__ (self, db, cursor, repo, uri, rootdir):
         Repository.__init__ (self, db, cursor, repo, uri, rootdir)
         self.tops = {}
-        
-        self.repo.checkout ('.', self.rootdir, newdir=".", rev='0')
 
+        self._checkout_try ('.', self.rootdir, newdir=".", rev='0')    
+            
     def checkout (self, path, rev):
         root = self.repo_uri.replace (self.repo.get_uri (), '').strip ('/')
 
@@ -81,7 +115,7 @@ class SVNRepository (Repository):
             for i, dummy in enumerate (roots):
                 rpath = os.path.join (self.rootdir, '/'.join (roots[:i + 1]))
                 if not os.path.isdir (rpath):
-                    self.repo.update (rpath, rev=rev, force=True)
+                    self._update_try (rpath, rev=rev, force=True)
 
         path = path.replace (root, '')
         top = path.strip ('/').split ('/')[0]
@@ -92,7 +126,7 @@ class SVNRepository (Repository):
         
         last_rev = self.tops.get (top, 0)
         if last_rev != rev:
-            self.repo.update (os.path.join (self.rootdir, root, top), rev=rev, force=True)
+            self._update_try (os.path.join (self.rootdir, root, top), rev=rev, force=True)
             self.tops[top] = rev
 
 class CVSRepository (Repository):
@@ -101,9 +135,8 @@ class CVSRepository (Repository):
         Repository.__init__ (self, db, cursor, repo, uri, rootdir)
 
     def checkout (self, path, rev):
-        self.repo.checkout (path, self.rootdir, rev=rev)
+        self._checkout_try (path, self.rootdir, rev=rev)
 
-        
 def create_repository (db, cursor, repo, uri, rootdir):
     if repo.get_type () == 'svn':
         return SVNRepository (db, cursor, repo, uri, rootdir)

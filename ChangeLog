@@ -2,6 +2,13 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Try again up to 3 times when a checkout/update fails, just in case
+	it's short temporary network problem.
+	
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Execute all commands with the C locale.
 	
 2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
