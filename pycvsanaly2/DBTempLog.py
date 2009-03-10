@@ -41,6 +41,8 @@ class DBTempLog:
         self.writer_thread.setDaemon (True)
         self.writer_thread.start ()
 
+        self._need_clear = False
+
     def __create_table (self):
         cnn = self.db.connect ()
         cursor = cnn.cursor ()
@@ -82,13 +84,20 @@ class DBTempLog:
         cursor.close ()
         cnn.close ()
 
+        self._need_clear = True
+
     def __drop_table (self):
+        if not self._need_clear:
+            return
+        
         cnn = self.db.connect ()
         cursor = cnn.cursor ()
         cursor.execute ("DROP TABLE _temp_log")
         cnn.commit ()
         cursor.close ()
         cnn.close ()
+
+        self._need_clear = False
 
     def __writer (self, queue):
         cnn = self.db.connect ()

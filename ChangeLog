@@ -1,5 +1,12 @@
 2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBTempLog.py:
+
+	Add a flag to make sure we don't try to drop the temp table more
+	than once.
+	
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Handle exceptions when running sloccount to create the FileMetrics
