@@ -221,7 +221,7 @@ class FileMetricsC (FileMetrics):
             kdsi = self.kdsi
         
         # Running kdsi
-        cmd = Command ([kdsi, self.path])
+        cmd = Command ([kdsi, self.path], env = {'LC_ALL' : 'C'})
         try:
             outputtext = cmd.run_sync ()
         except CommandError, e:
@@ -251,7 +251,7 @@ class FileMetricsC (FileMetrics):
             halstead = self.halstead
         
         # Running halstead
-        cmd = Command ([halstead, self.path])
+        cmd = Command ([halstead, self.path], env = {'LC_ALL' : 'C'})
         try:
             outputtext = cmd.run_sync ()
         except CommandError, e:
@@ -300,7 +300,7 @@ class FileMetricsC (FileMetrics):
             mccabe = self.mccabe
         
         # Running mccabe
-        cmd = Command ([mccabe, '-n', self.path])
+        cmd = Command ([mccabe, '-n', self.path], env = {'LC_ALL' : 'C'})
         # The output of this tool is multiline (one line per function)
         try:
             outputlines = cmd.run_sync ().split ('\n')
@@ -362,7 +362,7 @@ class FileMetricsPython (FileMetrics):
     def get_CommentsBlank (self):
         self.__ensure_pymetrics ()
 
-        cmd = Command ([self.pymetrics, '-C', '-S', '-i', 'simple:SimpleMetric', self.path])
+        cmd = Command ([self.pymetrics, '-C', '-S', '-i', 'simple:SimpleMetric', self.path], env = {'LC_ALL' : 'C'})
         try:
             outputlines = cmd.run_sync ().split ('\n')
         except CommandError, e:
@@ -388,7 +388,7 @@ class FileMetricsPython (FileMetrics):
     def get_MccabeComplexity (self):
         self.__ensure_pymetrics ()
 
-        cmd = Command ([self.pymetrics, '-C', '-S', '-B', '-i', 'mccabe:McCabeMetric', self.path])
+        cmd = Command ([self.pymetrics, '-C', '-S', '-B', '-i', 'mccabe:McCabeMetric', self.path], env = {'LC_ALL' : 'C'})
         try:
             outputlines = cmd.run_sync ().split ('\n')
         except CommandError, e:
@@ -473,7 +473,7 @@ class FileMetricsCCCC (FileMetrics):
         tmpdir = mkdtemp ()
 
         command = [cccc, '--outdir=%s' % tmpdir, '--lang=%s' % self.cccc_lang, self.path]
-        cmd = Command (command)
+        cmd = Command (command, env = {'LC_ALL' : 'C'})
         try:
             cmd.run_sync ()
         except CommandError, e:
@@ -544,7 +544,7 @@ def create_file_metrics (path):
     lang = 'unknown'
     
     if sloccount is not None:
-        cmd = Command ([sloccount, '--wide', '--details', path])
+        cmd = Command ([sloccount, '--wide', '--details', path], env = {'LC_ALL' : 'C'})
         try:
             outputlines = cmd.run_sync ().split ('\n')
         except CommandError, e:

@@ -1,5 +1,11 @@
 2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Execute all commands with the C locale.
+	
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/DBTempLog.py:
 
 	Add a flag to make sure we don't try to drop the temp table more
