@@ -181,6 +181,12 @@ class Measures:
     def getattrs (self):
         return self.__dict__.keys ()
 
+    def set_error (self):
+        keys = self.__dict__.keys ()
+        keys.remove ('lang')
+        for key in keys:
+            self.__dict__[key] = -1
+
 class FileMetrics:
 
     def __init__ (self, path, lang='unknown', sloc=0):
@@ -703,7 +709,68 @@ class Metrics (Extension):
         
         cursor.executemany (statement (self.__insert__, self.db.place_holder), self.metrics)
         self.metrics = []
+
+    def __measure_file (self, fm, measures, checkout_path, rev):
+        printdbg ("Measuring %s @ %s", (checkout_path, rev))
         
+        profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.loc = fm.get_LOC ()
+        except Exception, e:
+            printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.loc = -1
+        profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+            
+        profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.sloc, measures.lang = fm.get_SLOCLang ()
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.sloc = measures.lang = - 1
+        profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+
+        profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.ncomment = measures.lcomment = measures.lblank = -1
+        profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+
+        profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.halstead_length, measures.halstead_vol, \
+                measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running HalsteadComplexity for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.halstead_length = measures.halstead_vol = measures.halstead_level = measures.halstead_md = -1
+        profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
+                
+        profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
+                measures.mccabe_mean, measures.mccabe_median, \
+                measures.nfunctions = fm.get_MccabeComplexity ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running MccabeComplexity for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
+            measures.mccabe_sum = measures.mccabe_min = measures.mccabe_max = \
+                measures.mccabe_mean = measures.mccabe_median = measures.nfunctions = -1
+        profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+
     def run (self, repo, uri, db):
         profiler_start ("Running Metrics extension")
         
@@ -788,93 +855,43 @@ class Metrics (Extension):
                 printdbg ("Skipping file %s", (relative_path,))
                 continue
 
+            measures = Measures ()
+
             try:
-                printdbg ("Checking out %s @ %s", (relative_path, rev))
+                printdbg ("Checking out %s@%s", (relative_path, rev))
                 rp.checkout (relative_path, rev)
             except Repository.SkipFileException:
                 printdbg ("Skipping file %s", (relative_path,))
                 continue
             except Exception, e:
                 printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
-            
-            checkout_path = os.path.join (tmpdir, relative_path)
-            # FIXME: is this still possible?
-            if os.path.isdir (checkout_path):
-                printdbg ("Skipping file %s", (relative_path,))
-                continue
+                measures.set_error ()
+                relative_path = None
 
-            if not os.path.exists (checkout_path):
-                printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
-                continue
+            if relative_path is not None:
+                checkout_path = os.path.join (tmpdir, relative_path)
+                if os.path.isdir (checkout_path):
+                    printdbg ("Skipping file %s", (relative_path,))
+                    continue
 
-            try:
-                fm = create_file_metrics (checkout_path)
-            except Exception, e:
-                printerr ("Error creating FileMetrics for %s@%s. Exception: %s", (checkout_path, rev, str (e)))
-                continue
+                if not os.path.exists (checkout_path):
+                    printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
+                    measures.set_error ()
+                else:
+                    try:
+                        fm = create_file_metrics (checkout_path)
+                        self.__measure_file (fm, measures, checkout_path, rev)
+                    except Exception, e:
+                        printerr ("Error creating FileMetrics for %s@%s. Exception: %s", (checkout_path, rev, str (e)))
+                        measures.set_error ()
                     
-            # Measure the file
-            printdbg ("Measuring %s @ %s", (checkout_path, rev))
-            measures = Measures ()
-
-            profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
-            try:
-                measures.loc = fm.get_LOC ()
-            except Exception, e:
-                printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
-
-            profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
-            try:
-                measures.sloc, measures.lang = fm.get_SLOCLang ()
-            except ProgramNotFound, e:
-                printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
-            except Exception, e:
-                printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
-
-            profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
-            try:
-                measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
-            except NotImplementedError:
-                pass
-            except ProgramNotFound, e:
-                printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
-            except Exception, e:
-                printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
-
-            profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
-            try:
-                measures.halstead_length, measures.halstead_vol, \
-                    measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
-            except NotImplementedError:
-                pass
-            except ProgramNotFound, e:
-                printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
-            except Exception, e:
-                printerr ('Error running HalsteadComplexity for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
-                
-            profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
-            try:
-                measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
-                    measures.mccabe_mean, measures.mccabe_median, \
-                    measures.nfunctions = fm.get_MccabeComplexity ()
-            except NotImplementedError:
-                pass
-            except ProgramNotFound, e:
-                printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
-            except Exception, e:
-                printerr ('Error running MccabeComplexity for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
-            profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
-
             self.metrics.append ((id_counter, file_id, commit_id, measures.lang, measures.sloc, measures.loc,
                                   measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
                                   measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
                                   measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
                                   measures.halstead_level, measures.halstead_md))
-
+            del measures
+            
             if len (self.metrics) >= self.MAX_METRICS:
                 profiler_start ("Inserting results in db")
                 self.__insert_many (write_cursor)

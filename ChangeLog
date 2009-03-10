@@ -2,6 +2,17 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Instead of skipping files when something fails, we now store it in
+	the database setting to -1 the metric values that failed. So, from
+	now on:
+	 - Positive values: metric was successfully calculated
+	 - Null values: metric is not supported for the file type
+	 - -1: metric is supported but failed
+	
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Fix checkouts and updates that I broke in a previous commit.
 	
 2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
