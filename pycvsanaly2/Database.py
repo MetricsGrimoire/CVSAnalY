@@ -254,12 +254,6 @@ def initialize_ids (db, cursor):
         
 class DatabaseException (Exception):
     '''Generic Database Exception'''
-
-    def __init__ (self, message = None):
-        Exception.__init__ (self)
-
-        self.message = message
-        
 class DatabaseDriverNotSupported (DatabaseException):
     '''Database driver is not supported'''
 class DatabaseNotFound (DatabaseException):

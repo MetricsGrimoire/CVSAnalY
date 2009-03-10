@@ -1,5 +1,12 @@
 2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/Database.py:
+
+	Do not use Exception message attribute since it has been
+	deprecated as of python 2.6 and it's not actually useful for us.
+	
+2009-03-10  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Try again up to 3 times when a checkout/update fails, just in case
