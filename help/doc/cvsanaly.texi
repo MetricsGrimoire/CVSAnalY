@@ -323,11 +323,9 @@ http://svn.gnome.org/svn/nautilus
 @end menu
 
 @node Database Overview, Database schema details, Database, Database
-@ifnottex
-@heading Database schema overview
-@end ifnottex
+@section Database schema overview
 
-The database is dived into two main parts. The first one consists on the
+The database is divided into two main parts. The first one consists on the
 set of tables that represents the history of the project based on the
 information from the repository log. These tables are filled by
 @code{CVSAnalY} during the parsing process exclusively with the
@@ -343,8 +341,28 @@ related to the existing tables but not provided by the repository log.
 
 TODO: screenshot
 
+@subsection General conventions
+
+The database has been designed according to the following rules:
+
+@itemize @bullet
+
+@item
+Internal identifier: every table has an internal identifier called
+@code{id}. It's an auto-incremental integer and it's always the primary key of
+the table.
+
+@item
+Foreign keys: all fields with the suffix @code{_id} are foreign keys so
+that it's easy to identify them quickly. 
+
+@end itemize
+
+
 @node Database schema details, Extensions schema, Database Overview, Database
 @section @code{CVSAnalY} database schema details
+
+@subsubheading The scmlog table
 
 The main table is scmlog. Every commit in the repository is represented
 by a record in the scmlog table. 
@@ -375,7 +393,7 @@ date: The date when the commit was done.
 message: The commit message. 
 
 @item
-composed_rev: it's a boolean to indicate whether the rev field is
+composed_rev: It's a boolean to indicate whether the rev field is
 composed or not. This is needed because the rev field must be unique in
 every repository which is not possible in CVS since it uses revision
 numbers per file. The combination of a file path and its revision is
@@ -394,6 +412,62 @@ commit was done.
 
 @end itemize
 
+@subsubheading The actions table
+
+This table describes the different actions performed in every commit. In
+systems like CVS, where the commit is limited to a single file, there
+will be only one record in the actions table for every commit. However,
+most of the version control systems support atomic commits, where
+several actions are carried out on several files@footnote{With
+@code{file} we actually refer to both file and directory}. 
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+type: It's a character representing the type of the action. Currently
+supported actions are:
+
+@itemize @bullet
+@item
+@code{'A'}: The file has been added to the repository. 
+@item
+@code{'M'}: The file has been modified. It's the most common action. 
+@item
+@code{'D'}: The files has been deleted. 
+@item
+@code{'V'}: The file has been renamed. This might be a simple rename or
+that the file has been moved to another path keeping its name or not. In
+any case, the file identifier will never change after a @code{'V'}
+action.
+@item
+@code{'C'}: The file has been copied. It's similar to an @code{'A'}
+action, since a new file is added to a repository, but in this case
+it was copied from another existing file. 
+@item
+@code{'R'}: The file has been replaced. This means that an existing file
+is removed, and a new one with the same name is added. In addition, another
+existing file might be used as a base for the replacement, that is, the
+new file is a copy of such an existing file. 
+@end itemize
+
+Not all of the action types are always supported, for example, for CVS
+repositories only @code{'A'}, @code{'M'} and @code{'D'} actions are
+supported. 
+
+@item
+commit_id: It's the identifier of the commit where the action was
+performed. It's a foreign key that references the @code{id} field of
+@code{scmlog} table.
+
+@item
+branch_id: It's the identifier of the branch where the action was
+performed. It's a foreign key that references the @code{id} field of
+@code{branches} table. 
+
+@end itemize
 
 @node Extensions schema, , Database schema details, Database
 @section @code{CVSAnalY} extensions schema details
@@ -401,6 +475,19 @@ commit was done.
 
 @node FAQ, GNU Free Documentation License, Database, Top
 @chapter Frequently Asked Questions
+
+@section Database
+
+@subsection Why aren't branches associated to commits instead of actions?
+
+While it's logical to think that a commit is always associated to a
+single branch, that's not true in SVN repositories. The fact that
+branches don't really exist in SVN (they are just paths in the
+repository), makes possible to find commits involving files from different
+branches for the same revision. It happens, indeed, more often
+than expected. So, in most of the cases, all actions referencing the
+same commit will reference the same branch too, but we need to keep the
+relationship between action and branch in order to support all other cases. 
 
 @raisesections
 @include fdl.texi
