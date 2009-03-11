@@ -32,6 +32,7 @@ from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from pycvsanaly2.Command import Command, CommandError, CommandRunningError
+from repositoryhandler.backends import RepositoryCommandError
 from tempfile import mkdtemp
 from FilePaths import FilePaths
 from xml.sax import handler as xmlhandler, make_parser
@@ -70,7 +71,7 @@ class Repository:
             try:
                 self.repo.checkout (uri, rootdir, newdir, rev=rev)
                 done = True
-            except CommandError, e:
+            except RepositoryCommandError, e:
                 if tries > 0:
                     printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
                     tries -= 1
@@ -86,7 +87,7 @@ class Repository:
             try:
                 self.repo.update (uri, rev=rev, force=force)
                 done = True
-            except CommandError, e:
+            except RepositoryCommandError, e:
                 if tries > 0:
                     printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
                     tries -= 1

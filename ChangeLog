@@ -1,5 +1,12 @@
 2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Use RepositoryHandler exceptions instead of Command exceptions
+	when running commands through RepositoryHandler.
+	
+2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/__init__.py:
 
 	Fix a typo.
