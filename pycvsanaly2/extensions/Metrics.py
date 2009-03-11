@@ -263,7 +263,7 @@ class FileMetricsC (FileMetrics):
         # Running kdsi
         cmd = Command ([kdsi, self.path], env = {'LC_ALL' : 'C'})
         try:
-            outputtext = cmd.run_sync ()
+            outputtext = cmd.run ()
         except CommandError, e:
             if e.error:
                 printerr ('Error running kdsi: %s', (e.error,))
@@ -293,7 +293,7 @@ class FileMetricsC (FileMetrics):
         # Running halstead
         cmd = Command ([halstead, self.path], env = {'LC_ALL' : 'C'})
         try:
-            outputtext = cmd.run_sync ()
+            outputtext = cmd.run ()
         except CommandError, e:
             if e.error:
                 printerr ('Error running halstead: %s', (e.error,))
@@ -343,7 +343,7 @@ class FileMetricsC (FileMetrics):
         cmd = Command ([mccabe, '-n', self.path], env = {'LC_ALL' : 'C'})
         # The output of this tool is multiline (one line per function)
         try:
-            outputlines = cmd.run_sync ().split ('\n')
+            outputlines = cmd.run ().split ('\n')
         except CommandError, e:
             if e.error:
                 printerr ('Error running mccabe: %s', (e.error,))
@@ -404,7 +404,7 @@ class FileMetricsPython (FileMetrics):
 
         cmd = Command ([self.pymetrics, '-C', '-S', '-i', 'simple:SimpleMetric', self.path], env = {'LC_ALL' : 'C'})
         try:
-            outputlines = cmd.run_sync ().split ('\n')
+            outputlines = cmd.run ().split ('\n')
         except CommandError, e:
             if e.error:
                 printerr ('Error running pymetrics: %s', (e.error,))
@@ -430,7 +430,7 @@ class FileMetricsPython (FileMetrics):
 
         cmd = Command ([self.pymetrics, '-C', '-S', '-B', '-i', 'mccabe:McCabeMetric', self.path], env = {'LC_ALL' : 'C'})
         try:
-            outputlines = cmd.run_sync ().split ('\n')
+            outputlines = cmd.run ().split ('\n')
         except CommandError, e:
             if e.error:
                 printerr ('Error running pymetrics: %s', (e.error,))
@@ -515,7 +515,7 @@ class FileMetricsCCCC (FileMetrics):
         command = [cccc, '--outdir=%s' % tmpdir, '--lang=%s' % self.cccc_lang, self.path]
         cmd = Command (command, env = {'LC_ALL' : 'C'})
         try:
-            cmd.run_sync ()
+            cmd.run ()
         except CommandError, e:
             if e.error:
                 printerr ('Error running cccc: %s', (e.error,))
@@ -586,7 +586,7 @@ def create_file_metrics (path):
     if sloccount is not None:
         cmd = Command ([sloccount, '--wide', '--details', path], env = {'LC_ALL' : 'C'})
         try:
-            outputlines = cmd.run_sync ().split ('\n')
+            outputlines = cmd.run ().split ('\n')
         except CommandError, e:
             if e.error:
                 printerr ('Error running sloccount: %s', (e.error,))

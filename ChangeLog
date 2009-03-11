@@ -1,5 +1,13 @@
 2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/Command.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Update Command from misc and do not use run_sync() in Metrics
+	since it's now deprecated. 
+	
+2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Use RepositoryHandler exceptions instead of Command exceptions

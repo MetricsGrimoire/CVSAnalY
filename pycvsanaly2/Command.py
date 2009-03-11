@@ -164,6 +164,37 @@ class Command:
         
         return out_data, err_data, ret
 
+    def _run_with_callbacks (self, stdin = None, parser_out_func = None, parser_error_func = None, timeout = None):
+        out_func = err_func = None
+        
+        def out_cb (out_chunk, out_data_l):
+            out_data = out_data_l[0]
+            out_data += out_chunk
+            while '\n' in out_data:
+                pos = out_data.find ('\n')
+                parser_out_func (out_data[:pos + 1])
+                out_data = out_data[pos + 1:]
+            out_data_l[0] = out_data
+
+        def err_cb (err_chunk, err_data_l):
+            err_data = err_data_l[0]
+            err_data += err_chunk
+            while '\n' in err_data:
+                pos = err_data.find ('\n')
+                parser_error_func (err_data[:pos + 1])
+                err_data = err_data[pos + 1:]
+            err_data_l[0] = err_data
+
+        if parser_out_func is not None:
+            out_data = [""]
+            out_func = (out_cb, out_data)
+
+        if parser_error_func is not None:
+            err_data = [""]
+            err_func = (err_cb, err_data)
+        
+        return self._read_from_pipes (stdin, out_func, err_func, timeout)
+
     def _get_process (self):
         if self.process is not None:
             return self.process
@@ -184,50 +215,26 @@ class Command:
         self.process = subprocess.Popen (self.cmd, **kws)
 
         return self.process
-    
+
+    # We keep this only for backwards compatibility,
+    # but it doesn't make sense, since both run and run_sync
+    # have been always synchronous
     def run_sync (self, stdin = None, timeout = None):
-        self._get_process ()
-
-        out, err, ret = self._read_from_pipes (stdin, timeout = timeout)
-        
-        if ret != 0:
-            raise CommandError (self.cmd, ret, err)
-
-        return out
+        return self.run (stdin, None, None, timeout)
         
     def run (self, stdin = None, parser_out_func = None, parser_error_func = None, timeout = None):
         self._get_process ()
 
-        def out_cb (out_chunk, out_data_l):
-            out_data = out_data_l[0]
-            out_data += out_chunk
-            while '\n' in out_data:
-                pos = out_data.find ('\n')
-                if parser_out_func is not None:
-                    parser_out_func (out_data[:pos + 1])
-                else:
-                    sys.stdout.write (out_data[:pos + 1])
-                out_data = out_data[pos + 1:]
-            out_data_l[0] = out_data
-
-        def err_cb (err_chunk, err_data_l):
-            err_data = err_data_l[0]
-            err_data += err_chunk
-            while '\n' in err_data:
-                pos = err_data.find ('\n')
-                if parser_error_func is not None:
-                    parser_error_func (err_data[:pos + 1])
-                else:
-                    sys.stderr.write (err_data[:pos + 1])
-                err_data = err_data[pos + 1:]
-            err_data_l[0] = err_data
-        
-        out_data = [""]
-        err_data = [""]
-        ret = self._read_from_pipes (stdin, (out_cb, out_data), (err_cb, err_data), timeout)[2]
-
+        if parser_out_func is None and parser_error_func is None:
+            out, err, ret = self._read_from_pipes (stdin, timeout = timeout)
+        else:
+            out, err, ret = self._run_with_callbacks (stdin, parser_out_func, parser_error_func, timeout)
+            
         if ret != 0:
-            raise CommandError (self.cmd, ret)
+            raise CommandError (self.cmd, ret, err)
+
+        if parser_out_func is None:
+            return out
 
     def get_pid (self):
         try:
