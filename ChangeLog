@@ -1,5 +1,13 @@
 2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/ExtensionsManager.py:
+	* pycvsanaly2/extensions/__init__.py:
+
+	Do not use Exception message attribute since it has been
+	deprecated as of python 2.6.
+	
+2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* help/doc/cvsanaly.texi:
 
 	Update documentation

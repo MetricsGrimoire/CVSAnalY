@@ -55,7 +55,7 @@ class ExtensionsManager:
         try:
             extension.run (repo, uri, db)
         except ExtensionRunError, e:
-            printerr ("Error running extension %s: %s", (name, e.message))
+            printerr ("Error running extension %s: %s", (name, str (e)))
             return False
 
         return True

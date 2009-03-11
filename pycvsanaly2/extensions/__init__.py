@@ -23,11 +23,7 @@ class ExtensionUnknownError (Exception):
     '''Unkown extension'''
 
 class ExtensionRunError (Exception):
-    '''Error runnin extension'''
-
-    def __init__ (self, message):
-        Exception.__init__ (self)
-        self.message = message
+    '''Error running extension'''
 
 class Extension:
 
