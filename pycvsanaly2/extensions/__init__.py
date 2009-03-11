@@ -44,7 +44,7 @@ def get_extension (extension_name):
             pass
 
     if extension_name not in _extensions:
-        raise ExtensionUnknownError ('Extension %s not registered' % engine_name)
+        raise ExtensionUnknownError ('Extension %s not registered' % extension_name)
 
     return _extensions[extension_name]
 
