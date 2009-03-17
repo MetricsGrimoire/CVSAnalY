@@ -1,3 +1,9 @@
+2009-03-17  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBTempLog.py:
+
+	Initialize _need_clear before creating the temp table.
+	
 2009-03-11  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/Command.py:

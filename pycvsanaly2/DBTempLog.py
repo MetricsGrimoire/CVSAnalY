@@ -33,6 +33,8 @@ class DBTempLog:
     def __init__ (self, db):
         self.db = db
 
+        self._need_clear = False
+
         self.__create_table ()
         
         self.queue = AsyncQueue (50)
@@ -40,8 +42,6 @@ class DBTempLog:
                                                args=(self.queue,))
         self.writer_thread.setDaemon (True)
         self.writer_thread.start ()
-
-        self._need_clear = False
 
     def __create_table (self):
         cnn = self.db.connect ()
