@@ -162,6 +162,15 @@
 	
 2009-03-03  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/utils.py:
+
+	Use a config directory in the user home directory instead of a
+	file. It'll be used to store the some caches. Rename the config
+	file under /etc from cvsanaly to cvsanaly2.
+
+2009-03-03  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Add debug messages when skipping files.

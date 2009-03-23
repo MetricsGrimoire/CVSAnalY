@@ -109,18 +109,26 @@ class Config:
 
     def load (self):
         import os
+        from utils import cvsanaly_dot_dir, printout
 
         # First look in /etc
         # FIXME /etc is not portable
-        config_file = os.path.join ('/etc', 'cvsanaly')
+        config_file = os.path.join ('/etc', 'cvsanaly2')
         if os.path.isfile (config_file):
             self.__load_from_file (config_file)
 
         # Then look at $HOME
-        config_file = os.path.join (os.environ.get ('HOME'), '.cvsanaly')
+        config_file = os.path.join (cvsanaly_dot_dir (), 'config')
         if os.path.isfile (config_file):
             self.__load_from_file (config_file)
-
+        else:
+            # If there's an old file, migrate it
+            old_config = os.path.join (os.environ.get ('HOME'), '.cvsanaly')
+            if os.path.isfile (old_config):
+                printout ("Old config file found in %s, moving to %s", (old_config, config_file))
+                os.rename (old_config, config_file)
+                self.__load_from_file (config_file)
+            
     def load_from_file (self, path):
         self.__load_from_file (path)
          

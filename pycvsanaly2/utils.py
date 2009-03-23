@@ -19,6 +19,7 @@
 import sys
 import re
 import os
+import errno
 
 from Config import Config
 
@@ -92,6 +93,25 @@ def remove_directory (path):
 
     os.rmdir (path)
 
-
+_dot_dir = None
     
+def cvsanaly_dot_dir ():
+    global _dot_dir
+    
+    if _dot_dir is not None:
+        return _dot_dir
+    _dot_dir = os.path.join (os.environ.get ('HOME'), '.cvsanaly2')
+    try:
+        os.mkdir (_dot_dir, 0700)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            if not os.path.isdir (_dot_dir):
+                raise
+        else:
+            raise
+        
+    return _dot_dir
 
+if __name__ == '__main__':
+    print cvsanaly_dot_dir ()
+    
