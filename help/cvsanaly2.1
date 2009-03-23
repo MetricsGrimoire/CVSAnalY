@@ -1,6 +1,6 @@
 .TH CVSANALY2 1 "16 Feb 2009"
 .SH NAME
-\fBCVSAnalY\fP \- A Source Code Repositories Analizer
+\fBCVSAnalY\fP \- A Source Code Repositories Analyzer
 .SH SYNOPSIS
 .B cvsanaly2
 .RI [ options ] [ URI ]
@@ -59,6 +59,10 @@ running the log command for the repository.
 .TP
 \fB\-s, \-\-save\-logfile=<filename>\fR
 Save the input log information to the given path.
+
+.TP
+\fB\-n, \-\-no\-parse\fR
+Skip the parsing process. It only makes sense in conjunction with \-\-extensions
 
 .TP
 \fB\-\-extensions=extension1,extension2,...\fR

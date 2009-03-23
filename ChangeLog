@@ -1,5 +1,14 @@
 2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* help/cvsanaly2.1:
+	* pycvsanaly2/Config.py:
+	* pycvsanaly2/main.py:
+
+	Add a command line option (-n, --no-parse) to be able to skip the
+	parsing process when used in conjunction with --extensions.
+	
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/DBContentHandler.py:
 
 	Return from __insert_many when there's nothing to insert.

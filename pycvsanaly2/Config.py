@@ -29,7 +29,8 @@ class Config:
                        'quiet'        : False,
                        'profile'      : False,
                        'repo_logfile' : None,
-                       'save_logfile' : None, 
+                       'save_logfile' : None,
+                       'no_parse'     : False,
                        'db_driver'    : 'mysql',
                        'db_user'      : 'operator',
                        'db_password'  : None, 
@@ -76,6 +77,10 @@ class Config:
             pass
         try:
             self.save_logfile = config.save_logfile
+        except:
+            pass
+        try:
+            self.no_parse = config.no_parse
         except:
             pass
         try:

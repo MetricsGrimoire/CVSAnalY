@@ -66,6 +66,7 @@ Options:
   -f, --config-file              Use a custom configuration file
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
+  -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
       --extensions=ext1,ext2,    List of extensions to run        
 
 Database:
@@ -83,10 +84,10 @@ Metrics Options:
 
 def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVgqf:l:s:u:p:d:H:"
+    short_opts = "hVgqnf:l:s:u:p:d:H:"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
-                 "repo-logfile=", "save-logfile=", "db-user=", "db-password=",
+                 "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
                  "db-hostname=", "db-database=", "db-driver=", "extensions=", "metrics-all"]
 
     # Default options
@@ -94,6 +95,7 @@ def main (argv):
     quiet = None
     profile = None
     configfile = None
+    no_parse = None
     user = None
     passwd = None
     hostname = None
@@ -123,6 +125,8 @@ def main (argv):
             quiet = True
         elif opt in ("--profile", ):
             profile = True
+        elif opt in ("--no-parse", "-n"):
+            no_parse = True
         elif opt in ("-f", "--config-file"):
             configfile = value
         elif opt in ("-u", "--db-user"):
@@ -169,6 +173,8 @@ def main (argv):
         config.repo_logfile = logfile
     if save_logfile is not None:
         config.save_logfile = save_logfile
+    if no_parse is not None:
+        config.no_parse = no_parse
     if driver is not None:
         config.db_driver = driver
     if user is not  None:
@@ -184,11 +190,13 @@ def main (argv):
     if metrics_all is not None:
         config.metrics_all = metrics_all
 
+    if not config.extensions and config.no_parse:
+        # Do nothing!!!
+        return 0
+
     if config.debug:
         import repositoryhandler.backends
         repositoryhandler.backends.DEBUG = True
-
-    reader = LogReader ()
 
     # Create repository
     path = uri_to_filename (uri)
@@ -206,22 +214,25 @@ def main (argv):
         uri = uri.strip ('/')
         repo = create_repository ('svn', uri)
 
-    reader.set_repo (repo, path or uri)
+    if not config.no_parse:
+        # Create reader
+        reader = LogReader ()
+        reader.set_repo (repo, path or uri)
 
-    # Create parser
-    if config.repo_logfile is not None:
-        parser = create_parser_from_logfile (config.repo_logfile)
-        reader.set_logfile (config.repo_logfile)
-    else:
-        parser = create_parser_from_repository (repo)
+        # Create parser
+        if config.repo_logfile is not None:
+            parser = create_parser_from_logfile (config.repo_logfile)
+            reader.set_logfile (config.repo_logfile)
+        else:
+            parser = create_parser_from_repository (repo)
 
-    parser.set_repository (repo, uri)
+        parser.set_repository (repo, uri)
 
-    if parser is None:
-        printerr ("Failed to create parser")
-        return 1
+        if parser is None:
+            printerr ("Failed to create parser")
+            return 1
 
-    # TODO: check parser type == logfile type
+        # TODO: check parser type == logfile type
 
     try:
         emg = ExtensionsManager (config.extensions)
@@ -264,12 +275,20 @@ def main (argv):
         printerr ("Database error: %s", (e.message))
         return 1
 
+    if config.no_parse and not db_exists:
+        printerr ("The option --no-parse must be used with an already filled database")
+        return 1
+
     # Add repository to Database
     if db_exists:
         cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
         rep = cursor.fetchone ()
         initialize_ids (db, cursor)
         cursor.close ()
+
+    if config.no_parse and rep is None:
+        printerr ("The option --no-parse must be used with an already filled database")
+        return 1
         
     if not db_exists or rep is None:
         # We consider the name of the repo as the last item of the root path
@@ -282,22 +301,24 @@ def main (argv):
 
     cnn.close ()
 
-    # Start the parsing process
-    def new_line (line, user_data):
-        parser, writer = user_data
+    if not config.no_parse:
+        # Start the parsing process
+        printout ("Parsing log for %s (%s)", (path or uri, repo.get_type ()))
         
-        parser.feed (line)
-        writer and writer.add_line (line)
-
-    writer = None
-    if config.save_logfile is not None:
-        writer = LogWriter (config.save_logfile)
+        def new_line (line, user_data):
+            parser, writer = user_data
         
-    printout ("Parsing log for %s (%s)", (path or uri, repo.get_type ()))
-    parser.set_content_handler (DBProxyContentHandler (db))
-    reader.start (new_line, (parser, writer))
-    parser.end ()
-    writer and writer.close ()
+            parser.feed (line)
+            writer and writer.add_line (line)
+        
+        writer = None
+        if config.save_logfile is not None:
+            writer = LogWriter (config.save_logfile)
+        
+        parser.set_content_handler (DBProxyContentHandler (db))
+        reader.start (new_line, (parser, writer))
+        parser.end ()
+        writer and writer.close ()
 
     # Run extensions
     printout ("Executing extensions")
