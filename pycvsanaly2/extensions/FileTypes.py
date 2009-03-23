@@ -136,9 +136,10 @@ class FileTypes (Extension):
                 
                 type = guess_file_type (file_name)
                 types.append (DBFileType (None, type, file_id))
-                    
-            file_types = [(type.id, type.file_id, type.type) for type in types]
-            write_cursor.executemany (statement (DBFileType.__insert__, self.db.place_holder), file_types)
+
+            if types:
+                file_types = [(type.id, type.file_id, type.type) for type in types]
+                write_cursor.executemany (statement (DBFileType.__insert__, self.db.place_holder), file_types)
 
             rs = cursor.fetchmany ()
             
