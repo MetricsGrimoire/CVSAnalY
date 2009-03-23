@@ -25,7 +25,7 @@ from repositoryhandler.backends.watchers import DIFF
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-from pycvsanaly2.utils import to_utf8, printerr
+from pycvsanaly2.utils import to_utf8, printerr, uri_to_filename
 from pycvsanaly2.FindProgram import find_program
 
 class DBCommitLines:
