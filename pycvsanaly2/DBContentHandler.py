@@ -137,6 +137,9 @@ class DBContentHandler (ContentHandler):
             raise CacheFileMismatch (msg)
 
     def __insert_many (self):
+        if not self.actions and not self.commits:
+            return
+        
         cursor = self.cursor
 
         if self.actions:

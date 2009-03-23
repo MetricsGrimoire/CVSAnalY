@@ -1,5 +1,11 @@
 2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/DBContentHandler.py:
+
+	Return from __insert_many when there's nothing to insert.
+	
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/FileTypes.py:
 
 	Do not run executemany if we don't have any data to insert.
