@@ -1,5 +1,12 @@
 2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Fix incremental stuff in Metrics extension and update the contents
+	of the table for the metrics that failed on previous executions.
+	
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/DBContentHandler.py:
 	* pycvsanaly2/DBTempLog.py:
 	* pycvsanaly2/utils.py:

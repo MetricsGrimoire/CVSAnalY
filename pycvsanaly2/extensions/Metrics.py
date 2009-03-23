@@ -696,13 +696,25 @@ class Metrics (Extension):
         cnn.commit ()
         cursor.close ()
 
-    def __get_metrics (self, cnn):
-        cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT file_id, commit_id from metrics", self.db.place_holder))
-        metrics = [(res[0], res[1]) for res in cursor.fetchall ()]
-        cursor.close ()
-        
-        return metrics
+    def __get_metrics (self, cursor, repoid):
+        query = "select m.file_id, m.commit_id from metrics m, files f " + \
+                "where m.file_id = f.id and repository_id = ?"
+        cursor.execute (statement (query, self.db.place_holder), (repoid,))
+        return [(res[0], res[1]) for res in cursor.fetchall ()]
+
+    def __get_metrics_failed (self, cursor, repoid):
+        query = "select m.file_id, m.commit_id from metrics m, files f " + \
+                "where m.file_id = f.id and repository_id = ? and " + \
+                "(sloc = -1 or loc = -1 or " + \
+                "ncomment = -1 or lcomment = -1 or " + \
+                "lblank = -1 or nfunctions = -1 or " + \
+                "mccabe_max = -1 or mccabe_min = -1 or mccabe_sum = -1 or " + \
+                "mccabe_mean = -1 or mccabe_median = -1 or " + \
+                "halstead_length = -1 or halstead_vol = -1 or " + \
+                "halstead_level = -1 or halstead_md = -1)"
+
+        cursor.execute (statement (query, self.db.place_holder), (repoid,))
+        return [(res[0], res[1]) for res in cursor.fetchall ()]
 
     def __insert_many (self, cursor):
         if not self.metrics:
@@ -780,25 +792,11 @@ class Metrics (Extension):
         fp = FilePaths (db)
         
         cnn = self.db.connect ()
-        id_counter = 1
-        metrics = []
-
-        try:
-            self.__create_table (cnn)
-        except TableAlreadyExists:
-            cursor = cnn.cursor ()
-            cursor.execute (statement ("SELECT max(id) from metrics", db.place_holder))
-            id = cursor.fetchone ()[0]
-            if id is not None:
-                id_counter = id + 1
-            cursor.close ()
-
-            metrics = self.__get_metrics (cnn)
-        except Exception, e:
-            raise ExtensionRunError (str(e))
-
         read_cursor = cnn.cursor ()
         write_cursor = cnn.cursor ()
+        
+        id_counter = 1
+        metrics = metrics_failed = []
 
         # Temp dir for the checkouts
         tmpdir = mkdtemp ()
@@ -811,6 +809,32 @@ class Metrics (Extension):
             raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
         repoid = rp.get_repo_id ()
+
+        try:
+            self.__create_table (cnn)
+        except TableAlreadyExists:
+            cursor = cnn.cursor ()
+            if not self.config.metrics_all:
+                # HEAD, remove the previous content for the repository
+                # FIXME: we could probably improve this case
+                query = "DELETE m.* from metrics m, files f " + \
+                        "where f.id = m.file_id and " + \
+                        "f.repository_id = ?"
+                cursor.execute (statement (query, db.place_holder), (repoid,));
+                cnn.commit ()
+                
+            cursor.execute (statement ("SELECT max(id) from metrics", db.place_holder))
+            id = cursor.fetchone ()[0]
+            if id is not None:
+                id_counter = id + 1
+
+            cursor.close ()
+        except Exception, e:
+            raise ExtensionRunError (str(e))
+
+        if id_counter > 1:
+            metrics = self.__get_metrics (read_cursor, repoid)
+            metrics_failed = self.__get_metrics_failed (read_cursor, repoid)
             
         # Obtain files and revisions
         
@@ -839,7 +863,13 @@ class Metrics (Extension):
 
         read_cursor.execute (statement (query, db.place_holder), (repoid,))
         for revision, commit_id, file_id, composed in read_cursor.fetchall ():
-            if (file_id, commit_id) in metrics:
+            failed = False
+            
+            if (file_id, commit_id) in metrics_failed:
+                printdbg ("%d@%d is already in the database, but it failed, try again", (file_id, commit_id))
+                failed = True
+            elif (file_id, commit_id) in metrics:
+                printdbg ("%d@%d is already in the database, skip it", (file_id, commit_id))
                 continue
                 
             if composed:
@@ -885,12 +915,25 @@ class Metrics (Extension):
                     except Exception, e:
                         printerr ("Error creating FileMetrics for %s@%s. Exception: %s", (checkout_path, rev, str (e)))
                         measures.set_error ()
-                    
-            self.metrics.append ((id_counter, file_id, commit_id, measures.lang, measures.sloc, measures.loc,
-                                  measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
-                                  measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
-                                  measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
-                                  measures.halstead_level, measures.halstead_md))
+
+            if failed:
+                query = "update metrics set lang=?, sloc=?, loc=?, " + \
+                        "ncomment=?, lcomment=?, lblank=?, nfunctions=?, " + \
+                        "mccabe_max=?, mccabe_min=?, mccabe_sum=?, mccabe_mean=?, mccabe_median=?, " + \
+                        "halstead_length=?, halstead_vol=?, halstead_level=?, halstead_md=? " + \
+                        "where file_id = ? and commit_id = ?"
+                write_cursor.execute (statement (query, db.place_holder),
+                                      (measures.lang, measures.sloc, measures.loc,
+                                       measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
+                                       measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
+                                       measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
+                                       measures.halstead_level, measures.halstead_md, file_id, commit_id))
+            else:
+                self.metrics.append ((id_counter, file_id, commit_id, measures.lang, measures.sloc, measures.loc,
+                                      measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
+                                      measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
+                                      measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
+                                      measures.halstead_level, measures.halstead_md))
             del measures
             
             if len (self.metrics) >= self.MAX_METRICS:
