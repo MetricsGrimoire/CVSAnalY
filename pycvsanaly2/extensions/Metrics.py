@@ -60,6 +60,9 @@ class Repository:
         
     def get_repo_id (self):
         return self.repo_id
+
+    def get_srcdir (self):
+        return self.rootdir
         
     def checkout (self, path, rev):
         raise NotImplementedError
@@ -138,11 +141,49 @@ class CVSRepository (Repository):
     def checkout (self, path, rev):
         self._checkout_try (path, self.rootdir, rev=rev)
 
+class GitRepository (Repository):
+
+    def __init__ (self, db, cursor, repo, uri, rootdir):
+        Repository.__init__ (self, db, cursor, repo, uri, rootdir)
+        self.git = find_program ('git')
+        if self.git is None:
+            raise ProgramNotFound
+
+        name = os.path.basename (uri.rstrip ('/'))
+        self.srcdir = os.path.join (self.rootdir, name)
+
+        self.repo.checkout ('.', self.rootdir, newdir=name)
+
+    def get_srcdir (self):
+        return self.srcdir
+        
+    def __checkout (self, path, rev):
+        # In RepositoryHandler git checkout is actually a
+        # clone for consistency with the other backends.
+        # So we need to implement file checkout here
+        
+        cmd = ['git', 'checkout', rev, path]
+        c = Command (cmd, self.srcdir)
+        try:
+            c.run ()
+        except CommandError, e:
+            if e.error:
+                printerr ('Error running git chekcout: %s', (e.error,))
+            raise e
+        
+    def checkout (self, path, rev):
+        # There's no network, so it should never fail.
+        # I think it's safe to run checkout directly
+        # insted of _checkout_try.
+        self.__checkout (path, rev)
+
 def create_repository (db, cursor, repo, uri, rootdir):
     if repo.get_type () == 'svn':
         return SVNRepository (db, cursor, repo, uri, rootdir)
     elif repo.get_type () == 'cvs':
         return CVSRepository (db, cursor, repo, uri, rootdir)
+    elif repo.get_type () == 'git':
+        return GitRepository (db, cursor, repo, uri, rootdir)
     else:
         raise NotImplementedError
 
@@ -811,6 +852,7 @@ class Metrics (Extension):
             raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
         repoid = rp.get_repo_id ()
+        srcdir = rp.get_srcdir ()
 
         try:
             self.__create_table (cnn)
@@ -903,7 +945,7 @@ class Metrics (Extension):
                 relative_path = None
 
             if relative_path is not None:
-                checkout_path = os.path.join (tmpdir, relative_path)
+                checkout_path = os.path.join (srcdir, relative_path)
                 if os.path.isdir (checkout_path):
                     printdbg ("Skipping file %s", (relative_path,))
                     continue

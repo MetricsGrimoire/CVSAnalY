@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Add git support in Metrics extension.
+	
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Remove the tempdir used in Metrics when the extension is aborted.
 	
 2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
