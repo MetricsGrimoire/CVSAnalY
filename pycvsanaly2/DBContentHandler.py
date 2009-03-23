@@ -24,10 +24,14 @@ from Database import (DBRepository, DBLog, DBFile, DBFileLink, DBAction,
                       DBFileCopy, DBBranch, DBPerson, DBTag, DBTagRev,
                       statement)
 from profile import profiler_start, profiler_stop
-from utils import printdbg, printout, to_utf8
+from utils import printdbg, printout, to_utf8, cvsanaly_cache_dir
+from cPickle import dump, load
 
 class FileNotInCache (Exception):
     '''File is not in Cache'''
+
+class CacheFileMismatch (Exception):
+    '''File cache doesn't match with the Database'''
 
 class DBContentHandler (ContentHandler):
 
@@ -39,7 +43,10 @@ class DBContentHandler (ContentHandler):
         self.db = db
         self.cnn = None
         self.cursor = None
-        
+
+        self.__init_caches ()
+
+    def __init_caches (self):
         self.file_cache = {}
         self.moves_cache = {}
         self.deletes_cache = {}
@@ -47,6 +54,23 @@ class DBContentHandler (ContentHandler):
         self.branch_cache = {}
         self.tags_cache = {}
         self.people_cache = {}
+
+    def __save_caches_to_disk (self):
+        printdbg ("DBContentHandler: Saving caches to disk (%s)", (self.cache_file,))
+        cache = [self.file_cache, self.moves_cache, self.deletes_cache,
+                 self.revision_cache, self.branch_cache, self.tags_cache,
+                 self.people_cache]
+        f = open (self.cache_file, 'w')
+        dump (cache, f, -1)
+        f.close ()
+
+    def __load_caches_from_disk (self):
+        printdbg ("DBContentHandler: Loading caches from disk (%s)", (self.cache_file,))
+        f = open (self.cache_file, 'r')
+        (self.file_cache, self.moves_cache, self.deletes_cache,
+         self.revision_cache, self.branch_cache, self.tags_cache,
+         self.people_cache) = load (f)
+        f.close ()
 
     def __del__ (self):
         if self.cnn is not None:
@@ -64,6 +88,53 @@ class DBContentHandler (ContentHandler):
         cursor = self.cursor
         cursor.execute (statement ("SELECT id from repositories where uri = ?", self.db.place_holder), (uri,))
         self.repo_id = cursor.fetchone ()[0]
+
+        last_rev = last_commit = None
+        query = "SELECT rev, id from scmlog " + \
+                "where id = (select max(id) from scmlog where repository_id = ?)"
+        cursor.execute (statement (query, self.db.place_holder), (self.repo_id,))
+        rs = cursor.fetchone ()
+        if rs is not None:
+            last_rev, last_commit = rs
+        
+        filename = uri.replace ('/', '_')
+        self.cache_file = os.path.join (cvsanaly_cache_dir (), filename)
+
+        # if there's a previous cache file, just use it
+        if os.path.isfile (self.cache_file):
+            self.__load_caches_from_disk ()
+
+            if last_rev is not None:
+                try:
+                    commit_id = self.revision_cache[last_rev]
+                except KeyError:
+                    msg = "Cache file %s is not up to date or it's corrupt: " % (self.cache_file) + \
+                          "Revision %s was not found in the cache file" % (last_rev) + \
+                          "It's not possible to continue, the cache " + \
+                          "file should be removed and the database cleaned up"
+                    raise CacheFileMismatch (msg)
+                if commit_id != last_commit:
+                    # Cache and db don't match, removing cache
+                    msg = "Cache file %s is not up to date or it's corrupt: " % (self.cache_file) + \
+                          "Commit id mismatch for revision %s (File Cache:%d, Database: %d). " % (last_rev, commit_id, last_commit) + \
+                          "It's not possible to continue, the cache " + \
+                          "file should be removed and the database cleaned up"
+                    raise CacheFileMismatch (msg)
+            else:
+                # Database looks empty (or corrupt) and we have
+                # a cache file. We can just remove it and continue
+                # normally
+                self.__init_caches ()
+                os.remove (self.cache_file)
+                printout ("Database looks empty, removing cache file %s", (self.cache_file,))
+        elif last_rev is not None:
+            # There are data in the database,
+            # but we don't have a cache file!!!
+            msg = "Cache file %s is not up to date or it's corrupt: " % (self.cache_file) + \
+                  "Cache file cannot be found" + \
+                  "It's not possible to continue, the database " + \
+                  "should be cleaned up"
+            raise CacheFileMismatch (msg)
 
     def __insert_many (self):
         cursor = self.cursor
@@ -84,6 +155,11 @@ class DBContentHandler (ContentHandler):
         profiler_start ("Committing inserts for repository %d", (self.repo_id,))
         self.cnn.commit ()
         profiler_stop ("Committing inserts for repository %d", (self.repo_id,))
+
+        # Save the caches to disk
+        profiler_start ("Saving caches to disk")
+        self.__save_caches_to_disk ()
+        profiler_stop ("Saving caches to disk")
         
     def __add_new_file_and_link (self, file_name, parent_id, commit_id):
         dbfile = DBFile (None, file_name)
@@ -252,6 +328,9 @@ class DBContentHandler (ContentHandler):
         return self.__ensure_path (path, commit_id)
 
     def commit (self, commit):
+        if commit.revision in self.revision_cache:
+            return
+        
         profiler_start ("New commit %s for repository %d", (commit.revision, self.repo_id))
         
         log = DBLog (None, commit)
@@ -499,7 +578,3 @@ if __name__ == '__main__':
     ch.end ()
     cursor.close ()
     cnn.close ()
-
-
-        
-            

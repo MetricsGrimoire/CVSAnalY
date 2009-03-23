@@ -93,25 +93,50 @@ def remove_directory (path):
 
     os.rmdir (path)
 
-_dot_dir = None
-    
+_dirs = {}
+
 def cvsanaly_dot_dir ():
-    global _dot_dir
-    
-    if _dot_dir is not None:
-        return _dot_dir
-    _dot_dir = os.path.join (os.environ.get ('HOME'), '.cvsanaly2')
+
     try:
-        os.mkdir (_dot_dir, 0700)
+        return _dirs['dot']
+    except KeyError:
+        pass
+    
+    dot_dir = os.path.join (os.environ.get ('HOME'), '.cvsanaly2')
+    try:
+        os.mkdir (dot_dir, 0700)
     except OSError, e:
         if e.errno == errno.EEXIST:
-            if not os.path.isdir (_dot_dir):
+            if not os.path.isdir (dot_dir):
                 raise
         else:
             raise
-        
-    return _dot_dir
 
+    _dirs['dot'] = dot_dir
+    
+    return dot_dir
+
+def cvsanaly_cache_dir ():
+    try:
+        return _dirs['cache']
+    except KeyError:
+        pass
+    
+    cache_dir = os.path.join (cvsanaly_dot_dir (), 'cache')
+    try:
+        os.mkdir (cache_dir, 0700)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            if not os.path.isdir (cache_dir):
+                raise
+        else:
+            raise
+
+    _dirs['cache'] = cache_dir
+
+    return cache_dir
+    
 if __name__ == '__main__':
     print cvsanaly_dot_dir ()
+    print cvsanaly_cache_dir ()
     

@@ -35,7 +35,13 @@ class DBTempLog:
 
         self._need_clear = False
 
-        self.__create_table ()
+        try:
+            self.__create_table ()
+        except TableAlreadyExists:
+            # FIXME: we can use this to recover from a crash
+            self._need_clear = True
+            self.__drop_table ()
+            self.__create_table ()
         
         self.queue = AsyncQueue (50)
         self.writer_thread = threading.Thread (target=self.__writer,

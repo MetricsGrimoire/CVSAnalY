@@ -1,3 +1,12 @@
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+	* pycvsanaly2/DBTempLog.py:
+	* pycvsanaly2/utils.py:
+
+	Add support to load/save DBContentHandler caches from/to a disk
+	cache. Implement incremental approach in DBContentHandler.
+	
 2009-03-17  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/DBTempLog.py:
