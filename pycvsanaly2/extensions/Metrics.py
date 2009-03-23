@@ -804,8 +804,10 @@ class Metrics (Extension):
         try:
             rp = create_repository (db, read_cursor, repo, uri, tmpdir)
         except NotImplementedError:
+            remove_directory (tmpdir)
             raise ExtensionRunError ("Metrics extension is not supported for %s repositories" % (repo.get_type ()))
         except Exception, e:
+            remove_directory (tmpdir)
             raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
         repoid = rp.get_repo_id ()
@@ -830,6 +832,7 @@ class Metrics (Extension):
 
             cursor.close ()
         except Exception, e:
+            remove_directory (tmpdir)
             raise ExtensionRunError (str(e))
 
         if id_counter > 1:
