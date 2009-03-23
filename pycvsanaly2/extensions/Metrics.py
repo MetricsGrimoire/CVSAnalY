@@ -28,7 +28,7 @@ from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExi
                                   statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.Config import Config
-from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory
+from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory, uri_to_filename
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from pycvsanaly2.Command import Command, CommandError, CommandRunningError
@@ -52,10 +52,15 @@ class Repository:
         self.db = db
         self.cursor = cursor
         self.repo = repo
-        self.repo_uri = uri
         self.rootdir = rootdir
-        
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
+
+        path = uri_to_filename (uri)
+        if path is not None:
+            self.repo_uri = repo.get_uri_for_path (path)
+        else:
+            self.repo_uri = uri
+
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (self.repo_uri,))
         self.repo_id = cursor.fetchone ()[0]
         
     def get_repo_id (self):
@@ -145,6 +150,7 @@ class GitRepository (Repository):
 
     def __init__ (self, db, cursor, repo, uri, rootdir):
         Repository.__init__ (self, db, cursor, repo, uri, rootdir)
+        
         self.git = find_program ('git')
         if self.git is None:
             raise ProgramNotFound
@@ -152,7 +158,18 @@ class GitRepository (Repository):
         name = os.path.basename (uri.rstrip ('/'))
         self.srcdir = os.path.join (self.rootdir, name)
 
-        self.repo.checkout ('.', self.rootdir, newdir=name)
+        # We use our own clone command to take advantage
+        # of the --reference flag. It allows to clone from
+        # a remote repository while borrowing from an existing
+        # local directory
+        cmd = [self.git, 'clone', '--reference', uri, self.repo_uri, name]
+        c = Command (cmd, self.rootdir)
+        try:
+            c.run ()
+        except CommandError, e:
+            if e.error:
+                printerr ('Error running git clone: %s', (e.error,))
+            raise e
 
     def get_srcdir (self):
         return self.srcdir
@@ -162,7 +179,7 @@ class GitRepository (Repository):
         # clone for consistency with the other backends.
         # So we need to implement file checkout here
         
-        cmd = ['git', 'checkout', rev, path]
+        cmd = [self.git, 'checkout', rev, path]
         c = Command (cmd, self.srcdir)
         try:
             c.run ()

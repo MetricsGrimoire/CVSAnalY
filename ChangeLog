@@ -1,5 +1,18 @@
 2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/extensions/FileTypes.py:
+	* pycvsanaly2/extensions/CommitsLOC.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Use our own git clone command in Metrics to take advantage of the
+	--reference flag since we already have the repository cloned. It
+	makes the clone command really fast. It required some changes in
+	other extensions because we need to provide the local path instead of
+	the remote uri. 
+	
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Add git support in Metrics extension.

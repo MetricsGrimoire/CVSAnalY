@@ -227,10 +227,16 @@ class CommitsLOC (Extension):
     def run (self, repo, uri, db):
         self.db = db
 
+        path = uri_to_filename (uri)
+        if path is not None:
+            repo_uri = repo.get_uri_for_path (path)
+        else:
+            repo_uri = uri
+        
         cnn = self.db.connect ()
 
         cursor = cnn.cursor ()
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
+        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo_uri,))
         repo_id = cursor.fetchone ()[0]
 
         # If table does not exist, the list of commits is empty,
