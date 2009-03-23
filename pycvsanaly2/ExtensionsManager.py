@@ -39,7 +39,7 @@ class ExtensionsManager:
         for ext in exts:
             try:
                 self.exts[ext] = get_extension (ext)
-            except:
+            except ExtensionUnknownError:
                 raise InvalidExtension (ext)
 
             # Add dependencies

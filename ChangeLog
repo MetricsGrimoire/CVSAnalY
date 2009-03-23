@@ -1,5 +1,12 @@
 2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/ExtensionsManager.py:
+
+	Raise InvalidExtension only when a ExtensionUnknownError has been
+	raised.
+	
+2009-03-23  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Fix incremental stuff in Metrics extension and update the contents
