@@ -233,6 +233,12 @@ the log command for the repository.
 Save the input log information to the given path.
 
 @item
+-n, --no-parse
+
+Skip the parsing process. It only makes sense in conjunction with
+--extensions
+
+@item
 --extensions
 
 Run the given extensions after the log parsing/storing process. It
