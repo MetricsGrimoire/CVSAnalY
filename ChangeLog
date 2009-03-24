@@ -1,5 +1,12 @@
 2009-03-24  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* setup.py:
+
+	Add pkg-config support to setup.py script and use it to check
+	whether the required repository handler version is installed.
+	
+2009-03-24  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* help/doc/cvsanaly.texi:
 
 	Document the new -n, --no-parse command line option

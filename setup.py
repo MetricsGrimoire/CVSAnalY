@@ -29,8 +29,28 @@ Installer
 
 import commands
 import os
+import sys
 
 from distutils.core import setup
+from pycvsanaly2.FindProgram import find_program
+
+def pkg_check_modules (deps):
+    pkg_config = find_program ('pkg-config')
+    if pkg_config is None:
+        print "pkg-config was not found and it's required to build cvsanaly2"
+        sys.exit (1)
+        
+    cmd = "%s --errors-to-stdout --print-errors --exists '%s'" % (pkg_config, ' '.join (deps))
+    out = commands.getoutput (cmd)
+
+    if out:
+        print out
+        sys.exit (1)
+
+# Check dependencies
+deps = ['repositoryhandler >= 0.2']
+
+pkg_check_modules (deps)    
 
 setup(name = "cvsanaly2",
       version = "1.99.90 (2.0.0-beta1)",
