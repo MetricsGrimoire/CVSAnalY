@@ -136,7 +136,9 @@ config_files_code = [
     re.compile('\.dtd'), # XML Document Type Definition
     re.compile('\.bat'), # DOS batch files
     re.compile('\.vala'), # Vala
-    re.compile('\.py\.in$') 
+    re.compile('\.py\.in$'),
+    re.compile('\.rhtml$'), # eRuby
+    re.compile('\.sql$') # SQL script
     ]
 
 # Development documentation files (for hacking generally)
@@ -202,6 +204,7 @@ config_files_building = [
     re.compile('makefile.*$'), 
     re.compile('config\.sub$'),
     re.compile('config\.guess$'),
+    re.compile('config\.status$'),
     re.compile('ltmain\.sh$'),
     re.compile('autogen\.sh$'),
     re.compile('config$'),
@@ -262,8 +265,10 @@ config_files_documentation = [
     re.compile('\.dsl$'),
     re.compile('\.ent$'),
     re.compile('\.xml$'),
+    re.compile('\.xmi$'),
     re.compile('\.xsl$'),
     re.compile('\.entities$'),
+    re.compile('\.[1-7]$'), # Man pages
     re.compile('\.man$'),
     re.compile('\.manpages$'),
     re.compile('\.doc$'),
@@ -273,6 +278,7 @@ config_files_documentation = [
     re.compile('man\d?/.*\.\d$'),
     re.compile('\.docs$'),
     re.compile('\.sdw$'), # OpenOffice.org Writer document
+    re.compile('\.odt$'), # OpenOffice.org document
     re.compile('\.en$'), # Files in English language
     re.compile('\.de$'), # Files in German
     re.compile('\.es$'), # Files in Spanish
@@ -305,7 +311,8 @@ config_files_images = [
     re.compile('\.shape$'), # XML files used for shapes for instance in Kivio
     re.compile('\.sml$'), # XML files used for shapes for instance in Kivio
     re.compile('\.bdf$'), #  vfontcap  - Vector Font Capability Database (VFlib Version 2)
-    re.compile('\.ico$')
+    re.compile('\.ico$'),
+    re.compile('\.dia$') # We consider .dia as images, I don't want them in unknown
     ]
 
 # Translation files

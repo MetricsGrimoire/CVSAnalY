@@ -1,5 +1,11 @@
 2009-03-24  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/file_types.py:
+
+	Add more types
+	
+2009-03-24  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* setup.py:
 
 	Add pkg-config support to setup.py script and use it to check
