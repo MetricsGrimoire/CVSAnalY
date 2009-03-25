@@ -64,16 +64,11 @@ class CVSLineCounter (LineCounter):
         from pycvsanaly2.Config import Config
         from pycvsanaly2.CVSParser import CVSParser
 
-        rev_patt = re.compile ("^revision ([\d\.]*)$")
-        info_patt = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: ([^;]*);(  lines: \+(\d+) -(\d+);?)?")
+        p = CVSParser ()
+        p.set_repository (repo, uri)
         
-        def parse_line (line, user_data):
-            if not line:
-                return
-
-            match = rev_patt.match (line):
-            if match:
-                self.revision = match.group (1)
+        def new_line (line, parser):
+            parser.feed (line)
         
         reader = LogReader ()
         reader.set_repo (repo, uri)
@@ -81,8 +76,9 @@ class CVSLineCounter (LineCounter):
         if logfile is not None:
             reader.set_logfile (logfile)
 
-            reader.start (self.__parse_line)
+        reader.start (new_line, p)
 
+        self.lines = p.get_added_removed_lines ()
     
     def get_lines_for_revision (self, revision):
         return self.lines.get (revision, (0, 0))
@@ -147,37 +143,44 @@ class SVNLineCounter (LineCounter):
 class GitLineCounter (LineCounter):
 
     diffstat_pattern = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
-    
+
     def __init__ (self, repo, uri):
         LineCounter.__init__ (self, repo, uri)
+        
         self.git = find_program ('git')
         if self.git is None:
             raise ExtensionRunError ("Error running CommitsLOC extension: " + \
                                      "required git command cannot be found in path")
+
+        self.lines = {}
+        
+        cmd = [self.git, 'log', '--all', '--topo-order', '--shortstat', '--pretty=oneline', 'origin']
+        c = Command (cmd, uri)
+        try:
+            c.run (parser_out_func=self.__parse_line)
+        except CommandError, e:
+            if e.error:
+                printerr ("Error running git log command: %s", (e.error,))
+            raise ExtensionRunError ("Error running CommitsLOC extension: %s", str (e))
+        
+    def __parse_line (self, line):
+        match = self.diffstat_pattern.match (line)
+        if match:
+            added = removed = 0
+            if match.group (1) is not None:
+                added = int (match.group (2))
+
+            if match.group (3) is not None:
+                removed = int (match.group (4))
+
+            self.lines[self.rev] = (added, removed)
+        else:
+            # we only have two kind of lines,
+            # if it's not a diffstat, it's a rev line
+            self.rev = line.split (None, 1)[0]
     
     def get_lines_for_revision (self, revision):
-        cmd = [self.git, 'show', '--shortstat', revision]
-        env = os.environ.copy ().update ({'LC_ALL' : 'C'})
-        pipe = Popen (cmd, shell=False, stdout=PIPE, close_fds=True, env=env, cwd=self.uri)
-        out = pipe.communicate ()[0]
-
-        lines = out.split ('\n')
-        lines.reverse ()
-        for line in lines:
-            m = self.diffstat_pattern.match (line)
-            if m is None:
-                continue
-
-            added = removed = 0
-            if m.group (1) is not None:
-                added = int (m.group (2))
-
-            if m.group (3) is not None:
-                removed = int (m.group (4))
-
-            return (added, removed)
-            
-        return (0, 0)
+        return self.lines.get (revision, (0, 0))
 
 _counters = {
     'cvs' : CVSLineCounter,
@@ -238,8 +241,9 @@ class CommitsLOC (Extension):
         cnn.commit ()
         cursor.close ()
 
-    def __get_commits_for_repository (self, repo_id, cursor):
-        query = "SELECT id from scmlog WHERE repository_id = ?"
+    def __get_commits_lines_for_repository (self, repo_id, cursor):
+        query = "SELECT cm.commit_id from commits_lines cm, scmlog s " + \
+                "WHERE cm.commit_id = s.id and repository_id = ?"
         cursor.execute (statement (query, self.db.place_holder), (repo_id,))
         commits = [res[0] for res in cursor.fetchall ()]
 
@@ -272,7 +276,7 @@ class CommitsLOC (Extension):
             if id is not None:
                 DBCommitLines.id_counter = id + 1
 
-            commits = self.__get_commits_for_repository (repo_id, cursor)
+            commits = self.__get_commits_lines_for_repository (repo_id, cursor)
         except Exception, e:
             raise ExtensionRunError (str (e))
 
@@ -297,8 +301,9 @@ class CommitsLOC (Extension):
                 (added, removed) = counter.get_lines_for_revision (revision)
                 commit_list.append (DBCommitLines (None, commit_id, added, removed))
 
-            commits_lines = [(commit.id, commit.commit_id, commit.added, commit.removed) for commit in commit_list]
-            write_cursor.executemany (statement (DBCommitLines.__insert__, self.db.place_holder), commits_lines)
+            if commit_list:
+                commits_lines = [(commit.id, commit.commit_id, commit.added, commit.removed) for commit in commit_list]
+                write_cursor.executemany (statement (DBCommitLines.__insert__, self.db.place_holder), commits_lines)
 
             rs = cursor.fetchmany ()
             

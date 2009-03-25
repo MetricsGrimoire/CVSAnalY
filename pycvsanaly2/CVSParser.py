@@ -25,7 +25,6 @@ import datetime
 from Parser import Parser
 from ContentHandler import ContentHandler
 from Repository import Commit, Action, Person
-from Cache import Cache
 
 class CVSParser (Parser):
 
@@ -47,7 +46,6 @@ class CVSParser (Parser):
 
         self.root_path = ""
         self.lines = {}
-        self.cache = Cache ()
         
         # Parser context
         self.file = None
@@ -81,8 +79,8 @@ class CVSParser (Parser):
             self.file_added_on_branch = None
             self.file = None
 
-        # Save lines info in the Cache
-        self.cache.insert ('cvs-lines', self.lines)
+    def get_added_removed_lines (self):
+        return self.lines
 
     def _parse_line (self, line):
         if not line:

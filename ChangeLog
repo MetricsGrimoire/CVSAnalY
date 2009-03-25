@@ -1,5 +1,15 @@
 2009-03-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/CVSParser.py:
+	* pycvsanaly2/Cache.py: Removed
+	* pycvsanaly2/extensions/CommitsLOC.py:
+
+	Rework the CommitsLOC extension. For svn and git repos, the lines
+	added/removed per commit can be get from the log, so we can just
+	parse again to extract such data. It's much faster and reliable.
+	
+2009-03-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/Metrics.py:
 
 	Ignore what git clone command sends to stderr.
