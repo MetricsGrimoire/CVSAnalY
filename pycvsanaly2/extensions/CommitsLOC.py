@@ -24,9 +24,11 @@ from repositoryhandler.backends.watchers import DIFF
 
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
                                   statement, DBFile)
+from pycvsanaly2.Log import LogReader
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.utils import to_utf8, printerr, uri_to_filename
 from pycvsanaly2.FindProgram import find_program
+from pycvsanaly2.Command import Command, CommandError
 
 class DBCommitLines:
 
@@ -58,10 +60,29 @@ class CVSLineCounter (LineCounter):
 
     def __init__ (self, repo, uri):
         LineCounter.__init__ (self, repo, uri)
-        from pycvsanaly2.Cache import Cache
 
-        # FIXME: incremental
-        self.lines = Cache ().lookup ('cvs-lines')
+        from pycvsanaly2.Config import Config
+        from pycvsanaly2.CVSParser import CVSParser
+
+        rev_patt = re.compile ("^revision ([\d\.]*)$")
+        info_patt = re.compile ("^date: (\d\d\d\d)[/-](\d\d)[/-](\d\d) (\d\d):(\d\d):(\d\d)(.*);  author: (.*);  state: ([^;]*);(  lines: \+(\d+) -(\d+);?)?")
+        
+        def parse_line (line, user_data):
+            if not line:
+                return
+
+            match = rev_patt.match (line):
+            if match:
+                self.revision = match.group (1)
+        
+        reader = LogReader ()
+        reader.set_repo (repo, uri)
+        logfile = Config ().repo_logfile
+        if logfile is not None:
+            reader.set_logfile (logfile)
+
+            reader.start (self.__parse_line)
+
     
     def get_lines_for_revision (self, revision):
         return self.lines.get (revision, (0, 0))
