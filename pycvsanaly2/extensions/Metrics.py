@@ -164,8 +164,14 @@ class GitRepository (Repository):
         # local directory
         cmd = [self.git, 'clone', '--reference', uri, self.repo_uri, name]
         c = Command (cmd, self.rootdir)
+
+        def ignore_error (data):
+            pass
+        
         try:
-            c.run ()
+            # git clone send output to stderr, we handle it
+            # just to ignore it to avoid a CommandRunningError
+            c.run (parser_error_func=ignore_error)
         except CommandError, e:
             if e.error:
                 printerr ('Error running git clone: %s', (e.error,))
