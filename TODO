@@ -3,5 +3,5 @@ General
 
 [ ] Add documentation
 [X] Man page
-[ ] Fix incremental stuff
-[ ] Fix OOM problems too big projects
+[X] Fix incremental stuff
+[X] Fix OOM problems too big projects
