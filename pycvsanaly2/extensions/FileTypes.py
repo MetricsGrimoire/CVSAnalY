@@ -121,7 +121,7 @@ class FileTypes (Extension):
         query = "select a.file_id fid, f.file_name fname " + \
                 "from action_files a, files f " + \
                 "where f.id = a.file_id and " + \
-                "a.file_id not in (select parent_id from file_links) " + \
+                "not exists (select id from file_links where parent_id = a.file_id) " + \
                 "and f.repository_id = ? group by fid, fname"
 
         cursor.execute (statement (query, db.place_holder), (repo_id,))

@@ -1,5 +1,12 @@
 2009-03-26  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/FileTypes.py:
+
+	Use 'not exists' instead of 'not in' which gives little better
+	performance.
+	
+2009-03-26  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/FilePaths.py:
 
 	Split the file_links query into two different queries which
