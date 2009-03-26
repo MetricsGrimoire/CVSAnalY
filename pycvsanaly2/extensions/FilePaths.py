@@ -69,24 +69,35 @@ class FilePaths:
             rs = cursor.fetchmany ()
         adj.files = files
 
-        query = "select file_links.parent_id, file_links.file_id " + \
-                "from (select fl.file_id file_id, max(commit_id) md " + \
-                "from file_links fl, files f " + \
-                "where fl.file_id = f.id and f.repository_id = ? and " + \
-                "fl.commit_id <= ? and fl.file_id not in " + \
-                "(select file_id from actions where type in " + \
-                "('D', 'R') and commit_id <= ?) group by fl.file_id) f, file_links " + \
-                "where file_links.file_id = f.file_id and " + \
-                "file_links.commit_id = f.md order by 1"
+        # Get the files that have been removed or replaced
+        query = "select a.file_id from actions a, files f " + \
+                "where type in ('D', 'R') and commit_id <= ? " + \
+                "and a.file_id = f.id and f.repository_id = ?"
+        profiler_start ("Getting dead files for commit %d", (commit_id,))
+        cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
+        profiler_stop ("Getting dead files for commit %d", (commit_id,))
+        dead_files = [item[0] for item in cursor.fetchall ()]
 
+        # Get the file links
+        query = "select fl.parent_id, fl.file_id from " + \
+                "(select file_id, max(commit_id) mc " + \
+                "from file_links where commit_id <= ? " + \
+                "group by file_id) l, " + \
+                "file_links fl, files f " + \
+                "where l.file_id = fl.file_id and " + \
+                "l.mc = fl.commit_id and " + \
+                "f.id = l.file_id and f.repository_id = ?"
         profiler_start ("Getting file links for commit %d", (commit_id,))
-        cursor.execute (statement (query, db.place_holder), (repo_id, commit_id, commit_id))
+        cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
         profiler_stop ("Getting file links for commit %d", (commit_id,))
         rs = cursor.fetchmany ()
         adj_ = {}
         tops = []
         while rs:
             for f1, f2 in rs:
+                # Do not include dead links!
+                if dead_files and f1 in dead_files or f2 in dead_files:
+                    continue
                 adj_[f2] = f1
             rs = cursor.fetchmany ()
         adj.adj = adj_

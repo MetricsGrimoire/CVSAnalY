@@ -1,3 +1,10 @@
+2009-03-26  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Split the file_links query into two different queries which
+	drastically improves the performance.
+	
 2009-03-25  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* TODO:
