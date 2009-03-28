@@ -1,5 +1,11 @@
 2009-03-28  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Optimize the metrics query by removing an unneeded join.
+	
+2009-03-28  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/extensions/FilePaths.py:
 
 	Cache the files table, and get only the new names of the renamed

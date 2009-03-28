@@ -908,10 +908,11 @@ class Metrics (Extension):
         
         if self.config.metrics_all:
             query = "select s.rev rev, s.id commit_id, ft.file_id file_id, composed_rev " + \
-                    "from scmlog s, actions a, action_files af, file_types ft " + \
-                    "where s.id = a.commit_id and a.id = af.action_id and " + \
-                    "af.file_id = ft.file_id and ft.type in ('code', 'unknown') " + \
-                    "and a.type in ('A', 'M', 'R') and s.repository_id = ? " + \
+                    "from scmlog s, action_files af, file_types ft " + \
+                    "where s.id = af.commit_id and af.file_id = ft.file_id " + \
+                    "and ft.type in ('code', 'unknown') " + \
+                    "and af.action_type in ('A', 'M', 'R') " + \
+                    "and s.repository_id = ? " + \
                     "order by s.id"
         else:
             query = "select s.rev rev, s.id commit_id, head.file_id file_id, composed_rev " + \
