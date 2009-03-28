@@ -213,6 +213,10 @@ def main (argv):
     else:
         uri = uri.strip ('/')
         repo = create_repository ('svn', uri)
+        # Check uri actually points to a valid svn repo
+        if repo.get_last_revision (uri) is None:
+            printerr ("URI %s doesn't seem to point to a valid svn repository", (uri,))
+            return 1
 
     if not config.no_parse:
         # Create reader
