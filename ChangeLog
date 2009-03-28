@@ -1,5 +1,13 @@
 2009-03-28  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/FilePaths.py:
+
+	Cache the files table, and get only the new names of the renamed
+	files for the given revision. It improves te performance with
+	large tables.
+	
+2009-03-28  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/main.py:
 
 	Check ASAP whether the uri provided by the user points to a valid

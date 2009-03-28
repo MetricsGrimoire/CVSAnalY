@@ -34,9 +34,10 @@ class FilePaths:
             self.adj = {}
 
     
-    __shared_state = { 'rev' : None,
-                       'adj' : None,
-                       'db'  : None}
+    __shared_state = { 'rev'   : None,
+                       'adj'   : None,
+                       'files' : None,
+                       'db'    : None}
 
     def __init__ (self, db):
         self.__dict__ = self.__shared_state
@@ -49,24 +50,52 @@ class FilePaths:
         
         adj = FilePaths.Adj ()
 
-        query = "select files.id, files.file_name, new_file_name from files " + \
-                "LEFT JOIN (select fv.file_id ffid, new_file_name " + \
-                "from (select file_id, max(commit_id) md " + \
+        rf = self.__dict__['files']
+        if rf is not None:
+            repo_files_id, repo_files = rf
+            if repo_files_id != repo_id:
+                del self.__dict__['files']
+                repo_files = {}
+        else:
+            repo_files = {}
+
+        if not repo_files:
+            # Get and cache all the files table
+            query = "select id, file_name from files where repository_id = ?"
+            profiler_start ("Getting files for repository %d", (repo_id,))
+            cursor.execute (statement (query, db.place_holder), (repo_id,))
+            profiler_stop ("Getting files for repository %d", (repo_id,))
+            rs = cursor.fetchmany ()
+            while rs:
+                for id, file_name in rs:
+                    repo_files[id] = file_name
+                rs = cursor.fetchmany ()
+            self.__dict__['files'] = (repo_id, repo_files)
+
+        # Get the files that have been renamed
+        # with the new name for the given rev
+        query = "select fv.file_id, new_file_name " + \
+                "from (select file_id, max(commit_id) mc " + \
                 "from actions_file_names where commit_id <= ? " + \
-                "and type = 'V' group by file_id) fv, actions_file_names af " + \
-                "where af.commit_id = fv.md and " + \
-                "af.file_id = fv.file_id) new_names " + \
-                "ON files.id = new_names.ffid and repository_id = ?"
-        
+                "and type = 'V' group by file_id) fv, " + \
+                "actions_file_names af, files f " + \
+                "where af.file_id = fv.file_id and " + \
+                "af.commit_id = fv.mc and " + \
+                "f.id = fv.file_id and f.repository_id = ?"
         profiler_start ("Getting files for commit %d", (commit_id,))
         cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
         profiler_stop ("Getting files for commit %d", (commit_id,))
         rs = cursor.fetchmany ()
         files = {}
         while rs:
-            for id, file_name, rev_name in rs:
-                files[id] = rev_name or file_name
+            for id, file_name in rs:
+                files[id] = file_name
             rs = cursor.fetchmany ()
+
+        # Set not renamed files
+        for id in repo_files:
+            if id not in files:
+                files[id] = repo_files[id]
         adj.files = files
 
         # Get the files that have been removed or replaced
