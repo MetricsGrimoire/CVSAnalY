@@ -1,4 +1,87 @@
 ================
+cvsanaly 1.99.91
+================
+
+This the last beta release of cvsanaly2. Next releases (release
+candidates and final release) will only contain bug fixes and
+documentation updates.
+
+Database Schema Changes:
+
+    * commit_id has been removed from the file_types table.
+    * A new view (action_files) has been added to be able to match the
+      file_id associated to the action independently of the action
+      type. This is needed because in a replace action might involve 3
+      files: the file being replaced, the new file replacing the
+      old one and the file from which the replacement is done. In
+      these cases the new file is not stored in the actions table, but
+      in the to_id field of file_copies table. This view is almost a
+      copy of the actions table but the file_id will be taken from
+      file_copies for replace actions. 
+
+New Features:
+
+    * Add a command line option (-n, --no-parse) to be able to skip
+      the parsing process when used in conjunction with --extensions
+    * Add git support in Metrics extension
+    * Use a persistent cache on disk to store the caches used in
+      DBContentHandler. This makes running CVSAnalY incrementally
+      finally work
+    * Store -1 values in the database instead of NULL when the file
+      failed to be measured, so that it can be tried again in a
+      another CVSAnalY execution. NULL values are now reserved for the
+      files that are not supported.
+    * Try again up to 3 times when a checkout/update fails, just in
+      case it's just a short temporary network problem, in Metrics
+      extension
+    * Use the Command.py module in Metrics extension which provides
+      better error handling
+    * Instead of a single config file a directory is used now to store
+      the config file and the state of the caches used in
+      DBContentHandler needed to incrmentally run CVSAnalY. The old
+      configuration is automatically migrated. 
+    * Subsets of repositories can be analyzed and treated as
+      individual repositories. Specially useful to analyze SVN
+      repositorires with 'modules'
+
+Performance Fixes and Improvements:
+
+    * All queries have been reviewed and optimized
+    * CommitsLOC extension has been reworked, so that for CVS and Git
+      repositories we extract the information from the log command
+      instead of running diffs which drastically improves the
+      performance. 
+    * Do not run executemany if we don't have any data to insert in
+      FileTypes and CommitsLOC extensions
+    * Do not find te same program in PATH more than once in Metrics
+      extension
+    * Split the temp_log query into several queries to save memory
+    * Use a maximum size in queues, blocking on put() when the queue
+      is full, in order to save memory
+
+Documentation:
+
+    * Add documentation in texi format. Not finished yet.
+    * Update the manpage
+      
+Bug Fixes:
+
+    * Remove the tempdir used in Metrics extension when the extension
+      is aborted 
+    * Do not use deprecated python stuff
+    * Fix infinite loop in DBContentHandler when a path has been
+      renamed several times to the same name
+    * Do not crash when the Metrics extension doesn't support the
+      repository type, raise an exception instead. 
+    * Fix a crash with repositories where paths don't start with '/' 
+    * Fix the main queries used in FileTypes and Metrics extensions by
+      using the new action_files view to make sure we always get the
+      right file_id.
+    * Fix incosistency issues between the cache used in
+      DBContentandler and the database
+    * Several fixes in the SVN parser.
+
+================
 cvsanaly 1.99.90
 ================
 

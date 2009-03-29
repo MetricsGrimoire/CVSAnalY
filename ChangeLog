@@ -1,5 +1,12 @@
 2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* NEWS:
+	* pycvsanaly2/_config.py:
+
+	Update for release 1.99.91 (2.0.0-beta2).
+	
+2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* README:
 
 	Add Santiago Dueñas to the list of contributors.
