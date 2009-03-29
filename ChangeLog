@@ -1,5 +1,11 @@
 2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* README:
+
+	Add Santiago Dueñas to the list of contributors.
+	
+2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* setup.py:
 	* pycvsanaly2/main.py:
 	* pycvsanaly2/_config.py:
