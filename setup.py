@@ -48,7 +48,7 @@ def pkg_check_modules (deps):
         sys.exit (1)
 
 # Check dependencies
-deps = ['repositoryhandler >= 0.2']
+deps = ['repositoryhandler >= 0.3']
 
 pkg_check_modules (deps)    
 

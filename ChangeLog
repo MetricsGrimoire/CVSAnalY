@@ -1,3 +1,9 @@
+2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* setup.py:
+
+	Bump RepositoryHandler requirement to 0.3.
+	
 2009-03-28  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/extensions/Metrics.py:
