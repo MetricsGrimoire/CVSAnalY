@@ -41,15 +41,12 @@ from Log import LogReader, LogWriter
 from ExtensionsManager import ExtensionsManager, InvalidExtension, InvalidDependency
 from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
-
-# Some stuff about the project
-version = "2.0"
-author = "(C) 2004-2009 %s <%s>" % ("LibreSoft", "libresoft-tools-devel@lists.morfeo-project.org")
-name = "cvsanaly2 %s - LibreSoft Group http://www.libresoft.es" % (version)
-credits = "%s \n%s\n" % (name, author)
+from _config import *
 
 def usage ():
-    print credits
+    print "%s %s - %s" % (PACKAGE, VERSION, DESCRIPTION)
+    print COPYRIGHT
+    print
     print "Usage: cvsanaly2 [options] [URI]"
     print """
 Analyze the given URI. An URI can be a checked out directory, 

@@ -50,13 +50,15 @@ def pkg_check_modules (deps):
 # Check dependencies
 deps = ['repositoryhandler >= 0.3']
 
-pkg_check_modules (deps)    
+pkg_check_modules (deps)
 
-setup(name = "cvsanaly2",
-      version = "1.99.90 (2.0.0-beta1)",
-      author =  "LibreSoft",
-      author_email = "libresoft-tools-devel@lists.morfeo-project.org",
-      description = "An analysis tool for your source code repository",
+from pycvsanaly2._config import *
+
+setup(name = PACKAGE,
+      version = VERSION,
+      author =  AUTHOR,
+      author_email = AUTHOR_EMAIL,
+      description = DESCRIPTION,
       url = "https://forge.morfeo-project.org/projects/libresoft-tools/",      
       packages = ['pycvsanaly2', 'pycvsanaly2.extensions'],
       data_files = [('share/man/man1',['help/cvsanaly2.1'])],

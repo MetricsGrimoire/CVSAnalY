@@ -1,6 +1,15 @@
 2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* setup.py:
+	* pycvsanaly2/main.py:
+	* pycvsanaly2/_config.py:
+
+	Move project metadata (PACKAGE, VERSION, etc.) to a common module
+	so that it can be used by both main.py and setup.py
+	
+2009-03-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* setup.py:
 
 	Bump RepositoryHandler requirement to 0.3.
 	
