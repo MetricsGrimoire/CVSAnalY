@@ -340,12 +340,13 @@ information provided by the repository log. This is the main goal of
 the schema independently of how @code{CVSAnalY} was executed or even
 what project has been analyzed. The second part is composed by tables
 created and filled by @code{CVSAnalY} extensions
-(@xref{Extensions}). The information provided by these tables depends on
+(@xref{Extensions schema}). The information provided by these tables depends on
 every @code{CVSAnalY} Extension, however the main goal is common: to
 complete the @code{CVSAnalY} schema with additional information directly
 related to the existing tables but not provided by the repository log. 
 
-TODO: screenshot
+@sp 0.5
+@center @image{figs/db_schema, 15cm}
 
 @subsection General conventions
 

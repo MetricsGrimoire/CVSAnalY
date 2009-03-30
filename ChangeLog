@@ -1,6 +1,13 @@
 2009-03-30  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* help/doc/cvsanaly.texi:
+	* help/doc/figs/db_schema.png:
+
+	Add an image of the database schema to the documentation.
+	
+2009-03-30  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* help/doc/cvsanaly.texi:
 
 	Update documentation.
 	
