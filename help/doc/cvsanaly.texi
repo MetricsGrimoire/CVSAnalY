@@ -592,7 +592,7 @@ name: The name of the branch
 
 @subsubheading The tags and tag_revisions tables
 
-The combination of this two tables represents the list of tags found in
+The combination of these two tables represents the list of tags found in
 the repository. The @code{tags} table contains the names of the tags
 while the @code{tag_revisions} tables contains the list of revisions
 pointing to every tag
@@ -638,9 +638,180 @@ the repository.
 
 @end itemize
 
+@subsubheading The action_files and actions_file_names views
+
+The database design tries to represent all the logic behind the output
+given by a repository log. Because of this, the complexity of the schema
+makes difficult to write queries. In order to help the users of the
+database, @code{CVSAnalY} provides these two views.
+
+@itemize @bullet
+
+@item
+action_files: the @code{file_id} field of the @code{actions} table might
+be confusing. Depending on the situation you might want the
+@code{file_id} of the @code{actions} table or the @code{to_id} field of
+the @code{file_copies} table. For example, if you are interested on the
+new files added, you need the @code{to_id} field, while if you want to
+know what files have been deleted, you need the @code{file_id} field,
+since a replace operation implies that the replaced file is not
+available anymore. This view is useful when you are in the first
+case. The view is just a ``clone'' of the @code{actions} table, but using the
+@code{to_id} as @code{file_id} for replace actions.
+
+@item
+actions_file_names: since the name of a file may change during the
+history, we usually need to get the new file name given to a file as a
+result of a rename action. The new file name is stored in the
+@code{file_copies} tables which means we always need to add an extra
+join in the queries. This view is also a ``clone'' of the
+@code{actions} table including also the @code{new_file_name} field of
+the @code{file_copies} tables.
+
+@end itemize
+
 
 @node Extensions schema, , Database schema details, Database
 @section @code{CVSAnalY} extensions schema details
+
+A @code{CVSAnalY} Extension adds one or more tables with additional
+information directly related to the existing tables, but not provided by
+the repository log. 
+
+@subsubheading FileTypes extension
+
+This extension adds the @code{file_types} table containing the file type
+associated of every file found in the repository. The file type is not
+the mime type of the file but one of the following categories:
+
+@itemize @bullet
+
+@item
+code: source code files (C/C++, Python, Java, etc.)
+
+@item
+build: files used to build and configure the source code (Makefile,
+configure, cvsignore, etc.)
+
+@item
+ui: files containing graphical user interface definitions (glade,
+gtkbuilder, ui files, etc.)
+
+@item
+i18n: translation files (.po, .mo, etc.)
+
+@item
+documentation: documentation files
+
+@item
+devel-doc: documentation for developers (HACKING, ChangeLog, etc.)
+
+@item
+package: package files (.tar.gz, .deb, .rmp, etc.)
+
+@item
+image: icons and files (.png, .jpeg, etc.)
+
+@item
+multimedia: audio and video files (.ogg, .avi, .mp3, etc.)
+
+@item
+unknown: files with an unknown type, generally files that don't have
+extension
+
+@end itemize
+
+The file type is based on the file extension and it's assumed that a
+file doesn't change its type during the history. 
+
+The @code{file_types} table contains the following fields:
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+file_id: the file identifier. It's a foreign key that references the
+@code{id} field of the @code{files} table.
+
+@item
+type: the name of the type (as described above in this section)
+
+@end itemize
+
+@subsubheading Metrics extension
+
+This extension provides simple source code metrics for every revision of
+every single file found in the repository. Since this extension is about
+source code, it uses the FileTypes extension to get only source code
+files.
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+file_id: the identifier of the file. It's a foreign key that references
+the @code{id} field of the @code{files} table.
+
+@item
+commit_id: the identifier of the commit (revision). It's a foreign key
+that references the @code{id} field of the @code{scmlog} table
+
+@item
+lang: the programming language (as given by the sloccount tool)
+
+@item
+sloc: number of source code lines of code
+
+@item
+loc: number of lines of code
+
+@item
+ncomment: number of comments
+
+@item
+lcomment: number of commented lines
+
+@item
+lblank: number of blank lines
+
+@item
+nfunctions: number of functions
+
+@item
+mccabe_*: all fields starting with mccabe correspond to McCabe
+cyclomatic complexity
+
+@item
+halstead_*: all fields starting with halstead correspond to Halstead
+software science metrics
+
+@end itemize
+
+@subsubheading CommitsLOC extension
+
+This extension adds a table with the number of lines added and removed
+for every commit. 
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+commit_id: the commit identifier. It's a foreign key that references the
+@code{id} field of the @code{scmlog} table
+
+@item
+added: number of lines added in the given commit
+
+@item
+removed: number of lines removed in the given commit
+
+@end itemize
 
 
 @node FAQ, GNU Free Documentation License, Database, Top
@@ -704,6 +875,16 @@ SVN doesn't exist tags, they are usually implemented by copying the
 whole source tree into another directory. In this case the revision
 stored in the @code{tag_revisions} table points to the copy
 operation}
+
+@subsection Why is CommitsLOC and extension if that information is provided by the cvs log command?
+
+Because it's only available in the log output of CVS repositories. For
+the other repositories we have to get. In the case of SVN getting such
+information might take a long time depending on the number of
+revisions. Since the lines added/removed per commit is not the most
+important information provided by @code{CVSAnalY} and it makes the
+parsing process quite longer, we decided to move it
+to an extension, so that it will be optionally executed.
 
 @raisesections
 @include fdl.texi
