@@ -362,6 +362,9 @@ the table.
 Foreign keys: all fields with the suffix @code{_id} are foreign keys so
 that it's easy to identify them quickly. 
 
+@item
+Character encoding: @code{CVSAnalY} uses always utf-8 so all the fields
+in the database that contain strings are utf-8 encoded.
 @end itemize
 
 
@@ -475,6 +478,166 @@ performed. It's a foreign key that references the @code{id} field of
 
 @end itemize
 
+@subsubheading The files table
+
+The @code{files} table contains an identifier for every file or directory found
+in the repository.
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+file_name: The name of the file or directory. Note that this is not a
+path. 
+
+@item
+repository_id: It's the identifier of the repository to which the file
+belongs. It allows to easily get the list of files of the
+repository. It's a foreign key that references the @code{id} field of
+the @code{repositories} table.
+ 
+@end itemize
+
+@subsubheading The file_links table
+
+This table contains relationships between files. The relationship
+between two files is always parent - child. 
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+parent_id: the identifier of parent file or -1 if the file is in the
+root of the repository. It's a foreign key that references the @code{id}
+field of the @code{files} table.
+
+@item
+file_id: the identifier of the file. It's a foreign key that references
+the @code{id} field of the @code{files} table.
+
+@item
+commit_id: the identifier of the commit where the relationship appears
+for the first time. When a file or directory is moved, a new link is
+created with the id of the commit where the move action as
+performed. There will be, therefore, two links for the same file each
+one with a different parent. In order to know which parent is the right
+one at a certain point (revision), the commit_id field is used to choose 
+the link that contains the latest commit. It's a foreign key that
+references the @code{id} field of the @code{scmlog} table.
+
+@end itemize
+
+@subsubheading The file_copies table
+
+The @code{file_copies} table is used to store additional information about
+actions that involve more than one file. Copies, moves, renames and
+replacements are actions performed over two or more files. The @code{file_id}
+field of the @code{actions} table refers always to the file that is the
+object of the action. 
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+to_id: identifier of the file that is the destination of the action. In
+a move or copy operation, this field is the same than the @code{file_id}
+in the @code{actions} table. However, when a file is replaced, the
+@code{file_id} stored in the @code{actions} table is the existing file
+being replaced, and this field contains the @code{file_id} of the new
+file that replaces the existing one. It's a foreign key that references
+the @code{id} field of the @code{files} table.
+
+@item
+from_id: identifier of the file that is the source of the action. In a
+move or copy operation this is the @code{file_id} of the file from which
+the move or copy is done. It's a foreign key that references the
+@code{id} field of the @code{files} table.
+
+@item
+from_commit_id: identifier of the commit from which the operation is
+carried out. The source file contents are taken from the revision
+associated to this commit identifier. It's a foreign key that references
+the @code{id} field of the @code{scmlog} table
+
+@item
+new_file_name: contains the new name of the file for rename actions or
+@code{NULL} for other actions. 
+
+@item
+action_id: the identifier of the action. It's a foreign key that
+references the @code{id} field of the @code{actions} table.
+
+@end itemize
+
+@subsubheading The branches table
+
+This table contains the list of branches found in the repository
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+name: The name of the branch
+
+@end itemize
+
+@subsubheading The tags and tag_revisions tables
+
+The combination of this two tables represents the list of tags found in
+the repository. The @code{tags} table contains the names of the tags
+while the @code{tag_revisions} tables contains the list of revisions
+pointing to every tag
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+name: The name of the tag
+
+@item
+tag_id: the identifier of the tag associated to this revision. It's a
+foreign key that references the @code{id} field of the @code{tags}
+table.
+
+@item
+commit_id: the identifier of the commit representing the revision. It's
+a foreign key that references the @code{id} field of the @code{scmlog}
+table. 
+
+@end itemize
+
+@subsubheading The people table
+
+This table contains the name and email (when available) of the people
+involved in the repository.
+
+@itemize @bullet
+
+@item
+id: Identifier in the database.
+
+@item
+name: the person's name or nick. Depending on the repository type this
+field contains the real name (or at least the name provided by the user) or
+the user name for repositories that have authentication like CVS or SVN.
+
+@item
+email: The email of the person or @code{NULL} if it's not provided by
+the repository.
+
+@end itemize
+
+
 @node Extensions schema, , Database schema details, Database
 @section @code{CVSAnalY} extensions schema details
 
@@ -494,6 +657,52 @@ branches for the same revision. It happens, indeed, more often
 than expected. So, in most of the cases, all actions referencing the
 same commit will reference the same branch too, but we need to keep the
 relationship between action and branch in order to support all other cases. 
+
+@subsection Why doesn't files table contain full paths for files?
+
+@code{CVSAnalY} stores the whole history of the project in the
+database. Paths do change quite often during the history of a project as
+a result of a rename or a move operation. We are interested in files
+independently of their paths, but we also need to be able to get the full
+path of a file at any point in the history. Assigning identifiers to the
+files instead of the paths we can follow the history of any given file
+even if it's renamed or moved. Additionally, relationships between files
+are stored in the file_links table. When, for example, a directory is
+moved to another path, we only need to create a new relationship between
+two existing files. 
+
+@subsection Why are there two tables files and file_links instead of a single files table with a pointer to its parent file?
+
+That was the first approach we followed. Since we are trying to
+represent a tree, sounds reasonable to use a single table where every
+record is a node of the tree containing a pointer to its parent
+node. This approach works indeed, but makes quite hard to build paths,
+since it requires multiple recursive queries for every file
+path. We use instead a graph schema, where there's a table containing
+the vertices (files table) and another table containing edges
+(file_links table). A tree is indeed a graph without cycles. With this
+approach it's possible to get the adjacency matrix for any given
+revision with only two queries. Building paths for the files once we
+have the adjacency matrix is trivial. 
+
+@subsection How can I get the adjacency matrix representing the repository tree in a given revision? 
+
+TODO: queries
+
+@subsection Why are there two tables for tags?
+
+Despite it tires to represent the same concept, tags are implemented in
+a different way in every source code management system. Theoretically, a
+tag is just a label that points to a snapshot of the repository. In CVS
+is not possible to take a snapshot of the repository with only one
+revision, since revisions are per file. In CVS a tag is actually a list of
+pairs file-revision which is represented by @code{CVSAnalY} with the
+@code{tags} and @code{tag_revisions} tables. For SVN and Git
+repositories there will be only on revision for every tag@footnote{In
+SVN doesn't exist tags, they are usually implemented by copying the
+whole source tree into another directory. In this case the revision
+stored in the @code{tag_revisions} table points to the copy
+operation}
 
 @raisesections
 @include fdl.texi
