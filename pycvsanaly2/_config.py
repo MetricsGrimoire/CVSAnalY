@@ -1,5 +1,5 @@
 PACKAGE = 'cvsanaly2'
-VERSION = '1.99.91 (2.0.0-beta2)'
+VERSION = '2.0.0'
 
 AUTHOR = 'LibreSoft'
 AUTHOR_EMAIL = 'libresoft-tools-devel@lists.morfeo-project.org'

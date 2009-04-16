@@ -1,4 +1,19 @@
 ================
+cvsanaly   2.0.0
+================
+
+This is the final CVSAnalY 2.0 release.
+
+Bug fixes:
+
+    * Include man page and other documentation files in the dist
+      tarball. (Thanks to Víctor Llorens Vilella for reporting)
+
+Documentation:
+
+    * First version of the user manual
+
+================
 cvsanaly 1.99.91
 ================
 

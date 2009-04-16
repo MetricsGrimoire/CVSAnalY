@@ -1,5 +1,13 @@
 2009-04-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* NEWS:
+	* help/doc/version.texi:
+	* pycvsanaly2/_config.py:
+
+	Release 2.0.0
+	
+2009-04-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* TODO:
 
 	Updated.
