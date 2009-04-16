@@ -64,7 +64,6 @@ Published by LibreSoft
 * Usage::                           Running @code{CVSAnalY}.
 * The configuration file::          The @code{CVSAnalY} configuration file.
 * Database::                        The Database design.
-* Extensions::                      @code{CVSAnalY} extensions. 
 * FAQ::                             Frequently Asked Questions.
 * GNU Free Documentation License::  License for copying this manual.
 
@@ -318,6 +317,64 @@ http://svn.gnome.org/svn/nautilus
 
 @node The configuration file, Database, Usage, Top
 @chapter The @code{CVSAnalY} configuration file
+
+Running @code{CVSAnalY} might require to provide a lot of command line
+options. Some of such options such the hostname, database driver,
+database user name and so on, depend on the system where @code{CVSAnalY}
+is running and not on the repository to be analyzed. Those options have
+to be always provided, making the @code{CVSAnalY} execution command too
+large in some cases. A configuration file can be used to avoid this
+situation. Before parsing the command line option provided by the user
+@code{CVSAnalY} reads its configuration file, taking the options found
+there to replace the default values. There might be two configuration
+files:
+
+@itemize @bullet
+
+@item
+System-wide configuration file: /etc/cvsanaly2
+
+@item
+User configuration file: ~/.cvsanaly2/config
+
+@end itemize
+
+The system-wide configuration file is read first, then the user
+configuration file is read overriding the options already provided by
+the system-wide file, and finally the command line options are parsed
+overriding any other option already provided. For the options not
+provided by a configuration file or the command line interface, the
+default values will be taken. 
+
+The configuration file is just a file containing key-value pairs. 
+
+@example
+@group
+# Run in debug mode
+debug = True
+
+# Run quiet
+quiet = True
+
+# Enable profiling
+profile = True
+
+# Database driver
+db_driver = 'mysql'
+
+# Database user
+db_user = 'cvsanalyuser'
+
+# Database user password
+db_password = 'mysqlpassword'
+
+# Database hostname
+db_hostname = 'localhost'
+
+# Run always Metrics and CommitsLOC extensions
+extensions = ['Metrics', 'CommitsLOC']
+@end group
+@end example
 
 @node Database, FAQ, The configuration file, Top
 @chapter The Database design
@@ -856,10 +913,6 @@ the vertices (files table) and another table containing edges
 approach it's possible to get the adjacency matrix for any given
 revision with only two queries. Building paths for the files once we
 have the adjacency matrix is trivial. 
-
-@subsection How can I get the adjacency matrix representing the repository tree in a given revision? 
-
-TODO: queries
 
 @subsection Why are there two tables for tags?
 
