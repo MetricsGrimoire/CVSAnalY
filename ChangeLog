@@ -1,5 +1,11 @@
 2009-04-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* MANIFEST.in:
+
+	Add missing files.
+	
+2009-04-16  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* help/doc/cvsanaly.texi:
 
 	Add configuration file Chapter.

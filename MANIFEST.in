@@ -2,3 +2,9 @@ include ChangeLog
 include AUTHORS
 include COPYING
 include TODO
+include help/cvsanaly2.1
+include help/doc/cvsanaly.texi
+include help/doc/fdl.texi
+include help/doc/Makefile
+include help/doc/version.texi
+include help/doc/figs/db_schema.png
