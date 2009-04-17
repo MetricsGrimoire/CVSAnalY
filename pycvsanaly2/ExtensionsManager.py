@@ -17,7 +17,7 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-from extensions import get_extension, ExtensionRunError
+from extensions import get_extension, ExtensionRunError, ExtensionUnknownError
 from utils import printerr, printout
 
 class ExtensionException (Exception):
