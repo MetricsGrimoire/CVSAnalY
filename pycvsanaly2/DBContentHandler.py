@@ -263,12 +263,15 @@ class DBContentHandler (ContentHandler):
     def __ensure_path (self, path, commit_id):
         profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
         printdbg ("DBContentHandler: ensure_path %s", (path))
-        tokens = path.strip ('/').split ('/')
+        
+        prefix, lpath = path.split ("://", 1)
+        prefix += "://"
+        tokens = lpath.strip ('/').split ('/')
 
         parent = -1
         node_id = None
         for i, token in enumerate (tokens):
-            rpath = '/' + '/'.join (tokens[:i + 1])
+            rpath = prefix + '/' + '/'.join (tokens[:i + 1])
             printdbg ("DBContentHandler: rpath: %s", (rpath,))
             try:
                 node_id, parent_id = self.file_cache[rpath]
@@ -283,8 +286,8 @@ class DBContentHandler (ContentHandler):
             parent_id = parent
             parent = node_id
 
-            if path[0] != '/':
-                rpath = rpath.strip ('/')
+            if not ":///" in path:
+                rpath = rpath.replace (':///', '://')
             self.file_cache[rpath] = (node_id, parent_id)
 
         assert node_id is not None
@@ -362,13 +365,22 @@ class DBContentHandler (ContentHandler):
             dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
 
+            branch = commit.branch or action.branch
+            if branch in self.branch_cache:
+                branch_id = self.branch_cache[branch]
+            else:
+                branch_id = self.__ensure_branch (branch)
+            dbaction.branch_id = branch_id
+
+            prefix = "%d://" % (branch_id)
+            path = prefix + action.f1
+            
             if action.type == 'A':
                 # New file
-                path = action.f1
                 parent_path = os.path.dirname (path)
                 file_name = os.path.basename (path)
 
-                if not parent_path or parent_path == '/':
+                if not parent_path or parent_path == prefix.strip ('/'):
                     parent_id = -1
                 else:
                     parent_id = self.__get_file_for_path (parent_path, log.id)[0]
@@ -376,9 +388,8 @@ class DBContentHandler (ContentHandler):
                 file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
                 self.file_cache[path] = (file_id, parent_id)
             elif action.type == 'M':
-                file_id = self.__get_file_for_path (action.f1, log.id)[0]
+                file_id = self.__get_file_for_path (path, log.id)[0]
             elif action.type == 'D':
-                path = action.f1
                 file_id = self.__get_file_for_path (path, log.id)[0]
                 
                 # Remove the old references
@@ -388,20 +399,19 @@ class DBContentHandler (ContentHandler):
                         self.__move_path_to_deletes_cache (cpath)
                 self.__move_path_to_deletes_cache (path)
             elif action.type == 'V':
-                path = action.f1
                 new_parent_path = os.path.dirname (path)
                 new_file_name = os.path.basename (path)
 
                 from_commit_id = self.revision_cache.get (action.rev, None)
                 
-                old_path = action.f2
+                old_path = prefix + action.f2
                 file_id, parent_id = self.__get_file_for_path (old_path, from_commit_id, True)
                 
                 dbfilecopy = DBFileCopy (None, file_id)
                 dbfilecopy.action_id = dbaction.id
                 dbfilecopy.from_commit = from_commit_id
 
-                if not new_parent_path or new_parent_path == '/':
+                if not new_parent_path or new_parent_path == prefix.strip ('/'):
                     new_parent_id = -1
                 else:
                     new_parent_id = self.__get_file_for_path (new_parent_path, log.id)[0]
@@ -422,14 +432,15 @@ class DBContentHandler (ContentHandler):
                 dbfilecopy.new_file_name = new_file_name
                 self.__add_new_copy (dbfilecopy)
             elif action.type == 'C':
-                path = action.f1
                 parent_path = os.path.dirname (path)
                 file_name = os.path.basename (path)
 
                 from_commit_id = self.revision_cache.get (action.rev, None)
-                from_file_id = self.__get_file_for_path (action.f2, from_commit_id, True)[0]
-                
-                if not parent_path or parent_path == '/':
+
+                old_path = prefix + action.f2
+                from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
+
+                if not parent_path or parent_path == prefix.strip ('/'):
                     parent_id = -1
                 else:
                     parent_id = self.__get_file_for_path (parent_path, log.id)[0]
@@ -445,16 +456,16 @@ class DBContentHandler (ContentHandler):
             elif action.type == 'R':
                 # Replace action: Path has been removed and
                 # a new one has been added with the same path
-                path = action.f1
                 file_name = os.path.basename (path)
 
                 # The replace action is over the old file_id
                 file_id, parent_id = self.__get_file_for_path (path, log.id)
                 self.__move_path_to_deletes_cache (path)
-                
+
                 if action.f2 is not None:
+                    old_path = prefix + action.f2
                     from_commit_id = self.revision_cache.get (action.rev, None)
-                    from_file_id = self.__get_file_for_path (action.f2, from_commit_id, True)[0]
+                    from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
                 else:
                     from_commit_id = None
                     from_file_id = file_id
@@ -480,15 +491,6 @@ class DBContentHandler (ContentHandler):
                 assert "Unknown action type %s" % (action.type)
 
             dbaction.file_id = file_id
-
-            branch = commit.branch or action.branch
-                    
-            if branch in self.branch_cache:
-                branch_id = self.branch_cache[branch]
-            else:
-                branch_id = self.__ensure_branch (branch)
-                    
-            dbaction.branch_id = branch_id
             
             self.actions.append (dbaction)
 
