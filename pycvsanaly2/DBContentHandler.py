@@ -158,11 +158,6 @@ class DBContentHandler (ContentHandler):
         profiler_start ("Committing inserts for repository %d", (self.repo_id,))
         self.cnn.commit ()
         profiler_stop ("Committing inserts for repository %d", (self.repo_id,))
-
-        # Save the caches to disk
-        profiler_start ("Saving caches to disk")
-        self.__save_caches_to_disk ()
-        profiler_stop ("Saving caches to disk")
         
     def __add_new_file_and_link (self, file_name, parent_id, commit_id):
         dbfile = DBFile (None, file_name)
@@ -521,6 +516,12 @@ class DBContentHandler (ContentHandler):
         # flush pending inserts
         printdbg ("DBContentHandler: flushing pending inserts")
         self.__insert_many ()
+        
+        # Save the caches to disk
+        profiler_start ("Saving caches to disk")
+        self.__save_caches_to_disk ()
+        profiler_stop ("Saving caches to disk")
+        
         self.cursor.close ()
         self.cnn.close ()
         self.cnn = None

@@ -1,3 +1,11 @@
+2009-04-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/DBContentHandler.py:
+
+	Do not save caches to disk on every database commit since it's a
+	very heavy operation, do it only once at the end of the parsing
+	process.
+
 2009-04-17  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/ExtensionsManager.py:
