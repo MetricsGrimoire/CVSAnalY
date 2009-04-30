@@ -33,182 +33,14 @@ from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from pycvsanaly2.Command import Command, CommandError, CommandRunningError
 from repositoryhandler.backends import RepositoryCommandError
-from tempfile import mkdtemp
+from repositoryhandler.backends.watchers import CAT
+from tempfile import mkdtemp, NamedTemporaryFile
 from FilePaths import FilePaths
+from Jobs import JobPool, Job
 from xml.sax import handler as xmlhandler, make_parser
 from signal import SIGTERM
 import os
 import re
-
-class Repository:
-
-    RETRIES = 3
-    
-    class SkipFileException (Exception):
-        '''Raised when the file has not been checked out because
-        it should be skipped'''
-    
-    def __init__ (self, db, cursor, repo, uri, rootdir):
-        self.db = db
-        self.cursor = cursor
-        self.repo = repo
-        self.rootdir = rootdir
-
-        path = uri_to_filename (uri)
-        if path is not None:
-            self.repo_uri = repo.get_uri_for_path (path)
-        else:
-            self.repo_uri = uri
-
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (self.repo_uri,))
-        self.repo_id = cursor.fetchone ()[0]
-        
-    def get_repo_id (self):
-        return self.repo_id
-
-    def get_srcdir (self):
-        return self.rootdir
-        
-    def checkout (self, path, rev):
-        raise NotImplementedError
-
-    def _checkout_try (self, uri, rootdir, newdir = None, branch = None, rev = None):
-        tries = self.RETRIES
-        done = False
-        while not done:
-            try:
-                self.repo.checkout (uri, rootdir, newdir, rev=rev)
-                done = True
-            except RepositoryCommandError, e:
-                if tries > 0:
-                    printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
-                    tries -= 1
-                elif tries == 0:
-                    raise e
-            except Exception, e:
-                raise e
-
-    def _update_try (self, uri, rev = None, force = False):
-        tries = self.RETRIES
-        done = False
-        while not done:
-            try:
-                self.repo.update (uri, rev=rev, force=force)
-                done = True
-            except RepositoryCommandError, e:
-                if tries > 0:
-                    printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
-                    tries -= 1
-                elif tries == 0:
-                    raise e
-            except Exception, e:
-                raise e
-
-class SVNRepository (Repository):
-
-    def __init__ (self, db, cursor, repo, uri, rootdir):
-        Repository.__init__ (self, db, cursor, repo, uri, rootdir)
-        self.tops = {}
-
-        self._checkout_try ('.', self.rootdir, newdir=".", rev='0')    
-            
-    def checkout (self, path, rev):
-        root = self.repo_uri.replace (self.repo.get_uri (), '').strip ('/')
-
-        if not path.startswith (root):
-            raise Repository.SkipFileException
-
-        if not os.path.isdir (os.path.join (self.rootdir, root)):
-            roots = root.split ('/')
-
-            for i, dummy in enumerate (roots):
-                rpath = os.path.join (self.rootdir, '/'.join (roots[:i + 1]))
-                if not os.path.isdir (rpath):
-                    self._update_try (rpath, rev=rev, force=True)
-
-        path = path.replace (root, '')
-        top = path.strip ('/').split ('/')[0]
-        
-        # skip tags dir
-        if top == 'tags':
-            raise Repository.SkipFileException
-        
-        last_rev = self.tops.get (top, 0)
-        if last_rev != rev:
-            self._update_try (os.path.join (self.rootdir, root, top), rev=rev, force=True)
-            self.tops[top] = rev
-
-class CVSRepository (Repository):
-
-    def __init__ (self, db, cursor, repo, uri, rootdir):
-        Repository.__init__ (self, db, cursor, repo, uri, rootdir)
-
-    def checkout (self, path, rev):
-        self._checkout_try (path, self.rootdir, rev=rev)
-
-class GitRepository (Repository):
-
-    def __init__ (self, db, cursor, repo, uri, rootdir):
-        Repository.__init__ (self, db, cursor, repo, uri, rootdir)
-        
-        self.git = find_program ('git')
-        if self.git is None:
-            raise ProgramNotFound
-
-        name = os.path.basename (uri.rstrip ('/'))
-        self.srcdir = os.path.join (self.rootdir, name)
-
-        # We use our own clone command to take advantage
-        # of the --reference flag. It allows to clone from
-        # a remote repository while borrowing from an existing
-        # local directory
-        cmd = [self.git, 'clone', '--reference', uri, self.repo_uri, name]
-        c = Command (cmd, self.rootdir)
-
-        def ignore_error (data):
-            pass
-        
-        try:
-            # git clone send output to stderr, we handle it
-            # just to ignore it to avoid a CommandRunningError
-            c.run (parser_error_func=ignore_error)
-        except CommandError, e:
-            if e.error:
-                printerr ('Error running git clone: %s', (e.error,))
-            raise e
-
-    def get_srcdir (self):
-        return self.srcdir
-        
-    def __checkout (self, path, rev):
-        # In RepositoryHandler git checkout is actually a
-        # clone for consistency with the other backends.
-        # So we need to implement file checkout here
-        
-        cmd = [self.git, 'checkout', rev, path]
-        c = Command (cmd, self.srcdir)
-        try:
-            c.run ()
-        except CommandError, e:
-            if e.error:
-                printerr ('Error running git chekcout: %s', (e.error,))
-            raise e
-        
-    def checkout (self, path, rev):
-        # There's no network, so it should never fail.
-        # I think it's safe to run checkout directly
-        # insted of _checkout_try.
-        self.__checkout (path, rev)
-
-def create_repository (db, cursor, repo, uri, rootdir):
-    if repo.get_type () == 'svn':
-        return SVNRepository (db, cursor, repo, uri, rootdir)
-    elif repo.get_type () == 'cvs':
-        return CVSRepository (db, cursor, repo, uri, rootdir)
-    elif repo.get_type () == 'git':
-        return GitRepository (db, cursor, repo, uri, rootdir)
-    else:
-        raise NotImplementedError
 
 class ProgramNotFound (Extension):
 
@@ -648,14 +480,19 @@ def create_file_metrics (path):
     lang = 'unknown'
     
     if sloccount is not None:
-        cmd = Command ([sloccount, '--wide', '--details', path], env = {'LC_ALL' : 'C'})
+        tmpdir = mkdtemp ()
+        scmd = [sloccount, '--wide', '--details', '--datadir', tmpdir, path]
+        cmd = Command (scmd, env = {'LC_ALL' : 'C'})
         try:
             outputlines = cmd.run ().split ('\n')
+            remove_directory (tmpdir)
         except CommandError, e:
+            remove_directory (tmpdir)
             if e.error:
                 printerr ('Error running sloccount: %s', (e.error,))
             raise e
         except CommandRunningError, e:
+            remove_directory (tmpdir)
             pid = cmd.get_pid ()
             if pid:
                 os.kill (pid, SIGTERM)
@@ -672,6 +509,155 @@ def create_file_metrics (path):
         
     fm = _metrics.get (lang, FileMetrics)
     return fm (path, lang, sloc)
+
+class MetricsJob (Job):
+
+    def __init__ (self, id_counter, file_id, commit_id, path, rev, failed):
+        self.id_counter = id_counter
+        self.file_id = file_id
+        self.commit_id = commit_id
+        self.path = path
+        self.rev = rev
+        self.failed = failed
+
+    def __measure_file (self, fm, measures, checkout_path, rev):
+        printdbg ("Measuring %s @ %s", (checkout_path, rev))
+        
+        profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.loc = fm.get_LOC ()
+        except Exception, e:
+            printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.loc = -1
+        profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+            
+        profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.sloc, measures.lang = fm.get_SLOCLang ()
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.sloc = measures.lang = - 1
+        profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+
+        profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.ncomment = measures.lcomment = measures.lblank = -1
+        profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+
+        profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.halstead_length, measures.halstead_vol, \
+                measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running HalsteadComplexity for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
+            measures.halstead_length = measures.halstead_vol = measures.halstead_level = measures.halstead_md = -1
+        profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
+                
+        profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+        try:
+            measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
+                measures.mccabe_mean, measures.mccabe_median, \
+                measures.nfunctions = fm.get_MccabeComplexity ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
+        except Exception, e:
+            printerr ('Error running MccabeComplexity for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
+            measures.mccabe_sum = measures.mccabe_min = measures.mccabe_max = \
+                measures.mccabe_mean = measures.mccabe_median = measures.nfunctions = -1
+        profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+
+    def run (self, repo, repo_uri):
+        def write_file (line, fd):
+            fd.write (line)
+            
+        self.measures = Measures ()
+
+        repo_type = repo.get_type ()
+        if repo_type == 'cvs':
+            # CVS paths contain the module stuff
+            uri = repo.get_uri_for_path (repo_uri)
+            module = uri[len (repo.get_uri ()):].strip ('/')
+
+            path = self.path[len (module):].strip ('/')
+        else:
+            path = self.path.strip ('/')
+
+        suffix = ''
+        ext_ptr = self.path.rfind ('.')
+        if ext_ptr != -1:
+            suffix = self.path[ext_ptr:]
+
+        fd = NamedTemporaryFile ('w', suffix=suffix)
+        wid = repo.add_watch (CAT, write_file, fd.file)
+            
+        if repo_type == 'git':
+            retries = 0
+        else:
+            retries = 3
+            
+        done = False
+        failed = False
+        while not done and not failed:
+            try:
+                repo.cat (os.path.join (repo_uri, path), self.rev)
+                done = True
+            except RepositoryCommandError, e:
+                if retries > 0:
+                    printerr ("Command %s returned %d (%s), try again", (e.cmd, e.returncode, e.error))
+                    retries -= 1
+                    fd.file.seek (0)
+                elif retries == 0:
+                    failed = True
+                    printerr ("Error obtaining %s@%s. Command %s returned %d (%s)",
+                              (self.path, self.rev, e.cmd, e.returncode, e.error))
+            except Exception, e:
+                failed = True
+                printerr ("Error obtaining %s@%s. Exception: %s", (self.path, self.rev, str (e)))
+                
+        repo.remove_watch (CAT, wid)
+        fd.file.close ()
+
+        if failed:
+            self.measures.set_error ()
+        else:
+            try:
+                fm = create_file_metrics (fd.name)
+                self.__measure_file (fm, self.measures, fd.name, self.rev)
+            except Exception, e:
+                printerr ("Error creating FileMetrics for %s@%s. Exception: %s", (fd.name, self.rev, str (e)))
+                self.measures.set_error ()
+
+        fd.close ()
+
+    def get_id (self):
+        return self.id_counter
+    
+    def get_measures (self):
+        return self.measures
+
+    def get_file_id (self):
+        return self.file_id
+
+    def get_commit_id (self):
+        return self.commit_id
+
+    def is_failed (self):
+        return self.failed
 
 class Metrics (Extension):
 
@@ -787,66 +773,41 @@ class Metrics (Extension):
         cursor.executemany (statement (self.__insert__, self.db.place_holder), self.metrics)
         self.metrics = []
 
-    def __measure_file (self, fm, measures, checkout_path, rev):
-        printdbg ("Measuring %s @ %s", (checkout_path, rev))
-        
-        profiler_start ("[LOC] Measuring %s @ %s", (checkout_path, rev))
-        try:
-            measures.loc = fm.get_LOC ()
-        except Exception, e:
-            printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            measures.loc = -1
-        profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+    def __process_finished_jobs (self, job_pool, write_cursor, unlocked = False):
+        if unlocked:
+            job = job_pool.get_next_done_unlocked ()
+        else:
+            job = job_pool.get_next_done (0.01)
             
-        profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
-        try:
-            measures.sloc, measures.lang = fm.get_SLOCLang ()
-        except ProgramNotFound, e:
-            printout ('Program %s is not installed. Skipping sloc metric', (e.program, ))
-        except Exception, e:
-            printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            measures.sloc = measures.lang = - 1
-        profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+        while job is not None:
+            id_counter = job.get_id ()
+            measures = job.get_measures ()
+            file_id = job.get_file_id ()
+            commit_id = job.get_commit_id ()
 
-        profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
-        try:
-            measures.ncomment, measures.lcomment, measures.lblank = fm.get_CommentsBlank ()
-        except NotImplementedError:
-            pass
-        except ProgramNotFound, e:
-            printout ('Program %s is not installed. Skipping CommentsBlank metric', (e.program, ))
-        except Exception, e:
-            printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            measures.ncomment = measures.lcomment = measures.lblank = -1
-        profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
-
-        profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
-        try:
-            measures.halstead_length, measures.halstead_vol, \
-                measures.halstead_level, measures.halstead_md = fm.get_HalsteadComplexity ()
-        except NotImplementedError:
-            pass
-        except ProgramNotFound, e:
-            printout ('Program %s is not installed. Skipping halstead metric', (e.program, ))
-        except Exception, e:
-            printerr ('Error running HalsteadComplexity for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
-            measures.halstead_length = measures.halstead_vol = measures.halstead_level = measures.halstead_md = -1
-        profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
-                
-        profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
-        try:
-            measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
-                measures.mccabe_mean, measures.mccabe_median, \
-                measures.nfunctions = fm.get_MccabeComplexity ()
-        except NotImplementedError:
-            pass
-        except ProgramNotFound, e:
-            printout ('Program %s is not installed. Skipping mccabe metric', (e.program, ))
-        except Exception, e:
-            printerr ('Error running MccabeComplexity for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
-            measures.mccabe_sum = measures.mccabe_min = measures.mccabe_max = \
-                measures.mccabe_mean = measures.mccabe_median = measures.nfunctions = -1
-        profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+            if job.is_failed ():
+                query = "update metrics set lang=?, sloc=?, loc=?, " + \
+                        "ncomment=?, lcomment=?, lblank=?, nfunctions=?, " + \
+                        "mccabe_max=?, mccabe_min=?, mccabe_sum=?, mccabe_mean=?, mccabe_median=?, " + \
+                        "halstead_length=?, halstead_vol=?, halstead_level=?, halstead_md=? " + \
+                        "where file_id = ? and commit_id = ?"
+                    
+                write_cursor.execute (statement (query, db.place_holder),
+                                      (measures.lang, measures.sloc, measures.loc,
+                                       measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
+                                       measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
+                                       measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
+                                       measures.halstead_level, measures.halstead_md, file_id, commit_id))
+            else:
+                self.metrics.append ((id_counter, file_id, commit_id, measures.lang, measures.sloc, measures.loc,
+                                      measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
+                                      measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
+                                      measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
+                                      measures.halstead_level, measures.halstead_md))
+            if unlocked:
+                job = job_pool.get_next_done_unlocked ()
+            else:
+                job = job_pool.get_next_done (0.01)
 
     def run (self, repo, uri, db):
         profiler_start ("Running Metrics extension")
@@ -862,11 +823,15 @@ class Metrics (Extension):
         id_counter = 1
         metrics = metrics_failed = []
 
-        # Temp dir for the checkouts
-        tmpdir = mkdtemp ()
-
         try:
-            rp = create_repository (db, read_cursor, repo, uri, tmpdir)
+            path = uri_to_filename (uri)
+            if path is not None:
+                repo_uri = repo.get_uri_for_path (path)
+            else:
+                repo_uri = uri
+
+            read_cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo_uri,))
+            repoid = read_cursor.fetchone ()[0]
         except NotImplementedError:
             remove_directory (tmpdir)
             raise ExtensionRunError ("Metrics extension is not supported for %s repositories" % (repo.get_type ()))
@@ -874,9 +839,6 @@ class Metrics (Extension):
             remove_directory (tmpdir)
             raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
-        repoid = rp.get_repo_id ()
-        srcdir = rp.get_srcdir ()
-
         try:
             self.__create_table (cnn)
         except TableAlreadyExists:
@@ -903,6 +865,8 @@ class Metrics (Extension):
         if id_counter > 1:
             metrics = self.__get_metrics (read_cursor, repoid)
             metrics_failed = self.__get_metrics_failed (read_cursor, repoid)
+
+        job_pool = JobPool (repo, path or repo.get_uri ())
             
         # Obtain files and revisions
         
@@ -955,72 +919,25 @@ class Metrics (Extension):
                 printdbg ("Skipping file %s", (relative_path,))
                 continue
 
-            measures = Measures ()
+            job = MetricsJob (id_counter, file_id, commit_id, relative_path, rev, failed)
+            job_pool.push (job)
+            id_counter += 1
 
-            try:
-                printdbg ("Checking out %s@%s", (relative_path, rev))
-                rp.checkout (relative_path, rev)
-            except Repository.SkipFileException:
-                printdbg ("Skipping file %s", (relative_path,))
-                continue
-            except Exception, e:
-                printerr ("Error obtaining %s@%s. Exception: %s", (relative_path, rev, str (e)))
-                measures.set_error ()
-                relative_path = None
+            self.__process_finished_jobs (job_pool, write_cursor)
 
-            if relative_path is not None:
-                checkout_path = os.path.join (srcdir, relative_path)
-                if os.path.isdir (checkout_path):
-                    printdbg ("Skipping file %s", (relative_path,))
-                    continue
-
-                if not os.path.exists (checkout_path):
-                    printerr ("Error measuring %s@%s. File not found", (checkout_path, rev))
-                    measures.set_error ()
-                else:
-                    try:
-                        fm = create_file_metrics (checkout_path)
-                        self.__measure_file (fm, measures, checkout_path, rev)
-                    except Exception, e:
-                        printerr ("Error creating FileMetrics for %s@%s. Exception: %s", (checkout_path, rev, str (e)))
-                        measures.set_error ()
-
-            if failed:
-                query = "update metrics set lang=?, sloc=?, loc=?, " + \
-                        "ncomment=?, lcomment=?, lblank=?, nfunctions=?, " + \
-                        "mccabe_max=?, mccabe_min=?, mccabe_sum=?, mccabe_mean=?, mccabe_median=?, " + \
-                        "halstead_length=?, halstead_vol=?, halstead_level=?, halstead_md=? " + \
-                        "where file_id = ? and commit_id = ?"
-                write_cursor.execute (statement (query, db.place_holder),
-                                      (measures.lang, measures.sloc, measures.loc,
-                                       measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
-                                       measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
-                                       measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
-                                       measures.halstead_level, measures.halstead_md, file_id, commit_id))
-            else:
-                self.metrics.append ((id_counter, file_id, commit_id, measures.lang, measures.sloc, measures.loc,
-                                      measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
-                                      measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
-                                      measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
-                                      measures.halstead_level, measures.halstead_md))
-            del measures
-            
             if len (self.metrics) >= self.MAX_METRICS:
                 profiler_start ("Inserting results in db")
                 self.__insert_many (write_cursor)
                 cnn.commit ()
                 profiler_stop ("Inserting results in db")
-                    
-            id_counter += 1
 
+        job_pool.join ()
+        self.__process_finished_jobs (job_pool, write_cursor, True)
+                
         profiler_start ("Inserting results in db")
         self.__insert_many (write_cursor)
         cnn.commit ()
         profiler_stop ("Inserting results in db")
-
-        # Clean tmpdir
-        # TODO: how long would this take? 
-        remove_directory (tmpdir)
 
         read_cursor.close ()
         write_cursor.close ()

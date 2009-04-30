@@ -1,5 +1,14 @@
 2009-04-30  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
+	* pycvsanaly2/extensions/Jobs.py:
+	* pycvsanaly2/extensions/Metrics.py:
+
+	Use cat instead of checkout/update to get the contents of files in
+	metrics extension. Multiple cat command can run in parallel which
+	improves performance quite a lot.
+	
+2009-04-30  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
 	* pycvsanaly2/main.py:
 
 	Fix --version command line option.
