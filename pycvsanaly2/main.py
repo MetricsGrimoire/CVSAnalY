@@ -114,7 +114,7 @@ def main (argv):
             usage ()
             return 0
         elif opt in ("-V", "--version"):
-            print version
+            print VERSION
             return 0
         elif opt in ("--debug", "-g"):
             debug = True
