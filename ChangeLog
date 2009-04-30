@@ -1,3 +1,9 @@
+2009-04-30  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/main.py:
+
+	Fix --version command line option.
+	
 2009-04-29  Carlos Garcia Campos  <carlosgc@gsyc.es>
 
 	* pycvsanaly2/DBContentHandler.py:
