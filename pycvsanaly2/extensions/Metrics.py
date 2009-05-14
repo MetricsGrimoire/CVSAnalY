@@ -777,7 +777,7 @@ class Metrics (Extension):
         if unlocked:
             job = job_pool.get_next_done_unlocked ()
         else:
-            job = job_pool.get_next_done (0.01)
+            job = job_pool.get_next_done ()
             
         while job is not None:
             id_counter = job.get_id ()
@@ -807,7 +807,7 @@ class Metrics (Extension):
             if unlocked:
                 job = job_pool.get_next_done_unlocked ()
             else:
-                job = job_pool.get_next_done (0.01)
+                job = job_pool.get_next_done (0.5)
 
     def run (self, repo, uri, db):
         profiler_start ("Running Metrics extension")
@@ -894,6 +894,7 @@ class Metrics (Extension):
                     "and s.repository_id = ? " + \
                     "order by s.id"
 
+        n_metrics = 0
         read_cursor.execute (statement (query, db.place_holder), (repoid,))
         for revision, commit_id, file_id, composed in read_cursor.fetchall ():
             failed = False
@@ -922,14 +923,15 @@ class Metrics (Extension):
             job = MetricsJob (id_counter, file_id, commit_id, relative_path, rev, failed)
             job_pool.push (job)
             id_counter += 1
+            n_metrics += 1
 
-            self.__process_finished_jobs (job_pool, write_cursor)
-
-            if len (self.metrics) >= self.MAX_METRICS:
+            if n_metrics >= self.MAX_METRICS:
+                self.__process_finished_jobs (job_pool, write_cursor)
                 profiler_start ("Inserting results in db")
                 self.__insert_many (write_cursor)
                 cnn.commit ()
                 profiler_stop ("Inserting results in db")
+                n_metrics = 0
 
         job_pool.join ()
         self.__process_finished_jobs (job_pool, write_cursor, True)
