@@ -792,7 +792,7 @@ class Metrics (Extension):
                         "halstead_length=?, halstead_vol=?, halstead_level=?, halstead_md=? " + \
                         "where file_id = ? and commit_id = ?"
                     
-                write_cursor.execute (statement (query, db.place_holder),
+                write_cursor.execute (statement (query, self.db.place_holder),
                                       (measures.lang, measures.sloc, measures.loc,
                                        measures.ncomment, measures.lcomment, measures.lblank, measures.nfunctions,
                                        measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,

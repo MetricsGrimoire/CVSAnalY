@@ -2,6 +2,12 @@
 
 	* pycvsanaly2/extensions/Metrics.py:
 
+	Add missing self
+
+2009-05-14  Carlos Garcia Campos  <carlosgc@gsyc.es>
+
+	* pycvsanaly2/extensions/Metrics.py:
+
 	Proccess finished jobs every 100 jobs to make sure there are jobs
 	in the done queue and removing the timeout the first time
 	job_pool.get_next_done is called to make sure we always get a
