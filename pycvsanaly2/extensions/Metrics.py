@@ -598,9 +598,10 @@ class MetricsJob (Job):
             path = self.path.strip ('/')
 
         suffix = ''
-        ext_ptr = self.path.rfind ('.')
+        filename = os.path.basename (self.path)
+        ext_ptr = filename.rfind ('.')
         if ext_ptr != -1:
-            suffix = self.path[ext_ptr:]
+            suffix = filename[ext_ptr:]
 
         fd = NamedTemporaryFile ('w', suffix=suffix)
         wid = repo.add_watch (CAT, write_file, fd.file)
