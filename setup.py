@@ -47,10 +47,31 @@ def pkg_check_modules (deps):
         print out
         sys.exit (1)
 
+def generate_changelog ():
+    from subprocess import Popen, PIPE
+    from tempfile import mkstemp
+
+    fd, filename = mkstemp (dir=os.getcwd ())
+
+    print "Creating ChangeLog"
+    cmd = ["git", "log", "-M", "-C", "--name-status", "--date=short", "--no-color"]
+    pipe = Popen (cmd, stdout=PIPE).stdout
+
+    buff = pipe.read (1024)
+    while buff:
+        os.write (fd, buff)
+        buff = pipe.read (1024)
+    os.close (fd)
+
+    os.rename (filename, "ChangeLog")
+
 # Check dependencies
 deps = ['repositoryhandler >= 0.3']
 
 pkg_check_modules (deps)
+
+if sys.argv[1] == 'sdist':
+    generate_changelog ()
 
 from pycvsanaly2._config import *
 
