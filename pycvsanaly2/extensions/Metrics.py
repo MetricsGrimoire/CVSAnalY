@@ -593,7 +593,10 @@ class MetricsJob (Job):
             uri = repo.get_uri_for_path (repo_uri)
             module = uri[len (repo.get_uri ()):].strip ('/')
 
-            path = self.path[len (module):].strip ('/')
+            if module != '.':
+                path = self.path[len (module):].strip ('/')
+            else:
+                path = self.path.strip ('/')
         else:
             path = self.path.strip ('/')
 
