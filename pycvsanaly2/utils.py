@@ -63,7 +63,7 @@ def printout (str = '\n', args = None):
     
     if str != '\n':
         str += '\n'
-    sys.stdout.write (str)
+    sys.stdout.write (to_utf8 (str))
     sys.stdout.flush ()
 
 def printerr (str = '\n', args = None):
@@ -72,7 +72,7 @@ def printerr (str = '\n', args = None):
     
     if str != '\n':
         str += '\n'
-    sys.stderr.write (str)
+    sys.stderr.write (to_utf8 (str))
     sys.stderr.flush ()
 
 def printdbg (str = '\n', args = None):
