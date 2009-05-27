@@ -460,16 +460,30 @@ class DBContentHandler (ContentHandler):
 
                 # The replace action is over the old file_id
                 file_id, parent_id = self.__get_file_for_path (path, log.id)
-                self.__move_path_to_deletes_cache (path)
-
                 if action.f2 is not None:
                     old_path = prefix + action.f2
                     from_commit_id = self.revision_cache.get (action.rev, None)
                     from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
+
+                    # The file is replaced from itself, we can just
+                    # ignore this action.
+                    #
+                    # Fixes problems when building paths in situations like this one:
+                    #
+                    #r76 | mhr3 | 2006-10-18 18:07:11 +0200 (Wed, 18 Oct 2006) | 1 line
+                    #Changed paths:
+                    #   A /scripts/sframework (from /sframework:74)
+                    #   R /scripts/sframework/branches (from /sframework/branches:75)
+                    #   R /scripts/sframework/tags (from /sframework/tags:75)
+                    #   R /scripts/sframework/trunk (from /sframework/trunk:75)
+                    #   D /sframework
+                    if from_file_id == file_id:
+                        continue
                 else:
                     from_commit_id = None
                     from_file_id = file_id
-                    
+
+                self.__move_path_to_deletes_cache (path)
                 # Remove the old references
                 dirpath = path.rstrip ("/") + "/"
                 for cpath in self.file_cache.keys ():
