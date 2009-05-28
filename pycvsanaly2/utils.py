@@ -61,7 +61,7 @@ def printout (str = '\n', args = None):
         return
 
     if args is not None:
-        str = str % args
+        str = str % tuple (to_utf8 (arg) for arg in args)
     
     if str != '\n':
         str += '\n'
@@ -70,7 +70,7 @@ def printout (str = '\n', args = None):
 
 def printerr (str = '\n', args = None):
     if args is not None:
-        str = str % args
+        str = str % tuple (to_utf8 (arg) for arg in args)
     
     if str != '\n':
         str += '\n'
