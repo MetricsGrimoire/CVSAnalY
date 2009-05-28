@@ -176,7 +176,7 @@ class SVNParser (Parser):
                 # We can go directly from FILES to COMMIT
                 # when there is an empty log message
                 if self.msg_lines > 0:
-                    printout ("Warning (%d): parsing svn log, missing lines in commit message!", (self.n_line))
+                    printout ("Warning (%d): parsing svn log, missing lines in commit message!", (self.n_line,))
                 
                 self.__convert_commit_actions (self.commit)
                 self.handler.commit (self.commit)
@@ -184,7 +184,7 @@ class SVNParser (Parser):
                 self.commit = None
                 self.msg_lines = 0
             else:
-                printout ("Warning (%d): parsing svn log, unexpected separator", (self.n_line))
+                printout ("Warning (%d): parsing svn log, unexpected separator", (self.n_line,))
                 
             return
 

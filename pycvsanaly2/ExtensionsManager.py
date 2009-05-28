@@ -51,7 +51,7 @@ class ExtensionsManager:
                         raise InvalidDependency (ext, dep)
 
     def run_extension (self, name, extension, repo, uri, db):
-        printout ("Executing extension %s", (name))
+        printout ("Executing extension %s", (name,))
         try:
             extension.run (repo, uri, db)
         except ExtensionRunError, e:
@@ -76,7 +76,7 @@ class ExtensionsManager:
                     break
 
             if not result:
-                printout ("Skipping extension %s since one or more of its dependencies failed", (name))
+                printout ("Skipping extension %s since one or more of its dependencies failed", (name,))
                 continue
                     
             self.run_extension (name, extension, repo, uri, db)

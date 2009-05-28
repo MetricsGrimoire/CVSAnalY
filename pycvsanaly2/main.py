@@ -238,13 +238,13 @@ def main (argv):
     try:
         emg = ExtensionsManager (config.extensions)
     except InvalidExtension, e:
-        printerr ("Invalid extension %s", (e.name))
+        printerr ("Invalid extension %s", (e.name,))
         return 1
     except InvalidDependency, e:
         printerr ("Extension %s depends on extension %s which is not a valid extension", (e.name1, e.name2))
         return 1
     except Exception, e:
-        printerr ("Unknown extensions error: %s", (str (e)))
+        printerr ("Unknown extensions error: %s", (str (e),))
         return 1
     
     db_exists = False
@@ -256,13 +256,13 @@ def main (argv):
                               config.db_password,
                               config.db_hostname)
     except AccessDenied, e:
-        printerr ("Error creating database: %s", (e.message))
+        printerr ("Error creating database: %s", (e.message,))
         return 1
     except DatabaseNotFound:
-        printerr ("Database %s doesn't exist. It must be created before running cvsanaly", (config.db_database))
+        printerr ("Database %s doesn't exist. It must be created before running cvsanaly", (config.db_database,))
         return 1
     except DatabaseDriverNotSupported:
-        printerr ("Database driver %s is not supported by cvsanaly", (config.db_driver))
+        printerr ("Database driver %s is not supported by cvsanaly", (config.db_driver,))
         return 1
     
     cnn = db.connect ()
@@ -273,7 +273,7 @@ def main (argv):
     except TableAlreadyExists:
         db_exists = True
     except DatabaseException, e:
-        printerr ("Database error: %s", (e.message))
+        printerr ("Database error: %s", (e.message,))
         return 1
 
     if config.no_parse and not db_exists:
