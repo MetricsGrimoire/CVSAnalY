@@ -163,7 +163,7 @@ class SVNParser (Parser):
         # r176840 | (no author) | (no date) | 1 line
         # without any canged path, so I think we can just ignore them
         if self.patterns['invalid'].match (line):
-            printdbg ("SVN Parser: skipping invalid commit: %s", (line))
+            printdbg ("SVN Parser: skipping invalid commit: %s", (line,))
             self.state = SVNParser.COMMIT
             self.commit = None
             return

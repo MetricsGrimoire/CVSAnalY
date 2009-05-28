@@ -199,7 +199,7 @@ class DBContentHandler (ContentHandler):
 
     def __ensure_branch (self, branch):
         profiler_start ("Ensuring branch %s for repository %d", (branch, self.repo_id))
-        printdbg ("DBContentHandler: ensure_branch %s", (branch))
+        printdbg ("DBContentHandler: ensure_branch %s", (branch,))
         cursor = self.cursor
 
         cursor.execute (statement ("SELECT id from branches where name = ?", self.db.place_holder), (branch,))
@@ -219,7 +219,7 @@ class DBContentHandler (ContentHandler):
 
     def __ensure_tag (self, tag):
         profiler_start ("Ensuring tag %s for repository %d", (tag, self.repo_id))
-        printdbg ("DBContentHandler: ensure_tag %s", (tag))
+        printdbg ("DBContentHandler: ensure_tag %s", (tag,))
         cursor = self.cursor
 
         cursor.execute (statement ("SELECT id from tags where name = ?", self.db.place_holder), (tag,))
@@ -262,7 +262,7 @@ class DBContentHandler (ContentHandler):
 
     def __ensure_path (self, path, commit_id):
         profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
-        printdbg ("DBContentHandler: ensure_path %s", (path))
+        printdbg ("DBContentHandler: ensure_path %s", (path,))
         
         prefix, lpath = path.split ("://", 1)
         prefix += "://"
@@ -361,7 +361,7 @@ class DBContentHandler (ContentHandler):
         # TODO: sort actions? R, A, D, M, V, C
         
         for action in commit.actions:
-            printdbg ("DBContentHandler: Action: %s", (action.type))
+            printdbg ("DBContentHandler: Action: %s", (action.type,))
             dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
 
@@ -523,7 +523,7 @@ class DBContentHandler (ContentHandler):
             self.cursor.executemany (statement (DBTagRev.__insert__, self.db.place_holder), tag_revs)
 
         if len (self.actions) >= self.MAX_ACTIONS:
-            printdbg ("DBContentHandler: %d actions inserting", (len (self.actions)))
+            printdbg ("DBContentHandler: %d actions inserting", (len (self.actions),))
             self.__insert_many ()
 
         profiler_stop ("New commit %s for repository %d", (commit.revision, self.repo_id))
