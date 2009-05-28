@@ -28,15 +28,17 @@ config = Config ()
 def to_utf8 (string):
     if isinstance (string, unicode):
         return string.encode ('utf-8')
+    elif isinstance (string, str):
+        for encoding in ['ascii', 'utf-8', 'iso-8859-15']:
+            try:
+                s = unicode (string, encoding)
+            except:
+                continue
+            break
 
-    for encoding in ['ascii', 'utf-8', 'iso-8859-15']:
-        try:
-            s = unicode (string, encoding)
-        except:
-            continue
-        break
-        
-    return s.encode ('utf-8')
+        return s.encode ('utf-8')
+    else:
+        return string
 
 def uri_is_remote (uri):
     match = re.compile ("^.*://.*$").match (uri)
