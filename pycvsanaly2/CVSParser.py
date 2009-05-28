@@ -153,7 +153,7 @@ class CVSParser (Parser):
         
         # Revision
         match = self.patterns['revision'].match (line)
-        if match:
+        if match and self.rev_separator is not None:
             if self.commit is not None:
                 self.handler.commit (self.commit)
 
@@ -173,7 +173,7 @@ class CVSParser (Parser):
 
         # Commit info (date, author, etc.)
         match = self.patterns['info'].match (line)
-        if match:
+        if match and self.commit is not None:
             commit = self.commit
 
             revision = commit.revision.split ('|')[0]
