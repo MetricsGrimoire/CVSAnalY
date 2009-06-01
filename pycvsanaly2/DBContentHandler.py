@@ -217,6 +217,14 @@ class DBContentHandler (ContentHandler):
 
         return branch_id
 
+    def __get_branch (self, branch):
+        if branch in self.branch_cache:
+            branch_id = self.branch_cache[branch]
+        else:
+            branch_id = self.__ensure_branch (branch)
+
+        return branch_id
+
     def __ensure_tag (self, tag):
         profiler_start ("Ensuring tag %s for repository %d", (tag, self.repo_id))
         printdbg ("DBContentHandler: ensure_tag %s", (tag,))
@@ -365,11 +373,8 @@ class DBContentHandler (ContentHandler):
             dbaction = DBAction (None, action.type)
             dbaction.commit_id = log.id
 
-            branch = commit.branch or action.branch
-            if branch in self.branch_cache:
-                branch_id = self.branch_cache[branch]
-            else:
-                branch_id = self.__ensure_branch (branch)
+            branch = commit.branch or action.branch_f1
+            branch_id = self.__get_branch (branch)
             dbaction.branch_id = branch_id
 
             prefix = "%d://" % (branch_id)
@@ -403,8 +408,12 @@ class DBContentHandler (ContentHandler):
                 new_file_name = os.path.basename (path)
 
                 from_commit_id = self.revision_cache.get (action.rev, None)
-                
-                old_path = prefix + action.f2
+
+                if action.branch_f2:
+                    branch_f2_id = self.__get_branch (action.branch_f2)
+                    old_path = "%d://%s" % (branch_f2_id, action.f2)
+                else:
+                    old_path = prefix + action.f2
                 file_id, parent_id = self.__get_file_for_path (old_path, from_commit_id, True)
                 
                 dbfilecopy = DBFileCopy (None, file_id)
@@ -437,7 +446,11 @@ class DBContentHandler (ContentHandler):
 
                 from_commit_id = self.revision_cache.get (action.rev, None)
 
-                old_path = prefix + action.f2
+                if action.branch_f2:
+                    branch_f2_id = self.__get_branch (action.branch_f2)
+                    old_path = "%d://%s" % (branch_f2_id, action.f2)
+                else:
+                    old_path = prefix + action.f2
                 from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
 
                 if not parent_path or parent_path == prefix.strip ('/'):
@@ -463,7 +476,11 @@ class DBContentHandler (ContentHandler):
                 self.__move_path_to_deletes_cache (path)
 
                 if action.f2 is not None:
-                    old_path = prefix + action.f2
+                    if action.branch_f2:
+                        branch_f2_id = self.__get_branch (action.branch_f2)
+                        old_path = "%d://%s" % (branch_f2_id, action.f2)
+                    else:
+                        old_path = prefix + action.f2
                     from_commit_id = self.revision_cache.get (action.rev, None)
                     from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
                 else:

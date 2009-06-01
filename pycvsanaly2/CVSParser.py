@@ -219,8 +219,8 @@ class CVSParser (Parser):
             except KeyError:
                 branch = 'trunk'
 
-            action.branch = branch
-            
+            commit.branch = branch
+
             commit.actions.append (action)
 
             return
