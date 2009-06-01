@@ -58,11 +58,12 @@ class Commit:
 
 class Action:
     def __init__ (self):
-        self.__dict__ = { 'type'   : None,
-                          'branch' : None,
-                          'f1'     : None,
-                          'f2'     : None,
-                          'rev'    : None}
+        self.__dict__ = { 'type'      : None,
+                          'branch_f1' : None,
+                          'branch_f2' : None,
+                          'f1'        : None,
+                          'f2'        : None,
+                          'rev'       : None}
 
     def __getinitargs__(self):
         return ()
@@ -83,14 +84,16 @@ class Action:
         return self.type == other.type and \
             self.f1 == other.f1 and \
             self.f2 == other.f2 and \
-            self.branch == other.branch and \
+            self.branch_f1 == other.branch_f1 and \
+            self.branch_f2 == other.branch_f2 and \
             self.rev == other.rev
     
     def __ne__ (self, other):
         return self.type != other.type or \
             self.f1 != other.f1 or \
             self.f2 != other.f2 or \
-            self.branch != other.branch or \
+            self.branch_f1 != other.branch_f1 or \
+            self.branch_f2 != other.branch_f2 or \
             self.rev != other.rev
     
 

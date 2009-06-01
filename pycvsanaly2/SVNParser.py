@@ -235,7 +235,8 @@ class SVNParser (Parser):
             action.f2 = match.group (3)
             action.rev = match.group (4)
 
-            action.branch = self.__guess_branch_from_path (action.f1)
+            action.branch_f1 = self.__guess_branch_from_path (action.f1)
+            action.branch_f2 = self.__guess_branch_from_path (action.f2)
 
             self.commit.actions.append (action)
             self.handler.file (action.f1)
@@ -259,7 +260,7 @@ class SVNParser (Parser):
                 action.type = match.group (1)
                 action.f1 = path
 
-                action.branch = self.__guess_branch_from_path (path)
+                action.branch_f1 = self.__guess_branch_from_path (path)
 
                 self.commit.actions.append (action)
                 self.handler.file (path)
