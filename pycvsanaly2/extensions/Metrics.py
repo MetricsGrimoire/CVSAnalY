@@ -871,19 +871,13 @@ class Metrics (Extension):
             metrics_failed = self.__get_metrics_failed (read_cursor, repoid)
 
         job_pool = JobPool (repo, path or repo.get_uri (), self.MAX_METRICS)
-            
-        # Obtain files and revisions
-        
-        if self.config.metrics_all:
-            query = "select s.rev rev, s.id commit_id, ft.file_id file_id, composed_rev " + \
-                    "from scmlog s, action_files af, file_types ft " + \
-                    "where s.id = af.commit_id and af.file_id = ft.file_id " + \
-                    "and ft.type in ('code', 'unknown') " + \
-                    "and af.action_type in ('A', 'M', 'R') " + \
-                    "and s.repository_id = ? " + \
-                    "order by s.id"
-        else:
-            query = "select s.rev rev, s.id commit_id, head.file_id file_id, composed_rev " + \
+
+        # Get code files
+
+
+        # Get files and revision for head
+        if not self.config.metrics_all:
+            query = "select s.id commit_id, head.file_id file_id " + \
                     "from scmlog s, (" + \
                     "select af.action_id action_id, mlog.file_id file_id, mlog.commit_id commit_id " + \
                     "from action_files af, file_types ft, (" + \
@@ -897,12 +891,57 @@ class Metrics (Extension):
                     ") head where head.commit_id = s.id " + \
                     "and s.repository_id = ? " + \
                     "order by s.id"
+            read_cursor.execute (statement (query, db.place_holder), (repoid,))
+            head_files = {}
+            for commit_id, file_id in read_cursor.fetchall ():
+                head_files[file_id] = commit_id
+        else:
+            # Get code files to discard all other files in case of metrics-all
+            query = "select f.id from file_types ft, files f " + \
+                    "where f.id = ft.file_id and " + \
+                    "ft.type in ('code', 'unknown') and " + \
+                    "f.repository_id = ?"
+            read_cursor.execute (statement (query, db.place_holder), (repoid,))
+            code_files = [item[0] for item in read_cursor.fetchall ()]
+
+        # Obtain files and revisions
+        query = "select s.rev rev, s.id commit_id, af.file_id, af.action_type, s.composed_rev " + \
+                "from scmlog s, action_files af " + \
+                "where s.id = af.commit_id " + \
+                "and s.repository_id = ? " + \
+                "order by s.id"
 
         n_metrics = 0
+        prev_commit = -1
         read_cursor.execute (statement (query, db.place_holder), (repoid,))
-        for revision, commit_id, file_id, composed in read_cursor.fetchall ():
+        for revision, commit_id, file_id, action_type, composed in read_cursor.fetchall ():
+            if action_type in ('V', 'C'):
+                if prev_commit != commit_id:
+                    # Get the matrix for revision
+                    prev_commit = commit_id
+                    aux_cursor = cnn.cursor ()
+                    fp.update_for_revision (aux_cursor, commit_id, repoid)
+                    aux_cursor.close ()
+                continue
+            elif action_type == 'D':
+                continue
+            elif action_type in  ('A', 'R'):
+                if prev_commit != commit_id:
+                    # Get the matrix for revision
+                    prev_commit = commit_id
+                    aux_cursor = cnn.cursor ()
+                    fp.update_for_revision (aux_cursor, commit_id, repoid)
+                    aux_cursor.close ()
+
+            if self.config.metrics_all:
+                if file_id not in code_files:
+                    continue
+            else:
+                if file_id not in head_files or head_files[file_id] != commit_id:
+                    continue
+
             failed = False
-            
+
             if (file_id, commit_id) in metrics_failed:
                 printdbg ("%d@%d is already in the database, but it failed, try again", (file_id, commit_id))
                 failed = True
@@ -915,10 +954,18 @@ class Metrics (Extension):
             else:
                 rev = revision
 
-            aux_cursor = cnn.cursor ()
-            relative_path = fp.get_path (aux_cursor, file_id, commit_id, repoid).strip ("/")
+            try:
+                relative_path = fp.get_path (file_id, commit_id, repoid).strip ("/")
+            except AttributeError, e:
+                if fp.get_commit_id () != commit_id:
+                    aux_cursor = cnn.cursor ()
+                    fp.update_for_revision (aux_cursor, commit_id, repoid)
+                    aux_cursor.close ()
+
+                    relative_path = fp.get_path (file_id, commit_id, repoid).strip ("/")
+                else:
+                    raise e
             printdbg ("Path for %d at %s -> %s", (file_id, rev, relative_path))
-            aux_cursor.close ()
 
             if repo.get_type () == 'svn' and relative_path == 'tags':
                 printdbg ("Skipping file %s", (relative_path,))

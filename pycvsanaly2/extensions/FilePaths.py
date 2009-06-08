@@ -43,12 +43,22 @@ class FilePaths:
         self.__dict__ = self.__shared_state
         self.__dict__['db'] = db
 
-    def __get_adj_for_revision (self, cursor, repo_id, commit_id):
+    def update_for_revision (self, cursor, commit_id, repo_id):
         db = self.__dict__['db']
 
-        profiler_start ("Getting adjacency matrix for commit %d", (commit_id,))
-        
-        adj = FilePaths.Adj ()
+        if commit_id == self.__dict__['rev']:
+            return
+
+        prev_commit_id = self.__dict__['rev']
+        self.__dict__['rev'] = commit_id
+
+        profiler_start ("Updating adjacency matrix for commit %d", (commit_id,))
+
+        if self.__dict__['adj'] is None:
+            adj = FilePaths.Adj ()
+            self.__dict__['adj'] = adj
+        else:
+            adj = self.__dict__['adj']
 
         rf = self.__dict__['files']
         if rf is not None:
@@ -71,69 +81,48 @@ class FilePaths:
                     repo_files[id] = file_name
                 rs = cursor.fetchmany ()
             self.__dict__['files'] = (repo_id, repo_files)
+            adj.files = repo_files
 
         # Get the files that have been renamed
         # with the new name for the given rev
-        query = "select fv.file_id, new_file_name " + \
-                "from (select file_id, max(commit_id) mc " + \
-                "from actions_file_names where commit_id <= ? " + \
-                "and type = 'V' group by file_id) fv, " + \
-                "actions_file_names af, files f " + \
-                "where af.file_id = fv.file_id and " + \
-                "af.commit_id = fv.mc and " + \
-                "f.id = fv.file_id and f.repository_id = ?"
-        profiler_start ("Getting files for commit %d", (commit_id,))
+        query = "select af.file_id, af.new_file_name " + \
+                "from actions_file_names af, files f " + \
+                "where af.file_id = f.id " + \
+                "and af.commit_id = ? " + \
+                "and af.type = 'V' " + \
+                "and f.repository_id = ?"
+        profiler_start ("Getting new file names for commit %d", (commit_id,))
         cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
-        profiler_stop ("Getting files for commit %d", (commit_id,))
+        profiler_stop ("Getting new file names for commit %d", (commit_id,))
         rs = cursor.fetchmany ()
-        files = {}
         while rs:
             for id, file_name in rs:
-                files[id] = file_name
+                adj.files[id] = file_name
             rs = cursor.fetchmany ()
 
-        # Set not renamed files
-        for id in repo_files:
-            if id not in files:
-                files[id] = repo_files[id]
-        adj.files = files
-
-        # Get the files that have been removed or replaced
-        query = "select a.file_id from actions a, files f " + \
-                "where type in ('D', 'R') and commit_id <= ? " + \
-                "and a.file_id = f.id and f.repository_id = ?"
-        profiler_start ("Getting dead files for commit %d", (commit_id,))
-        cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
-        profiler_stop ("Getting dead files for commit %d", (commit_id,))
-        dead_files = [item[0] for item in cursor.fetchall ()]
-
-        # Get the file links
-        query = "select fl.parent_id, fl.file_id from " + \
-                "(select file_id, max(commit_id) mc " + \
-                "from file_links where commit_id <= ? " + \
-                "group by file_id) l, " + \
-                "file_links fl, files f " + \
-                "where l.file_id = fl.file_id and " + \
-                "l.mc = fl.commit_id and " + \
-                "f.id = l.file_id and f.repository_id = ?"
+        # Get the new file links since the last time
+        query = "select fl.parent_id, fl.file_id " + \
+                "from file_links fl, files f " + \
+                "where fl.file_id = f.id "
+        if prev_commit_id is None:
+            query += "and fl.commit_id = ? "
+            args = (commit_id, repo_id)
+        else:
+            query += "and fl.commit_id between ? and ? "
+            args = (prev_commit_id, commit_id, repo_id)
+        query += "and f.repository_id = ?"
         profiler_start ("Getting file links for commit %d", (commit_id,))
-        cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
+        cursor.execute (statement (query, db.place_holder), args)
         profiler_stop ("Getting file links for commit %d", (commit_id,))
         rs = cursor.fetchmany ()
-        adj_ = {}
-        tops = []
         while rs:
             for f1, f2 in rs:
-                # Do not include dead links!
-                if dead_files and f1 in dead_files or f2 in dead_files:
-                    continue
-                adj_[f2] = f1
+                adj.adj[f2] = f1
             rs = cursor.fetchmany ()
-        adj.adj = adj_
 
-        profiler_stop ("Getting adjacency matrix for commit %d", (commit_id,))
+        self.__dict__['adj'] = adj
 
-        return adj
+        profiler_stop ("Updating adjacency matrix for commit %d", (commit_id,))
 
     def __build_path (self, file_id, adj):
         if file_id not in adj.adj:
@@ -151,25 +140,21 @@ class FilePaths:
         profiler_stop ("Building path for file %d", (file_id,))
 
         return "/" + "/".join (tokens)
-    
-    def get_path (self, cursor, file_id, commit_id, repo_id):
-        db = self.__dict__['db']
 
+    def get_path (self, file_id, commit_id, repo_id):
         profiler_start ("Getting path for file %d at commit %d", (file_id, commit_id))
 
-        if commit_id == self.__dict__['rev']:
-            adj = self.__dict__['adj']
-        else:
-            del self.__dict__['adj']
-            self.__dict__['rev'] = commit_id
-            adj = self.__get_adj_for_revision (cursor, repo_id, commit_id)
-            self.__dict__['adj'] = adj
+        adj = self.__dict__['adj']
+        assert adj is not None, "Matrix no updated"
 
         path = self.__build_path (file_id, adj)
-        
+
         profiler_stop ("Getting path for file %d at commit %d", (file_id, commit_id))
 
         return path
+
+    def get_commit_id (self):
+        return self.__dict__['rev']
 
 
 if __name__ == '__main__':
@@ -191,8 +176,9 @@ if __name__ == '__main__':
     for id, file_id in cursor.fetchall ():
         if old_id != id:
             print "Commit ",id
+            fp.update_for_revision (cursor, id, 1)
             old_id = id
-        print fp.get_path (cursor, file_id, id, 1)
+        print fp.get_path (file_id, id, 1)
 
     cursor.close ()
     
