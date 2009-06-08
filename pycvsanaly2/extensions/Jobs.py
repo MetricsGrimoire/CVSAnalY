@@ -29,10 +29,10 @@ class JobPool:
 
     POOL_SIZE = 5
 
-    def __init__ (self, repo, repo_uri, jobs_done = True, poolsize = POOL_SIZE):
+    def __init__ (self, repo, repo_uri, jobs_done = True, poolsize = POOL_SIZE, queuesize = None):
         self.jobs_done = jobs_done
-        
-        self.queue = AsyncQueue ()
+
+        self.queue = AsyncQueue (queuesize or 0)
         if self.jobs_done:
             self.done = AsyncQueue ()
             
