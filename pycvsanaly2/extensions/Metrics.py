@@ -870,7 +870,7 @@ class Metrics (Extension):
             metrics = self.__get_metrics (read_cursor, repoid)
             metrics_failed = self.__get_metrics_failed (read_cursor, repoid)
 
-        job_pool = JobPool (repo, path or repo.get_uri (), self.MAX_METRICS)
+        job_pool = JobPool (repo, path or repo.get_uri (), queuesize=self.MAX_METRICS)
 
         # Get code files
 
