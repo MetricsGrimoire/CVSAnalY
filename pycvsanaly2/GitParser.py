@@ -24,7 +24,7 @@ import datetime
 
 from Parser import Parser
 from Repository import Commit, Action, Person
-from utils import printdbg
+from utils import printout, printdbg
 
 class GitParser (Parser):
 
@@ -124,6 +124,15 @@ class GitParser (Parser):
                 if m:
                     self.commit.tags = [m.group (1)]
                     printdbg ("Commit %s tagged as '%s'", (self.commit.revision, self.commit.tags[0]))
+
+            if branch is not None and self.branch_stack:
+                # Detect empty branches. Ideally, the head of a branch
+                # can't have children. When this happens is because the
+                # branch is empty, so we just ignore such branch
+                prev_commit = self.branch_stack[-1]
+                if git_commit.is_my_child (prev_commit):
+                    printout ("Warning: Detected empty branch '%s', it'll be ignored", (branch,))
+                    branch = None
 
             if len (self.branches) >= 2:
                 # If current commit is the start point of a new branch
