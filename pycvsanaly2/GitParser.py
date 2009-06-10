@@ -24,6 +24,7 @@ import datetime
 
 from Parser import Parser
 from Repository import Commit, Action, Person
+from utils import printdbg
 
 class GitParser (Parser):
 
@@ -62,11 +63,14 @@ class GitParser (Parser):
             self._unpack_branch_stack ()
 
     def _unpack_branch_stack (self):
+        printdbg ("Unpacking branch stack")
         branch, stack = self.branches.pop (0)
         # Ignore local and stash branches
         if branch[1] != "remote":
+            printdbg ("Ignoring local branch '%s'", (branch[0],))
             return
-        
+
+        printdbg ("Unpacking %d commits from branch '%s'", (len (stack), branch[0]))
         for commit in stack:
             commit.commit.branch = branch[0]
             self.handler.commit (commit.commit)
@@ -98,23 +102,28 @@ class GitParser (Parser):
                 m = re.search (self.patterns['branch'], decorate)
                 if m:
                     branch = (m.group (1), "remote")
+                    printdbg ("Branch '%s' head at acommit %s", (branch[0], self.commit.revision))
                 else:
                     # Local Branch
                     m = re.search (self.patterns['local-branch'], decorate)
                     if m:
                         branch = (m.group (1), "local")
+                        printdbg ("Commit %s on local branch '%s'", (self.commit.revision, branch[0]))
                         # If local branch was merged we just ignore this decoration
                         if self.branch_stack and git_commit.is_my_child (self.branch_stack[-1]):
+                            printdbg ("Local branch '%s' was merged", (branch[0],))
                             branch = None
                     else:
                         # Stash
                         m = re.search (self.patterns['stash'], decorate)
                         if m:
                             branch = ("stash", "stash")
+                            printdbg ("Commit %s on stash", (self.commit.revision,))
                 # Tag
                 m = re.search (self.patterns['tag'], decorate)
                 if m:
                     self.commit.tags = [m.group (1)]
+                    printdbg ("Commit %s tagged as '%s'", (self.commit.revision, self.commit.tags[0]))
 
             if len (self.branches) >= 2:
                 # If current commit is the start point of a new branch
@@ -128,6 +137,7 @@ class GitParser (Parser):
 
                 for b, stack in branches:
                     if git_commit.is_my_child (stack[-1]):
+                        printdbg ("Start point of branch '%s' at commit %s", (self.branches[0][0], self.commit.revision))
                         self._unpack_branch_stack ()
                         self.branch_stack = stack
 
