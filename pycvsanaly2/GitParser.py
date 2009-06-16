@@ -36,7 +36,34 @@ class GitParser (Parser):
 
         def is_my_child (self, git_commit):
             return git_commit.parents and self.commit.revision in git_commit.parents
-    
+
+    class GitBranch:
+
+        ( REMOTE,
+          LOCAL,
+          STASH ) = range (3)
+
+        def __init__ (self, type, name, tail):
+            self.type = type
+            self.name = name
+            self.set_tail (tail)
+
+        def is_my_parent (self, git_commit):
+            return git_commit.is_my_child (self.tail)
+
+        def is_remote (self):
+            return self.type == self.REMOTE
+
+        def is_local (self):
+            return self.type == self.LOCAL
+
+        def is_stash (self):
+            return self.type == self.STASH
+
+        def set_tail (self, tail):
+            self.tail = tail
+            self.tail.commit.branch = self.name
+
     patterns = {}
     patterns['commit'] = re.compile ("^commit[ \t]+([^ ]+)( ([^\(]+))?( \((.*)\))?$")
     patterns['author'] = re.compile ("^Author:[ \t]+(.*)[ \t]+<(.*)>$")
@@ -55,25 +82,15 @@ class GitParser (Parser):
 
         # Parser context
         self.commit = None
-        self.branch_stack = None
+        self.branch = None
         self.branches = []
 
     def flush (self):
         if self.branches:
-            self._unpack_branch_stack ()
-
-    def _unpack_branch_stack (self):
-        printdbg ("Unpacking branch stack")
-        branch, stack = self.branches.pop (0)
-        # Ignore local and stash branches
-        if branch[1] != "remote":
-            printdbg ("Ignoring local branch '%s'", (branch[0],))
-            return
-
-        printdbg ("Unpacking %d commits from branch '%s'", (len (stack), branch[0]))
-        for commit in stack:
-            commit.commit.branch = branch[0]
-            self.handler.commit (commit.commit)
+            if self.branch.is_remote ():
+                self.handler.commit (self.branch.tail.commit)
+            self.branch = None
+            self.branches = None
 
     def _parse_line (self, line):
         if line is None or line == '':
@@ -83,10 +100,12 @@ class GitParser (Parser):
         for patt in self.patterns['ignore']:
             if patt.match (line):
                 return
-        
+
         # Commit
         match = self.patterns['commit'].match (line)
         if match:
+            if self.commit is not None and self.branch.is_remote ():
+                self.handler.commit (self.branch.tail.commit)
             self.commit = Commit ()
             self.commit.revision = match.group (1)
 
@@ -94,30 +113,30 @@ class GitParser (Parser):
             if parents:
                 parents = parents.split ()
             git_commit = self.GitCommit (self.commit, parents)
-            
+
             decorate = match.group (5)
             branch = None
             if decorate:
                 # Remote branch
                 m = re.search (self.patterns['branch'], decorate)
                 if m:
-                    branch = (m.group (1), "remote")
-                    printdbg ("Branch '%s' head at acommit %s", (branch[0], self.commit.revision))
+                    branch = self.GitBranch (self.GitBranch.REMOTE, m.group (1), git_commit)
+                    printdbg ("Branch '%s' head at acommit %s", (branch.name, self.commit.revision))
                 else:
                     # Local Branch
                     m = re.search (self.patterns['local-branch'], decorate)
                     if m:
-                        branch = (m.group (1), "local")
-                        printdbg ("Commit %s on local branch '%s'", (self.commit.revision, branch[0]))
+                        branch = self.GitBranch (self.GitBranch.LOCAL, m.group (1), git_commit)
+                        printdbg ("Commit %s on local branch '%s'", (self.commit.revision, branch.name))
                         # If local branch was merged we just ignore this decoration
-                        if self.branch_stack and git_commit.is_my_child (self.branch_stack[-1]):
-                            printdbg ("Local branch '%s' was merged", (branch[0],))
+                        if self.branch and self.branch.is_my_parent (git_commit):
+                            printdbg ("Local branch '%s' was merged", (branch.name,))
                             branch = None
                     else:
                         # Stash
                         m = re.search (self.patterns['stash'], decorate)
                         if m:
-                            branch = ("stash", "stash")
+                            branch = self.GitBranch (self.GitBranch.STASH, "stash", git_commit)
                             printdbg ("Commit %s on stash", (self.commit.revision,))
                 # Tag
                 m = re.search (self.patterns['tag'], decorate)
@@ -125,13 +144,12 @@ class GitParser (Parser):
                     self.commit.tags = [m.group (1)]
                     printdbg ("Commit %s tagged as '%s'", (self.commit.revision, self.commit.tags[0]))
 
-            if branch is not None and self.branch_stack:
+            if branch is not None and self.branch is not None:
                 # Detect empty branches. Ideally, the head of a branch
                 # can't have children. When this happens is because the
                 # branch is empty, so we just ignore such branch
-                prev_commit = self.branch_stack[-1]
-                if git_commit.is_my_child (prev_commit):
-                    printout ("Warning: Detected empty branch '%s', it'll be ignored", (branch,))
+                if self.branch.is_my_parent (git_commit):
+                    printout ("Warning: Detected empty branch '%s', it'll be ignored", (branch.name,))
                     branch = None
 
             if len (self.branches) >= 2:
@@ -139,25 +157,27 @@ class GitParser (Parser):
                 # we have to look at all the current branches since
                 # we haven't inserted the new branch yet.
                 # If not, look at all other branches excluding the current one
-                if branch is not None:
-                    branches = [b for b in self.branches]
-                else:
-                    branches = self.branches[1:]
+                for i, b in enumerate (self.branches):
+                    if i == 0 and branch is None:
+                        continue
 
-                for b, stack in branches:
-                    if git_commit.is_my_child (stack[-1]):
-                        printdbg ("Start point of branch '%s' at commit %s", (self.branches[0][0], self.commit.revision))
-                        self._unpack_branch_stack ()
-                        self.branch_stack = stack
+                    if b.is_my_parent (git_commit):
+                        # We assume current branch is always the last one
+                        # AFAIK there's no way to make sure this is right
+                        printdbg ("Start point of branch '%s' at commit %s", (self.branches[0].name, self.commit.revision))
+                        self.branches.pop (0)
+                        self.branch = b
 
             if branch is not None:
-                self.branch_stack = []
+                self.branch = branch
+
                 # Insert master always at the end
-                if branch == ('master', 'remote'):
-                    self.branches.append ((branch, self.branch_stack))
+                if branch.is_remote () and branch.name == 'master':
+                    self.branches.append (self.branch)
                 else:
-                    self.branches.insert (0, (branch, self.branch_stack))
-            self.branch_stack.append (git_commit)
+                    self.branches.insert (0, self.branch)
+            else:
+                self.branch.set_tail (git_commit)
 
             return
 
