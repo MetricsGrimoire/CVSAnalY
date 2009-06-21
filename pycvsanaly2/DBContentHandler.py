@@ -280,6 +280,10 @@ class DBContentHandler (ContentHandler):
         node_id = None
         for i, token in enumerate (tokens):
             rpath = prefix + '/' + '/'.join (tokens[:i + 1])
+            if not ":///" in path:
+                # If the repo paths don't start with /
+                # remove it here
+                rpath = rpath.replace (':///', '://')
             printdbg ("DBContentHandler: rpath: %s", (rpath,))
             try:
                 node_id, parent_id = self.file_cache[rpath]
@@ -294,8 +298,6 @@ class DBContentHandler (ContentHandler):
             parent_id = parent
             parent = node_id
 
-            if not ":///" in path:
-                rpath = rpath.replace (':///', '://')
             self.file_cache[rpath] = (node_id, parent_id)
 
         assert node_id is not None
