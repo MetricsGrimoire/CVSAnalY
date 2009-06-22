@@ -33,6 +33,7 @@ class GitParser (Parser):
         def __init__ (self, commit, parents):
             self.commit = commit
             self.parents = parents
+            self.svn_tag = None
 
         def is_my_child (self, git_commit):
             return git_commit.parents and self.commit.revision in git_commit.parents
@@ -76,14 +77,21 @@ class GitParser (Parser):
     patterns['tag'] = re.compile ("tag: refs/tags/([^,]*)")
     patterns['stash'] = re.compile ("refs/stash")
     patterns['ignore'] = [re.compile ("^AuthorDate: .*$"), re.compile ("^Merge: .*$")]
+    patterns['svn-tag'] = re.compile ("^svn path=/tags/(.*)/; revision=([0-9]+)$")
 
     def __init__ (self):
         Parser.__init__ (self)
+
+        self.is_gnome = None
 
         # Parser context
         self.commit = None
         self.branch = None
         self.branches = []
+
+    def set_repository (self, repo, uri):
+        Parser.set_repository (self, repo, uri)
+        self.is_gnome = re.search ("^[a-z]+://(.*@)?git\.gnome\.org/.*$", repo.get_uri ()) is not None
 
     def flush (self):
         if self.branches:
@@ -105,7 +113,9 @@ class GitParser (Parser):
         match = self.patterns['commit'].match (line)
         if match:
             if self.commit is not None and self.branch.is_remote ():
-                self.handler.commit (self.branch.tail.commit)
+                if self.branch.tail.svn_tag is None: # Skip commits on svn tags
+                    self.handler.commit (self.branch.tail.commit)
+
             self.commit = Commit ()
             self.commit.revision = match.group (1)
 
@@ -167,6 +177,18 @@ class GitParser (Parser):
                         printdbg ("Start point of branch '%s' at commit %s", (self.branches[0].name, self.commit.revision))
                         self.branches.pop (0)
                         self.branch = b
+
+            if self.branch and self.branch.tail.svn_tag is not None and self.branch.is_my_parent (git_commit):
+                # There's a pending tag in previous commit
+                pending_tag = self.branch.tail.svn_tag
+                printdbg ("Move pending tag '%s' from previous commit %s to current %s", (pending_tag,
+                                                                                          self.branch.tail.commit.revision,
+                                                                                          self.commit.revision))
+                if self.commit.tags and pending_tag not in self.commit.tags:
+                    self.commit.tags.append (pending_tag)
+                else:
+                    self.commit.tags = [pending_tag]
+                self.branch.tail.svn_tag = None
 
             if branch is not None:
                 self.branch = branch
@@ -239,6 +261,20 @@ class GitParser (Parser):
             self.handler.file (action.f1)
 
             return
+
+        # This is a workaround for a bug in the GNOME Git migration
+        # There are commits on tags not correctly detected like this one:
+        # http://git.gnome.org/cgit/evolution/commit/?id=b8e52acac2b9fc5414a7795a73c74f7ee4eeb71f
+        # We want to ignore commits on tags since it doesn't make any sense in Git
+        if self.is_gnome:
+            match = self.patterns['svn-tag'].match (line.strip ())
+            if match:
+                printout ("Warning: detected a commit on a svn tag: %s", (match.group (0),))
+                tag = match.group (1)
+                if tag in self.commit.tags:
+                    # The commit will be ignored, so move the tag
+                    # to the next (previous in history) commit
+                    self.branch.tail.svn_tag = tag
 
         # Message
         self.commit.message += line + '\n'
