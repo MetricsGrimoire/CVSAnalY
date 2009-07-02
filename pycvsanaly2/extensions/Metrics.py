@@ -964,7 +964,11 @@ class Metrics (Extension):
 
                     relative_path = fp.get_path (file_id, commit_id, repoid).strip ("/")
                 else:
-                    raise e
+                    if self.config.metrics_noerr:
+                        printerr ("Error getting path for file %d@%d: %s", (file_id, commit_id, str(e)))
+                    else:
+                        raise e
+                    
             printdbg ("Path for %d at %s -> %s", (file_id, rev, relative_path))
 
             if repo.get_type () == 'svn' and relative_path == 'tags':

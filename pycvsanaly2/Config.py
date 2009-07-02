@@ -25,20 +25,21 @@ class ErrorLoadingConfig (Exception):
 
 class Config:
 
-    __shared_state = { 'debug'        : False,
-                       'quiet'        : False,
-                       'profile'      : False,
-                       'repo_logfile' : None,
-                       'save_logfile' : None,
-                       'no_parse'     : False,
-                       'db_driver'    : 'mysql',
-                       'db_user'      : 'operator',
-                       'db_password'  : None, 
-                       'db_database'  : 'cvsanaly',
-                       'db_hostname'  : 'localhost',
-                       'extensions'   : [],
+    __shared_state = { 'debug'         : False,
+                       'quiet'         : False,
+                       'profile'       : False,
+                       'repo_logfile'  : None,
+                       'save_logfile'  : None,
+                       'no_parse'      : False,
+                       'db_driver'     : 'mysql',
+                       'db_user'       : 'operator',
+                       'db_password'   : None, 
+                       'db_database'   : 'cvsanaly',
+                       'db_hostname'   : 'localhost',
+                       'extensions'    : [],
                        # Metrics extension options
-                       'metrics_all'  : False}
+                       'metrics_all'   : False,
+                       'metrics_noerr' : False}
     
     def __init__ (self):
         self.__dict__ = self.__shared_state
@@ -109,6 +110,10 @@ class Config:
             pass
         try:
             self.metrics_all = config.metrics_all
+        except:
+            pass
+        try:
+            self.metrics_noerr = config.metrics_noerr
         except:
             pass
 

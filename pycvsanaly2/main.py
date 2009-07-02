@@ -77,6 +77,7 @@ Database:
 Metrics Options:
 
       --metrics-all              Get metrics for every revision, not only for HEAD
+      --metrics-noerr            Ignore errors when calculating metrics
 """
 
 def main (argv):
@@ -85,7 +86,8 @@ def main (argv):
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
                  "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
-                 "db-hostname=", "db-database=", "db-driver=", "extensions=", "metrics-all"]
+                 "db-hostname=", "db-database=", "db-driver=", "extensions=",
+                 "metrics-all", "metrics-noerr"]
 
     # Default options
     debug = None
@@ -102,6 +104,7 @@ def main (argv):
     save_logfile = None
     extensions = None
     metrics_all = None
+    metrics_noerr = None
 
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
@@ -144,6 +147,8 @@ def main (argv):
             extensions = value.split (',')
         elif opt in ("--metrics-all", ):
             metrics_all = True
+        elif opt in ("--metrics-noerr", ):
+            metrics_noerr = True
 
     if len (args) <= 0:
         uri = os.getcwd ()
@@ -186,6 +191,8 @@ def main (argv):
         config.extensions.extend ([item for item in extensions if item not in config.extensions])
     if metrics_all is not None:
         config.metrics_all = metrics_all
+    if metrics_noerr is not None:
+        config.metrics_noerr = metrics_noerr
 
     if not config.extensions and config.no_parse:
         # Do nothing!!!
