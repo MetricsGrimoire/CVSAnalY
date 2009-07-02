@@ -837,10 +837,8 @@ class Metrics (Extension):
             read_cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (repo_uri,))
             repoid = read_cursor.fetchone ()[0]
         except NotImplementedError:
-            remove_directory (tmpdir)
             raise ExtensionRunError ("Metrics extension is not supported for %s repositories" % (repo.get_type ()))
         except Exception, e:
-            remove_directory (tmpdir)
             raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
         try:
@@ -863,7 +861,6 @@ class Metrics (Extension):
 
             cursor.close ()
         except Exception, e:
-            remove_directory (tmpdir)
             raise ExtensionRunError (str(e))
 
         if id_counter > 1:
@@ -871,9 +868,6 @@ class Metrics (Extension):
             metrics_failed = self.__get_metrics_failed (read_cursor, repoid)
 
         job_pool = JobPool (repo, path or repo.get_uri (), queuesize=self.MAX_METRICS)
-
-        # Get code files
-
 
         # Get files and revision for head
         if not self.config.metrics_all:
