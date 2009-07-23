@@ -70,6 +70,8 @@ class ExtensionsManager:
             result = True
             # Run dependencies first
             for dep in extension.deps:
+                if dep in done:
+                    continue
                 result = self.run_extension (dep, self.exts[dep] (), repo, uri, db)
                 done.append (dep)
                 if not result:
