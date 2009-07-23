@@ -480,6 +480,7 @@ def create_file_metrics (path):
     lang = 'unknown'
     
     if sloccount is not None:
+        profiler_start ("Running sloccount %s", (path,))
         tmpdir = mkdtemp ()
         scmd = [sloccount, '--wide', '--details', '--datadir', tmpdir, path]
         cmd = Command (scmd, env = {'LC_ALL' : 'C'})
@@ -487,11 +488,13 @@ def create_file_metrics (path):
             outputlines = cmd.run ().split ('\n')
             remove_directory (tmpdir)
         except CommandError, e:
+            profiler_stop ("Running sloccount %s", (path,))
             remove_directory (tmpdir)
             if e.error:
                 printerr ('Error running sloccount: %s', (e.error,))
             raise e
         except CommandRunningError, e:
+            profiler_stop ("Running sloccount %s", (path,))
             remove_directory (tmpdir)
             pid = cmd.get_pid ()
             if pid:
@@ -506,6 +509,7 @@ def create_file_metrics (path):
 
             # If no line with 'top_dir' is found, that means
             # that SLOC is 0 and lang is unknown
+        profiler_stop ("Running sloccount %s", (path,))
         
     fm = _metrics.get (lang, FileMetrics)
     return fm (path, lang, sloc)
