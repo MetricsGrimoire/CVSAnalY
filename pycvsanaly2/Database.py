@@ -276,7 +276,44 @@ def statement (str, ph_mark):
     printdbg (retval)
     
     return retval
-    
+
+class ICursor:
+
+    def __init__ (self, cursor, size = 100):
+        self.cursor = cursor
+        self.interval_size = size
+        self.i = 0
+        self.query = None
+        self.args = None
+        self.need_exec = True
+
+    def __execute (self):
+        q = "%s limit %d, %d" % (self.query, self.i, self.interval_size)
+        self.i += self.interval_size
+
+        printdbg (q)
+        self.cursor.execute (q, self.args)
+        self.need_exec = False
+
+    def execute (self, query, args = None):
+        self.i = 0
+        self.query = query
+        self.args = args
+
+        self.__execute ()
+
+    def fetchmany (self):
+        if self.need_exec:
+            self.__execute ()
+
+        rs = self.cursor.fetchall ()
+        self.need_exec = rs is not None
+
+        return rs
+
+    def close (self):
+        self.cursor.close()
+
 class Database:
     '''CVSAnaly Database'''
 
