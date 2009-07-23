@@ -565,7 +565,7 @@ if __name__ == '__main__':
     import sys
     from cStringIO import StringIO
     from cPickle import dump, load
-    from Database import create_database, DBRepository
+    from Database import create_database, DBRepository, ICursor
 
     uri = "http://svn.test-cvsanaly.org/svn/test"
     
@@ -588,32 +588,26 @@ if __name__ == '__main__':
     cursor.execute (statement (DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
     cursor.close ()
     cnn.commit ()
-    
+
     ch = DBContentHandler (db)
     ch.begin ()
     ch.repository (uri)
-    
-    cursor = cnn.cursor ()
 
-    i = 0
-    while True:
-        query = "SELECT object from _temp_log order by id desc limit %d, 100" % i
-        i += 100
-        cursor.execute (statement (query, db.place_holder))        
-        rs = cursor.fetchmany ()
-        if not rs:
-            break
+    # We need to split the query to save memory
+    icursor = ICursor (cnn.cursor (), 100)
+    icursor.execute (statement ("SELECT object from _temp_log order by id desc",
+                                self.db.place_holder))
+    rs = icursor.fetchmany ()
+    while rs:
+        for t in rs:
+            obj = t[0]
+            io = StringIO (obj)
+            commit = load (io)
+            io.close ()
+            ch.commit (commit)
 
-        while rs:
-            for t in rs:
-                obj = t[0]
-                io = StringIO (obj)
-                commit = load (io)
-                io.close ()
-                ch.commit (commit)
-            
-            rs = cursor.fetchmany ()
-            
+        rs = icursor.fetchmany ()
+
     ch.end ()
-    cursor.close ()
+    icursor.close ()
     cnn.close ()

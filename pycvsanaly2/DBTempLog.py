@@ -18,7 +18,7 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from ContentHandler import ContentHandler
-from Database import SqliteDatabase, MysqlDatabase, TableAlreadyExists, statement
+from Database import SqliteDatabase, MysqlDatabase, TableAlreadyExists, statement, ICursor
 from Repository import Commit
 from AsyncQueue import AsyncQueue, TimeOut
 
@@ -151,34 +151,27 @@ class DBTempLog:
         self.flush ()
         
         cnn = self.db.connect ()
-        cursor = cnn.cursor ()
 
         if order is None or order == ContentHandler.ORDER_REVISION:
             query = "SELECT object from _temp_log order by id desc"
         else:
             query = "SELECT object from _temp_log order by date asc"
 
-        i = 0
-        while True:
-            # We need to split the query to save memory
-            q = "%s limit %d, %d" % (query, i, self.INTERVAL_SIZE)
-            i += self.INTERVAL_SIZE
-            cursor.execute (statement (q, self.db.place_holder))
-            rs = cursor.fetchmany ()
-            if not rs:
-                break
-            
-            while rs:
-                for t in rs:
-                    obj = t[0]
-                    io = StringIO (obj)
-                    commit = load (io)
-                    io.close ()
-                    cb (commit)
+        # We need to split the query to save memory
+        icursor = ICursor (cnn.cursor (), self.INTERVAL_SIZE)
+        icursor.execute (statement (query, self.db.place_holder))
+        rs = icursor.fetchmany ()
+        while rs:
+            for t in rs:
+                obj = t[0]
+                io = StringIO (obj)
+                commit = load (io)
+                io.close ()
+                cb (commit)
 
-                rs = cursor.fetchmany ()
+            rs = icursor.fetchmany ()
 
-        cursor.close ()
+        icursor.close ()
         cnn.close ()
 
     def flush (self):
