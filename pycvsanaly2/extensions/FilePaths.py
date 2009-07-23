@@ -153,6 +153,14 @@ class FilePaths:
 
         return path
 
+    def get_filename (self, file_id):
+        adj = self.__dict__['adj']
+        assert adj is not None, "Matrix no updated"
+        try:
+            return adj.files[file_id]
+        except KeyError:
+            return None
+
     def get_commit_id (self):
         return self.__dict__['rev']
 
