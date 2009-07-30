@@ -916,6 +916,7 @@ class Metrics (Extension):
         profiler_start ("Getting actions")
         icursor.execute (statement (query, db.place_holder), (repoid,))
         rs = icursor.fetchmany ()
+        profiler_stop ("Getting actions")
         while rs:
             for revision, commit_id, file_id, action_type, composed in rs:
                 if action_type in ('V', 'C'):
