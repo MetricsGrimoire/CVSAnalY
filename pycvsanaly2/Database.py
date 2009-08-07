@@ -288,7 +288,7 @@ class ICursor:
         self.need_exec = True
 
     def __execute (self):
-        q = "%s limit %d, %d" % (self.query, self.i, self.interval_size)
+        q = "%s LIMIT %d OFFSET %d" % (self.query, self.interval_size, self.i)
         self.i += self.interval_size
 
         printdbg (q)
