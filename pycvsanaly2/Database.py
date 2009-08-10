@@ -292,7 +292,11 @@ class ICursor:
         self.i += self.interval_size
 
         printdbg (q)
-        self.cursor.execute (q, self.args)
+        if self.args:
+            self.cursor.execute (q, self.args)
+        else:
+            self.cursor.execute (q)
+
         self.need_exec = False
 
     def execute (self, query, args = None):
