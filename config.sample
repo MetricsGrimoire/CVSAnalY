@@ -1,0 +1,27 @@
+## Run in debug mode?
+# debug = False
+#
+## Run quiet
+# quit = False
+#
+## Enable profiling
+# profile = False
+#
+# repo_logfile = None
+# save_logfile = None
+# no_parse = False
+#
+## Database parameters
+# db_driver = 'mysql'
+# db_user = 'operator'
+# db_password = None
+# db_database = 'cvsanaly'
+# db_hostname = 'localhost'
+#
+## Extensions
+## No extensions enable by default
+# extensions = ['Metrics', 'CommitsLOC']
+#
+## Metrics extension options
+# metrics_all = False
+# metrics_noerr = False
