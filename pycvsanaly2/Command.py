@@ -49,12 +49,16 @@ class Command:
 
     SELECT_TIMEOUT = 2
     
-    def __init__ (self, command, cwd = None, env = None):
+    def __init__ (self, command, cwd = None, env = None, error_handler_func = None):
         self.cmd = command
         self.cwd = cwd
         self.env = env
+        self.error_handler_func = error_handler_func
 
         self.process = None
+
+    def set_error_handler (self, error_handler_func):
+        self.error_handler_func = error_handler_func
 
     def _read (self, fd, buffsize):
         while True:
@@ -82,10 +86,10 @@ class Command:
         read_set = [p.stdout, p.stderr]
         write_set = []
 
+        p.stdin.flush ()
         if stdin is not None:
-            p.stdin.flush ()
             write_set.append (p.stdin)
-        
+
         if out_data_cb is None:
             out_data = ""
         else:
@@ -112,11 +116,16 @@ class Command:
 
                 if rlist == wlist == []:
                     if err_data:
-                        raise CommandRunningError (self.cmd, err_data)
+                        handled = False
+                        if self.error_handler_func is not None:
+                            handled = self.error_handler_func (self, err_data)
+                        if not handled:
+                            raise CommandRunningError (self.cmd, err_data)
                     if timeout is not None:
                         elapsed += self.SELECT_TIMEOUT
                         if elapsed >= timeout:
                             os.kill (p.pid, SIGTERM)
+                            p.wait ()
                             self.process = None
                             raise CommandTimeOut
                 elif timeout is not None:
@@ -236,6 +245,10 @@ class Command:
         if parser_out_func is None:
             return out
 
+    def input (self, data):
+        if self.process is not None:
+            self.process.stdin.write (data)
+
     def get_pid (self):
         try:
             return self.process.pid
@@ -272,16 +285,17 @@ if __name__ == '__main__':
         cmd.run_sync ()
     except CommandError, e:
         print "Error running command. Error: %s" % (e.error)
-        
+
     # Run sync
     cmd = Command (['ls'], '/tmp/')
     print cmd.run_sync ()
 
+    def error_handler (cmd, data):
+        cmd.input ('p\n')
+        return True
     cmd = Command (['svn', 'info', 'https://svn.apache.org/repos/asf/activemq/trunk'])
-    try:
-        print cmd.run_sync ()
-    except CommandRunningError, e:
-        print cmd.run_sync ('p\n')
+    cmd.set_error_handler (error_handler)
+    print cmd.run ()
 
     # Timeout
     cmd = Command (['sleep', '100'])
