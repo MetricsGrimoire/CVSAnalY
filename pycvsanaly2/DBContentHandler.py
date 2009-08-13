@@ -252,21 +252,38 @@ class DBContentHandler (ContentHandler):
 
         return branch_id
 
-    def __ensure_tag (self, tag):
-        profiler_start ("Ensuring tag %s for repository %d", (tag, self.repo_id))
-        printdbg ("DBContentHandler: ensure_tag %s", (tag,))
-        cursor = self.cursor
+    def __get_tag (self, tag):
+        """Get the tag_id given a tag name.
+           First, it tries to get it from cache and then from the database.
+           When a new tag_id is gotten from the database, the cache must be
+           updated
+        """
+        def ensure_tag (tag):
+            profiler_start ("Ensuring tag %s for repository %d",
+                            (tag, self.repo_id))
+            printdbg ("DBContentHandler: ensure_tag %s", (tag,))
+            cursor = self.cursor
 
-        cursor.execute (statement ("SELECT id from tags where name = ?", self.db.place_holder), (tag,))
-        rs = cursor.fetchone ()
-        if not rs:
-            t = DBTag (None, tag)
-            cursor.execute (statement (DBTag.__insert__, self.db.place_holder), (t.id, t.name))
-            tag_id = t.id
+            cursor.execute (statement ("SELECT id from tags where name = ?",
+                            self.db.place_holder), (tag,))
+            rs = cursor.fetchone ()
+            if not rs:
+                t = DBTag (None, tag)
+                cursor.execute (statement (DBTag.__insert__,
+                                self.db.place_holder), (t.id, t.name))
+                tag_id = t.id
+            else:
+                tag_id = rs[0]
+
+            profiler_stop ("Ensuring tag %s for repository %d", (tag, self.repo_id))
+
+            return tag_id
+
+        if tag in self.tags_cache:
+            tag_id = self.tags_cache[tag]
         else:
-            tag_id = rs[0]
-
-        profiler_stop ("Ensuring tag %s for repository %d", (tag, self.repo_id))
+            tag_id = ensure_tag (tag)
+            self.tags_cache[tag] = tag_id
 
         return tag_id
 
@@ -549,11 +566,7 @@ class DBContentHandler (ContentHandler):
         if commit.tags is not None:
             tag_revs = []
             for tag in commit.tags:
-                if tag in self.tags_cache:
-                    tag_id = self.tags_cache[tag]
-                else:
-                    tag_id = self.__ensure_tag (tag)
-                    
+                tag_id = self.__get_tag (tag)
                 db_tagrev = DBTagRev (None)
                 tag_revs.append ((db_tagrev.id, tag_id, log.id))
 
