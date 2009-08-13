@@ -455,6 +455,50 @@ class DBContentHandler (ContentHandler):
 
         return file_id
 
+    def __action_copy (self, path, prefix, log, action, dbaction):
+        """Process a copied file"""
+        new_parent_path = os.path.dirname (path)
+        new_file_name = os.path.basename (path)
+
+        from_commit_id = self.revision_cache.get (action.rev, None)
+
+        if action.branch_f2:
+            branch_f2_id = self.__get_branch (action.branch_f2)
+            old_path = "%d://%s" % (branch_f2_id, action.f2)
+        else:
+            old_path = prefix + action.f2
+        file_id, parent_id = self.__get_file_for_path (old_path,
+                                            from_commit_id, True)
+
+
+        parent_path = os.path.dirname (path)
+        file_name = os.path.basename (path)
+
+        from_commit_id = self.revision_cache.get (action.rev, None)
+
+        if action.branch_f2:
+            branch_f2_id = self.__get_branch (action.branch_f2)
+            old_path = "%d://%s" % (branch_f2_id, action.f2)
+        else:
+            old_path = prefix + action.f2
+        from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
+
+        if not parent_path or parent_path == prefix.strip ('/'):
+            parent_id = -1
+        else:
+            parent_id = self.__get_file_for_path (parent_path, log.id)[0]
+
+        file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+        self.file_cache[path] = (file_id, parent_id)
+
+        dbfilecopy = DBFileCopy (None, file_id)
+        dbfilecopy.from_id = from_file_id
+        dbfilecopy.action_id = dbaction.id
+        dbfilecopy.from_commit = from_commit_id
+        self.__add_new_copy (dbfilecopy)
+
+        return file_id
+
     def commit (self, commit):
         if commit.revision in self.revision_cache:
             return
@@ -503,31 +547,8 @@ class DBContentHandler (ContentHandler):
                 # A file has been renamed
                 file_id = self.__action_rename (path, prefix, log, action, dbaction)
             elif action.type == 'C':
-                parent_path = os.path.dirname (path)
-                file_name = os.path.basename (path)
-
-                from_commit_id = self.revision_cache.get (action.rev, None)
-
-                if action.branch_f2:
-                    branch_f2_id = self.__get_branch (action.branch_f2)
-                    old_path = "%d://%s" % (branch_f2_id, action.f2)
-                else:
-                    old_path = prefix + action.f2
-                from_file_id = self.__get_file_for_path (old_path, from_commit_id, True)[0]
-
-                if not parent_path or parent_path == prefix.strip ('/'):
-                    parent_id = -1
-                else:
-                    parent_id = self.__get_file_for_path (parent_path, log.id)[0]
-                        
-                file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
-                self.file_cache[path] = (file_id, parent_id)
-
-                dbfilecopy = DBFileCopy (None, file_id)
-                dbfilecopy.from_id = from_file_id
-                dbfilecopy.action_id = dbaction.id
-                dbfilecopy.from_commit = from_commit_id
-                self.__add_new_copy (dbfilecopy)
+                # A file has been copied
+                file_id = self.__action_copy (path, prefix, log, action, dbaction)
             elif action.type == 'R':
                 # Replace action: Path has been removed and
                 # a new one has been added with the same path
