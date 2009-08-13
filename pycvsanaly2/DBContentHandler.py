@@ -382,6 +382,21 @@ class DBContentHandler (ContentHandler):
         # so it was copied at some point
         return self.__ensure_path (path, commit_id)
 
+    def __action_add (self, path, prefix, log):
+        """Process a new file added"""
+        parent_path = os.path.dirname (path)
+        file_name = os.path.basename (path)
+
+        if not parent_path or parent_path == prefix.strip ('/'):
+            parent_id = -1
+        else:
+            parent_id = self.__get_file_for_path (parent_path, log.id)[0]
+
+        file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+        self.file_cache[path] = (file_id, parent_id)
+
+        return file_id
+
     def commit (self, commit):
         if commit.revision in self.revision_cache:
             return
@@ -416,22 +431,15 @@ class DBContentHandler (ContentHandler):
 
             prefix = "%d://" % (branch_id)
             path = prefix + action.f1
-            
+
             if action.type == 'A':
-                # New file
-                parent_path = os.path.dirname (path)
-                file_name = os.path.basename (path)
-
-                if not parent_path or parent_path == prefix.strip ('/'):
-                    parent_id = -1
-                else:
-                    parent_id = self.__get_file_for_path (parent_path, log.id)[0]
-
-                file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
-                self.file_cache[path] = (file_id, parent_id)
+                # A file has been added
+                file_id = self.__action_add (path, prefix, log)
             elif action.type == 'M':
+                # A file has been modified
                 file_id = self.__get_file_for_path (path, log.id)[0]
             elif action.type == 'D':
+                # A file has been deleted
                 file_id = self.__get_file_for_path (path, log.id)[0]
                 
                 # Remove the old references
