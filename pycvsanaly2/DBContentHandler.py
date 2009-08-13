@@ -397,6 +397,19 @@ class DBContentHandler (ContentHandler):
 
         return file_id
 
+    def __action_delete (self, path, log):
+        """Process a deleted file"""
+        file_id = self.__get_file_for_path (path, log.id)[0]
+
+        # Remove the old references
+        dirpath = path.rstrip ("/") + "/"
+        for cpath in self.file_cache.keys ():
+            if cpath.startswith (dirpath):
+                self.__move_path_to_deletes_cache (cpath)
+        self.__move_path_to_deletes_cache (path)
+
+        return file_id
+
     def commit (self, commit):
         if commit.revision in self.revision_cache:
             return
@@ -440,14 +453,8 @@ class DBContentHandler (ContentHandler):
                 file_id = self.__get_file_for_path (path, log.id)[0]
             elif action.type == 'D':
                 # A file has been deleted
-                file_id = self.__get_file_for_path (path, log.id)[0]
-                
-                # Remove the old references
-                dirpath = path.rstrip ("/") + "/"
-                for cpath in self.file_cache.keys ():
-                    if cpath.startswith (dirpath):
-                        self.__move_path_to_deletes_cache (cpath)
-                self.__move_path_to_deletes_cache (path)
+                file_id = self.__action_delete (path, log)
+
             elif action.type == 'V':
                 new_parent_path = os.path.dirname (path)
                 new_file_name = os.path.basename (path)
