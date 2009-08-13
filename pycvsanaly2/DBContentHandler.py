@@ -197,31 +197,39 @@ class DBContentHandler (ContentHandler):
 
         return person_id
 
-    def __ensure_branch (self, branch):
-        profiler_start ("Ensuring branch %s for repository %d", (branch, self.repo_id))
-        printdbg ("DBContentHandler: ensure_branch %s", (branch,))
-        cursor = self.cursor
-
-        cursor.execute (statement ("SELECT id from branches where name = ?", self.db.place_holder), (branch,))
-        rs = cursor.fetchone ()
-        if not rs:
-            b = DBBranch (None, branch)
-            cursor.execute (statement (DBBranch.__insert__, self.db.place_holder), (b.id, b.name))
-            branch_id = b.id
-        else:
-            branch_id = rs[0]
-            
-        self.branch_cache[branch] = branch_id
-            
-        profiler_stop ("Ensuring branch %s for repository %d", (branch, self.repo_id))
-
-        return branch_id
-
     def __get_branch (self, branch):
+        """Get the branch_id given a branch name.
+           First, it tries to get it from cache and then from the database.
+           When a new branch_id is gotten from the database, the cache must be
+           updated
+        """
+        def ensure_branch (branch):
+            profiler_start ("Ensuring branch %s for repository %d",
+                            (branch, self.repo_id))
+            printdbg ("DBContentHandler: ensure_branch %s", (branch,))
+            cursor = self.cursor
+
+            cursor.execute (statement ("SELECT id from branches where name = ?",
+                            self.db.place_holder), (branch,))
+            rs = cursor.fetchone ()
+            if not rs:
+                b = DBBranch (None, branch)
+                cursor.execute (statement (DBBranch.__insert__,
+                                self.db.place_holder), (b.id, b.name))
+                branch_id = b.id
+            else:
+                branch_id = rs[0]
+
+            profiler_stop ("Ensuring branch %s for repository %d",
+                           (branch, self.repo_id))
+
+            return branch_id
+
         if branch in self.branch_cache:
             branch_id = self.branch_cache[branch]
         else:
-            branch_id = self.__ensure_branch (branch)
+            branch_id = ensure_branch (branch)
+            self.branch_cache[branch] = branch_id
 
         return branch_id
 
