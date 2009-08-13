@@ -410,6 +410,51 @@ class DBContentHandler (ContentHandler):
 
         return file_id
 
+    def __action_rename (self, path, prefix, log, action, dbaction):
+        """Process a renamed file"""
+        new_parent_path = os.path.dirname (path)
+        new_file_name = os.path.basename (path)
+
+        from_commit_id = self.revision_cache.get (action.rev, None)
+
+        if action.branch_f2:
+            branch_f2_id = self.__get_branch (action.branch_f2)
+            old_path = "%d://%s" % (branch_f2_id, action.f2)
+        else:
+            old_path = prefix + action.f2
+        file_id, parent_id = self.__get_file_for_path (old_path,
+                                            from_commit_id, True)
+
+        dbfilecopy = DBFileCopy (None, file_id)
+        dbfilecopy.action_id = dbaction.id
+        dbfilecopy.from_commit = from_commit_id
+
+        if not new_parent_path or new_parent_path == prefix.strip ('/'):
+            new_parent_id = -1
+        else:
+            new_parent_id = self.__get_file_for_path (new_parent_path, log.id)[0]
+        if new_parent_id != parent_id:
+            # It's not a simple rename, but a move operation
+            # we have to write down the new link
+            parent_id = new_parent_id
+            dblink = DBFileLink (None, parent_id, file_id)
+            dblink.commit_id = log.id
+            self.cursor.execute (statement (DBFileLink.__insert__,
+                                 self.db.place_holder),
+                                 (dblink.id, dblink.parent, dblink.child,
+                                 dblink.commit_id))
+            self.moves_cache[path] = old_path
+
+        self.file_cache[path] = (file_id, parent_id)
+
+        # Move/rename is a special case of copy.  # There's not a 
+        # new file_id
+        dbfilecopy.from_id = file_id
+        dbfilecopy.new_file_name = new_file_name
+        self.__add_new_copy (dbfilecopy)
+
+        return file_id
+
     def commit (self, commit):
         if commit.revision in self.revision_cache:
             return
@@ -454,44 +499,9 @@ class DBContentHandler (ContentHandler):
             elif action.type == 'D':
                 # A file has been deleted
                 file_id = self.__action_delete (path, log)
-
             elif action.type == 'V':
-                new_parent_path = os.path.dirname (path)
-                new_file_name = os.path.basename (path)
-
-                from_commit_id = self.revision_cache.get (action.rev, None)
-
-                if action.branch_f2:
-                    branch_f2_id = self.__get_branch (action.branch_f2)
-                    old_path = "%d://%s" % (branch_f2_id, action.f2)
-                else:
-                    old_path = prefix + action.f2
-                file_id, parent_id = self.__get_file_for_path (old_path, from_commit_id, True)
-                
-                dbfilecopy = DBFileCopy (None, file_id)
-                dbfilecopy.action_id = dbaction.id
-                dbfilecopy.from_commit = from_commit_id
-
-                if not new_parent_path or new_parent_path == prefix.strip ('/'):
-                    new_parent_id = -1
-                else:
-                    new_parent_id = self.__get_file_for_path (new_parent_path, log.id)[0]
-                if new_parent_id != parent_id:
-                    # It's not a simple rename, but a move operation
-                    # we have to write down the new link
-                    parent_id = new_parent_id
-                    dblink = DBFileLink (None, parent_id, file_id)
-                    dblink.commit_id = log.id
-                    self.cursor.execute (statement (DBFileLink.__insert__, self.db.place_holder),
-                                         (dblink.id, dblink.parent, dblink.child, dblink.commit_id))
-                    self.moves_cache[path] = old_path
-                    
-                self.file_cache[path] = (file_id, parent_id)
-                
-                # Move/rename is a special case of copy. There's not a new file_id
-                dbfilecopy.from_id = file_id
-                dbfilecopy.new_file_name = new_file_name
-                self.__add_new_copy (dbfilecopy)
+                # A file has been renamed
+                file_id = self.__action_rename (path, prefix, log, action, dbaction)
             elif action.type == 'C':
                 parent_path = os.path.dirname (path)
                 file_name = os.path.basename (path)
