@@ -175,25 +175,44 @@ class DBContentHandler (ContentHandler):
                              (dbfilecopy.id, dbfilecopy.to_id, dbfilecopy.from_id,
                               dbfilecopy.from_commit, dbfilecopy.new_file_name, dbfilecopy.action_id))
 
-    def __ensure_person (self, person):
-        profiler_start ("Ensuring person %s for repository %d", (person.name, self.repo_id))
-        printdbg ("DBContentHandler: ensure_person %s <%s>", (person.name, person.email))
-        cursor = self.cursor
+    def __get_person (self, person):
+        """Get the person_id given a person struct
+           First, it tries to get it from cache and then from the database.
+           When a new person_id is gotten from the database, the cache must be
+           updated
+        """
+        def ensure_person (person):
+            profiler_start ("Ensuring person %s for repository %d",
+                            (person.name, self.repo_id))
+            printdbg ("DBContentHandler: ensure_person %s <%s>",
+                      (person.name, person.email))
+            cursor = self.cursor
+
+            name = to_utf8 (person.name)
+            email = person.email
+            cursor.execute (statement ("SELECT id from people where name = ?",
+                            self.db.place_holder), (name,))
+            rs = cursor.fetchone ()
+            if not rs:
+                p = DBPerson (None, person)
+                cursor.execute (statement (DBPerson.__insert__,
+                                self.db.place_holder), (p.id, p.name, email))
+                person_id = p.id
+            else:
+                person_id = rs[0]
+
+            profiler_stop ("Ensuring person %s for repository %d",
+                           (person.name, self.repo_id))
+
+            return person_id
 
         name = to_utf8 (person.name)
-        email = person.email
-        cursor.execute (statement ("SELECT id from people where name = ?", self.db.place_holder), (name,))
-        rs = cursor.fetchone ()
-        if not rs:
-            p = DBPerson (None, person)
-            cursor.execute (statement (DBPerson.__insert__, self.db.place_holder), (p.id, p.name, email))
-            person_id = p.id
+
+        if name in self.people_cache:
+            person_id = self.people_cache[name]
         else:
-            person_id = rs[0]
-
-        self.people_cache[name] = person_id
-
-        profiler_stop ("Ensuring person %s for repository %d", (person.name, self.repo_id))
+            person_id = ensure_person (person)
+            self.people_cache[name] = person_id
 
         return person_id
 
@@ -355,22 +374,13 @@ class DBContentHandler (ContentHandler):
         log = DBLog (None, commit)
         log.repository_id = self.repo_id
         self.revision_cache[commit.revision] = log.id
-                       
-        committer = to_utf8 (commit.committer.name)
-        author = commit.author is not None and to_utf8 (commit.author.name) or None
-        
-        if committer in self.people_cache:
-            log.committer = self.people_cache[committer]
-        else:
-            log.committer = self.__ensure_person (commit.committer)
 
-        if author == committer:
+        log.committer = self.__get_person (commit.committer)
+
+        if commit.author == commit.committer:
             log.author = log.committer
-        elif author is not None:
-            if author in self.people_cache:
-                log.author = self.people_cache[author]
-            else:
-                log.author = self.__ensure_person (commit.author)
+        elif commit.author is not None:
+            log.author = self.__get_person (commit.author)
 
         self.commits.append (log)
 
