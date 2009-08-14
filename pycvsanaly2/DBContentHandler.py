@@ -312,54 +312,58 @@ class DBContentHandler (ContentHandler):
 
         return self.file_cache[current_path]
 
-    def __ensure_path (self, path, commit_id):
-        profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
-        printdbg ("DBContentHandler: ensure_path %s", (path,))
-        
-        prefix, lpath = path.split ("://", 1)
-        prefix += "://"
-        tokens = lpath.strip ('/').split ('/')
+    def __get_file_for_path (self, path, commit_id, old=False):
+        """Get a pair of (node_id, parent_id) regarding a path.
+           First, it looks at file_cache, the at the moves cache,
+           then at the deleted cache and finally, when it is not
+           found in the cache, it is added and linked in the
+           database.
+        """
+        def ensure_path (path, commit_id):
+            profiler_start ("Ensuring path %s for repository %d", (path, self.repo_id))
+            printdbg ("DBContentHandler: ensure_path %s", (path,))
 
-        parent = -1
-        node_id = None
-        for i, token in enumerate (tokens):
-            rpath = prefix + '/' + '/'.join (tokens[:i + 1])
-            if not ":///" in path:
-                # If the repo paths don't start with /
-                # remove it here
-                rpath = rpath.replace (':///', '://')
-            printdbg ("DBContentHandler: rpath: %s", (rpath,))
-            try:
-                node_id, parent_id = self.file_cache[rpath]
+            prefix, lpath = path.split ("://", 1)
+            prefix += "://"
+            tokens = lpath.strip ('/').split ('/')
+
+            parent = -1
+            node_id = None
+            for i, token in enumerate (tokens):
+                rpath = prefix + '/' + '/'.join (tokens[:i + 1])
+                if not ":///" in path:
+                    # If the repo paths don't start with /
+                    # remove it here
+                    rpath = rpath.replace (':///', '://')
+                printdbg ("DBContentHandler: rpath: %s", (rpath,))
+                try:
+                    node_id, parent_id = self.file_cache[rpath]
+                    parent = node_id
+                    continue
+                except:
+                    pass
+
+                # Rpath not in cache, add it
+                node_id = self.__add_new_file_and_link (token, parent, commit_id)
+                parent_id = parent
                 parent = node_id
-                
-                continue
-            except:
-                pass
 
-            # Rpath not in cache, add it
-            node_id = self.__add_new_file_and_link (token, parent, commit_id)
-            parent_id = parent
-            parent = node_id
+                self.file_cache[rpath] = (node_id, parent_id)
 
-            self.file_cache[rpath] = (node_id, parent_id)
+            assert node_id is not None
 
-        assert node_id is not None
+            printdbg ("DBContentHandler: path ensured %s = %d (%d)", (path, node_id, parent_id))
+            profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id))
 
-        printdbg ("DBContentHandler: path ensured %s = %d (%d)", (path, node_id, parent_id))
-        profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id))
+            return node_id, parent_id
 
-        return node_id, parent_id
-            
-    def __get_file_for_path (self, path, commit_id, old = False):
         printdbg ("DBContentHandler: Looking for path %s in cache", (path,))
-
         # First of all look at the cache
         try:
             return self.file_cache[path]
         except KeyError:
             pass
-        
+
         # It's not in the cache look now at moves cache
         try:
             retval = self.__get_file_from_moves_cache (path)
@@ -377,10 +381,10 @@ class DBContentHandler (ContentHandler):
                 return self.deletes_cache[path]
             except KeyError:
                 pass
-        
+
         # It hasen't been moved (or any of its parents)
         # so it was copied at some point
-        return self.__ensure_path (path, commit_id)
+        return ensure_path (path, commit_id)
 
     def __action_add (self, path, prefix, log):
         """Process a new file added"""
