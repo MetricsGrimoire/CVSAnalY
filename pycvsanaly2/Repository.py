@@ -43,10 +43,10 @@ class Commit:
         self.__dict__[name] = value
 
     def __eq__ (self, other):
-        return self.revision == other.revision
+        return isinstance (other, Commit) and self.revision == other.revision
 
     def __ne__ (self, other):
-        return self.revision != other.revision
+        return not isinstance (other, Commit) or self.revision != other.revision
 
 # Action types
 # A Add
@@ -81,7 +81,8 @@ class Action:
         self.__dict__[name] = value
 
     def __eq__ (self, other):
-        return self.type == other.type and \
+        return isinstance (other, Action) and \
+            self.type == other.type and \
             self.f1 == other.f1 and \
             self.f2 == other.f2 and \
             self.branch_f1 == other.branch_f1 and \
@@ -89,7 +90,8 @@ class Action:
             self.rev == other.rev
     
     def __ne__ (self, other):
-        return self.type != other.type or \
+        return not isinstance (other, Action) or \
+            self.type != other.type or \
             self.f1 != other.f1 or \
             self.f2 != other.f2 or \
             self.branch_f1 != other.branch_f1 or \
@@ -118,10 +120,10 @@ class Person:
         self.__dict__[name] = value
 
     def __eq__ (self, other):
-        return self.name == other.name
+        return isinstance (other, Person) and self.name == other.name
     
     def __ne__ (self, other):
-        return self.name != other.name
+        return not isinstance (other, Person) or self.name != other.name
 
 if __name__ == '__main__':
     from cPickle import dump, load
