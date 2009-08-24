@@ -16,6 +16,7 @@
 
 import os
 import sys
+import threading
 
 from Timer import Timer
 from Config import Config
@@ -29,13 +30,19 @@ def plog (data):
     str = "MARK: %s: %s" % ('foo', data)
     os.access (str, os.F_OK)
 
-_timers = {}
 def profiler_start (msg, args = None):
     if not config.profile:
         return
 
     if args is not None:
         msg = msg % args
+
+    ct = threading.currentThread()
+    try:
+        _timers = ct._timers
+    except AttributeError:
+        ct._timers = {}
+        _timers = ct._timers
 
     if msg in _timers:
         _timers[msg].start ()
@@ -49,6 +56,8 @@ def profiler_stop (msg, args = None, delete = False):
     if args is not None:
         msg = msg % args
 
+    ct = threading.currentThread()
+    _timers = ct._timers
     t = _timers[msg]
     t.stop ()
 
@@ -58,3 +67,20 @@ def profiler_stop (msg, args = None, delete = False):
 
     if delete:
         del _timers[msg]
+
+if __name__ == '__main__':
+    import time
+
+    Config().profile = True
+
+    def _thread (n):
+        profiler_start ("Running thread %d sleeping %d seconds", (n, n + 1))
+        time.sleep (n + 1)
+        profiler_stop ("Running thread %d sleeping %d seconds", (n, n + 1), True)
+
+    for i in range (6):
+        thread = threading.Thread (target=_thread, args=(i,))
+        thread.setDaemon (True)
+        thread.start ()
+
+    thread.join ()
