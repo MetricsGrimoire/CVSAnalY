@@ -42,7 +42,7 @@ def profiler_start (msg, args = None):
     else:
         _timers[msg] = Timer ()
 
-def profiler_stop (msg, args = None):
+def profiler_stop (msg, args = None, delete = False):
     if not config.profile:
         return
 
@@ -55,4 +55,6 @@ def profiler_stop (msg, args = None):
     str = "[ %s ] %f s elapsed\n" % (msg, t.elapsed ())
     sys.stdout.write (str)
     sys.stdout.flush ()
-    
+
+    if delete:
+        del _timers[msg]
