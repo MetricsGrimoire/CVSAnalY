@@ -74,7 +74,7 @@ class FilePaths:
             query = "select id, file_name from files where repository_id = ?"
             profiler_start ("Getting files for repository %d", (repo_id,))
             cursor.execute (statement (query, db.place_holder), (repo_id,))
-            profiler_stop ("Getting files for repository %d", (repo_id,))
+            profiler_stop ("Getting files for repository %d", (repo_id,), True)
             rs = cursor.fetchmany ()
             while rs:
                 for id, file_name in rs:
@@ -93,7 +93,7 @@ class FilePaths:
                 "and f.repository_id = ?"
         profiler_start ("Getting new file names for commit %d", (commit_id,))
         cursor.execute (statement (query, db.place_holder), (commit_id, repo_id))
-        profiler_stop ("Getting new file names for commit %d", (commit_id,))
+        profiler_stop ("Getting new file names for commit %d", (commit_id,), True)
         rs = cursor.fetchmany ()
         while rs:
             for id, file_name in rs:
@@ -113,7 +113,7 @@ class FilePaths:
         query += "and f.repository_id = ?"
         profiler_start ("Getting file links for commit %d", (commit_id,))
         cursor.execute (statement (query, db.place_holder), args)
-        profiler_stop ("Getting file links for commit %d", (commit_id,))
+        profiler_stop ("Getting file links for commit %d", (commit_id,), True)
         rs = cursor.fetchmany ()
         while rs:
             for f1, f2 in rs:
@@ -122,7 +122,7 @@ class FilePaths:
 
         self.__dict__['adj'] = adj
 
-        profiler_stop ("Updating adjacency matrix for commit %d", (commit_id,))
+        profiler_stop ("Updating adjacency matrix for commit %d", (commit_id,), True)
 
     def __build_path (self, file_id, adj):
         if file_id not in adj.adj:
@@ -137,7 +137,7 @@ class FilePaths:
             tokens.insert (0, adj.files[id])
             id = adj.adj[id]
 
-        profiler_stop ("Building path for file %d", (file_id,))
+        profiler_stop ("Building path for file %d", (file_id,), True)
 
         return "/" + "/".join (tokens)
 
@@ -149,7 +149,7 @@ class FilePaths:
 
         path = self.__build_path (file_id, adj)
 
-        profiler_stop ("Getting path for file %d at commit %d", (file_id, commit_id))
+        profiler_stop ("Getting path for file %d at commit %d", (file_id, commit_id), True)
 
         return path
 

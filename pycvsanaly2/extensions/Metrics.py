@@ -488,13 +488,13 @@ def create_file_metrics (path):
             outputlines = cmd.run ().split ('\n')
             remove_directory (tmpdir)
         except CommandError, e:
-            profiler_stop ("Running sloccount %s", (path,))
+            profiler_stop ("Running sloccount %s", (path,), True)
             remove_directory (tmpdir)
             if e.error:
                 printerr ('Error running sloccount: %s', (e.error,))
             raise e
         except CommandRunningError, e:
-            profiler_stop ("Running sloccount %s", (path,))
+            profiler_stop ("Running sloccount %s", (path,), True)
             remove_directory (tmpdir)
             pid = cmd.get_pid ()
             if pid:
@@ -509,7 +509,7 @@ def create_file_metrics (path):
 
             # If no line with 'top_dir' is found, that means
             # that SLOC is 0 and lang is unknown
-        profiler_stop ("Running sloccount %s", (path,))
+        profiler_stop ("Running sloccount %s", (path,), True)
         
     fm = _metrics.get (lang, FileMetrics)
     return fm (path, lang, sloc)
@@ -533,7 +533,7 @@ class MetricsJob (Job):
         except Exception, e:
             printerr ('Error running loc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
             measures.loc = -1
-        profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev))
+        profiler_stop ("[LOC] Measuring %s @ %s", (checkout_path, rev), True)
             
         profiler_start ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
         try:
@@ -543,7 +543,7 @@ class MetricsJob (Job):
         except Exception, e:
             printerr ('Error running sloc for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
             measures.sloc = measures.lang = - 1
-        profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev))
+        profiler_stop ("[SLOC] Measuring %s @ %s", (checkout_path, rev), True)
 
         profiler_start ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
         try:
@@ -555,7 +555,7 @@ class MetricsJob (Job):
         except Exception, e:
             printerr ('Error running CommentsBlank for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
             measures.ncomment = measures.lcomment = measures.lblank = -1
-        profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev))
+        profiler_stop ("[CommentsBlank] Measuring %s @ %s", (checkout_path, rev), True)
 
         profiler_start ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
         try:
@@ -568,7 +568,7 @@ class MetricsJob (Job):
         except Exception, e:
             printerr ('Error running HalsteadComplexity for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
             measures.halstead_length = measures.halstead_vol = measures.halstead_level = measures.halstead_md = -1
-        profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev))
+        profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev), True)
                 
         profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
         try:
@@ -583,7 +583,7 @@ class MetricsJob (Job):
             printerr ('Error running MccabeComplexity for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
             measures.mccabe_sum = measures.mccabe_min = measures.mccabe_max = \
                 measures.mccabe_mean = measures.mccabe_median = measures.nfunctions = -1
-        profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
+        profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev), True)
 
     def run (self, repo, repo_uri):
         def write_file (line, fd):
@@ -1006,6 +1006,6 @@ class Metrics (Extension):
         write_cursor.close ()
         cnn.close()
         
-        profiler_stop ("Running Metrics extension")
+        profiler_stop ("Running Metrics extension", delete = True)
 
 register_extension ("Metrics", Metrics)

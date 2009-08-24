@@ -202,7 +202,7 @@ class DBContentHandler (ContentHandler):
                 person_id = rs[0]
 
             profiler_stop ("Ensuring person %s for repository %d",
-                           (person.name, self.repo_id))
+                           (person.name, self.repo_id), True)
 
             return person_id
 
@@ -240,7 +240,7 @@ class DBContentHandler (ContentHandler):
                 branch_id = rs[0]
 
             profiler_stop ("Ensuring branch %s for repository %d",
-                           (branch, self.repo_id))
+                           (branch, self.repo_id), True)
 
             return branch_id
 
@@ -275,7 +275,7 @@ class DBContentHandler (ContentHandler):
             else:
                 tag_id = rs[0]
 
-            profiler_stop ("Ensuring tag %s for repository %d", (tag, self.repo_id))
+            profiler_stop ("Ensuring tag %s for repository %d", (tag, self.repo_id), True)
 
             return tag_id
 
@@ -353,7 +353,7 @@ class DBContentHandler (ContentHandler):
             assert node_id is not None
 
             printdbg ("DBContentHandler: path ensured %s = %d (%d)", (path, node_id, parent_id))
-            profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id))
+            profiler_stop ("Ensuring path %s for repository %d", (path, self.repo_id), True)
 
             return node_id, parent_id
 
@@ -634,7 +634,7 @@ class DBContentHandler (ContentHandler):
             printdbg ("DBContentHandler: %d actions inserting", (len (self.actions),))
             self.__insert_many ()
 
-        profiler_stop ("New commit %s for repository %d", (commit.revision, self.repo_id))
+        profiler_stop ("New commit %s for repository %d", (commit.revision, self.repo_id), True)
 
     def end (self):
         # flush pending inserts
@@ -644,7 +644,7 @@ class DBContentHandler (ContentHandler):
         # Save the caches to disk
         profiler_start ("Saving caches to disk")
         self.__save_caches_to_disk ()
-        profiler_stop ("Saving caches to disk")
+        profiler_stop ("Saving caches to disk", delete = True)
         
         self.cursor.close ()
         self.cnn.close ()
