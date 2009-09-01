@@ -271,7 +271,7 @@ class GitParser (Parser):
             if match:
                 printout ("Warning: detected a commit on a svn tag: %s", (match.group (0),))
                 tag = match.group (1)
-                if tag in self.commit.tags:
+                if self.commit.tags and tag in self.commit.tags:
                     # The commit will be ignored, so move the tag
                     # to the next (previous in history) commit
                     self.branch.tail.svn_tag = tag
