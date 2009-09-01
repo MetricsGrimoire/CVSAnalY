@@ -77,7 +77,7 @@ class GitParser (Parser):
     patterns['tag'] = re.compile ("tag: refs/tags/([^,]*)")
     patterns['stash'] = re.compile ("refs/stash")
     patterns['ignore'] = [re.compile ("^AuthorDate: .*$"), re.compile ("^Merge: .*$")]
-    patterns['svn-tag'] = re.compile ("^svn path=/tags/(.*)/; revision=([0-9]+)$")
+    patterns['svn-tag'] = re.compile ("^svn path=/tags/(.*)/?; revision=([0-9]+)$")
 
     def __init__ (self):
         Parser.__init__ (self)
