@@ -32,6 +32,7 @@ class DBProxyContentHandler (ContentHandler):
         self.db = db
         self.templog = None
         self.order = ContentHandler.ORDER_REVISION
+        self.repo_uri = None
 
         self.db_handler = DBContentHandler (db)
 
@@ -39,10 +40,9 @@ class DBProxyContentHandler (ContentHandler):
         self.templog = DBTempLog (self.db)
         if order is not None:
             self.order = order
-        self.db_handler.begin ()
 
     def repository (self, uri):
-        self.db_handler.repository (uri)
+        self.repo_uri = uri
 
     def commit (self, commit):
         self.templog.insert (commit)
@@ -54,7 +54,7 @@ class DBProxyContentHandler (ContentHandler):
         printdbg ("DBProxyContentHandler: thread __reader started")
         templog.foreach (commit_cb, self.order)
         printdbg ("DBProxyContentHandler: thread __reader finished")
-        
+
     def end (self):
         # The log is now in the temp table
         # Retrieve the data now and pass it to
@@ -62,6 +62,9 @@ class DBProxyContentHandler (ContentHandler):
 
         self.templog.flush ()
         printdbg ("DBProxyContentHandler: parsing finished, creating thread")
+
+        self.db_handler.begin ()
+        self.db_handler.repository (self.repo_uri)
 
         queue = AsyncQueue (50)
         reader_thread = threading.Thread (target=self.__reader,
