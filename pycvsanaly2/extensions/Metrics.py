@@ -25,7 +25,7 @@
 #
 
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
-                                  statement, DBFile, ICursor)
+                                  statement, DBFile)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.Config import Config
 from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory, uri_to_filename
@@ -35,7 +35,7 @@ from pycvsanaly2.Command import Command, CommandError, CommandRunningError
 from repositoryhandler.backends import RepositoryCommandError
 from repositoryhandler.backends.watchers import CAT
 from tempfile import mkdtemp, NamedTemporaryFile
-from FilePaths import FilePaths
+from FileRevs import FileRevs
 from Jobs import JobPool, Job
 from xml.sax import handler as xmlhandler, make_parser
 from signal import SIGTERM
@@ -823,8 +823,6 @@ class Metrics (Extension):
         
         self.db = db
 
-        fp = FilePaths (db)
-        
         cnn = self.db.connect ()
         read_cursor = cnn.cursor ()
         write_cursor = cnn.cursor ()
@@ -874,125 +872,61 @@ class Metrics (Extension):
 
         job_pool = JobPool (repo, path or repo.get_uri (), queuesize=self.MAX_METRICS)
 
-        # Get files and revision for head
-        if not self.config.metrics_all:
-            query = "select s.id commit_id, head.file_id file_id " + \
-                    "from scmlog s, (" + \
-                    "select af.action_id action_id, mlog.file_id file_id, mlog.commit_id commit_id " + \
-                    "from action_files af, file_types ft, (" + \
-                    "select file_id, max(commit_id) commit_id " + \
-                    "from action_files group by file_id" + \
-                    ") mlog where mlog.file_id = af.file_id " + \
-                    "and mlog.commit_id = af.commit_id and " + \
-                    "ft.file_id = mlog.file_id and " + \
-                    "ft.type in ('code', 'unknown') " + \
-                    "and af.action_type in ('A', 'M', 'R')" + \
-                    ") head where head.commit_id = s.id " + \
-                    "and s.repository_id = ? " + \
-                    "order by s.id"
-            read_cursor.execute (statement (query, db.place_holder), (repoid,))
-            head_files = {}
-            for commit_id, file_id in read_cursor.fetchall ():
-                head_files[file_id] = commit_id
-        else:
-            # Get code files to discard all other files in case of metrics-all
-            query = "select f.id from file_types ft, files f " + \
-                    "where f.id = ft.file_id and " + \
-                    "ft.type in ('code', 'unknown') and " + \
-                    "f.repository_id = ?"
-            read_cursor.execute (statement (query, db.place_holder), (repoid,))
-            code_files = [item[0] for item in read_cursor.fetchall ()]
-
-        # Obtain files and revisions
-        query = "select s.rev rev, s.id commit_id, af.file_id, af.action_type, s.composed_rev " + \
-                "from scmlog s, action_files af " + \
-                "where s.id = af.commit_id " + \
-                "and s.repository_id = ? " + \
-                "order by s.id"
+        # Get code files to discard all other files in case of metrics-all
+        query = "select f.id from file_types ft, files f " + \
+                "where f.id = ft.file_id and " + \
+                "ft.type in ('code', 'unknown') and " + \
+                "f.repository_id = ?"
+        read_cursor.execute (statement (query, db.place_holder), (repoid,))
+        code_files = [item[0] for item in read_cursor.fetchall ()]
 
         n_metrics = 0
-        prev_commit = -1
-        icursor = ICursor (read_cursor, self.INTERVAL_SIZE)
-        profiler_start ("Getting actions")
-        icursor.execute (statement (query, db.place_holder), (repoid,))
-        rs = icursor.fetchmany ()
-        profiler_stop ("Getting actions")
-        while rs:
-            for revision, commit_id, file_id, action_type, composed in rs:
-                if action_type in ('V', 'C'):
-                    if prev_commit != commit_id:
-                        # Get the matrix for revision
-                        prev_commit = commit_id
-                        aux_cursor = cnn.cursor ()
-                        fp.update_for_revision (aux_cursor, commit_id, repoid)
-                        aux_cursor.close ()
-                        continue
-                elif action_type == 'D':
-                    continue
-                elif action_type in  ('A', 'R'):
-                    if prev_commit != commit_id:
-                        # Get the matrix for revision
-                        prev_commit = commit_id
-                        aux_cursor = cnn.cursor ()
-                        fp.update_for_revision (aux_cursor, commit_id, repoid)
-                        aux_cursor.close ()
+        fr = FileRevs (db, cnn, read_cursor, repoid)
 
-                if self.config.metrics_all:
-                    if file_id not in code_files:
-                        continue
+        for revision, commit_id, file_id, action_type, composed in fr:
+            if file_id not in code_files:
+                continue
+
+            failed = False
+
+            if (file_id, commit_id) in metrics_failed:
+                printdbg ("%d@%d is already in the database, but it failed, try again", (file_id, commit_id))
+                failed = True
+            elif (file_id, commit_id) in metrics:
+                printdbg ("%d@%d is already in the database, skip it", (file_id, commit_id))
+                continue
+
+            try:
+                relative_path = fr.get_path ()
+            except AttributeError, e:
+                if self.config.metrics_noerr:
+                    printerr ("Error getting path for file %d@%d: %s", (file_id, commit_id, str(e)))
                 else:
-                    if file_id not in head_files or head_files[file_id] != commit_id:
-                        continue
+                    raise e
 
-                failed = False
+            if composed:
+                rev = revision.split ("|")[0]
+            else:
+                rev = revision
 
-                if (file_id, commit_id) in metrics_failed:
-                    printdbg ("%d@%d is already in the database, but it failed, try again", (file_id, commit_id))
-                    failed = True
-                elif (file_id, commit_id) in metrics:
-                    printdbg ("%d@%d is already in the database, skip it", (file_id, commit_id))
-                    continue
+            printdbg ("Path for %d at %s -> %s", (file_id, rev, relative_path))
 
-                if composed:
-                    rev = revision.split ("|")[0]
-                else:
-                    rev = revision
+            if repo.get_type () == 'svn' and relative_path == 'tags':
+                printdbg ("Skipping file %s", (relative_path,))
+                continue
 
-                try:
-                    relative_path = fp.get_path (file_id, commit_id, repoid).strip ("/")
-                except AttributeError, e:
-                    if fp.get_commit_id () != commit_id:
-                        aux_cursor = cnn.cursor ()
-                        fp.update_for_revision (aux_cursor, commit_id, repoid)
-                        aux_cursor.close ()
+            job = MetricsJob (id_counter, file_id, commit_id, relative_path, rev, failed)
+            job_pool.push (job)
+            id_counter += 1
+            n_metrics += 1
 
-                        relative_path = fp.get_path (file_id, commit_id, repoid).strip ("/")
-                    else:
-                        if self.config.metrics_noerr:
-                            printerr ("Error getting path for file %d@%d: %s", (file_id, commit_id, str(e)))
-                        else:
-                            raise e
-
-                printdbg ("Path for %d at %s -> %s", (file_id, rev, relative_path))
-
-                if repo.get_type () == 'svn' and relative_path == 'tags':
-                    printdbg ("Skipping file %s", (relative_path,))
-                    continue
-
-                job = MetricsJob (id_counter, file_id, commit_id, relative_path, rev, failed)
-                job_pool.push (job)
-                id_counter += 1
-                n_metrics += 1
-
-                if n_metrics >= self.MAX_METRICS:
-                    self.__process_finished_jobs (job_pool, write_cursor)
-                    profiler_start ("Inserting results in db")
-                    self.__insert_many (write_cursor)
-                    cnn.commit ()
-                    profiler_stop ("Inserting results in db")
-                    n_metrics = 0
-
-            rs = icursor.fetchmany ()
+            if n_metrics >= self.MAX_METRICS:
+                self.__process_finished_jobs (job_pool, write_cursor)
+                profiler_start ("Inserting results in db")
+                self.__insert_many (write_cursor)
+                cnn.commit ()
+                profiler_stop ("Inserting results in db")
+                n_metrics = 0
 
         job_pool.join ()
         self.__process_finished_jobs (job_pool, write_cursor, True)
