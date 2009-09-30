@@ -47,8 +47,9 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
         return self
 
     def __get_next (self):
-        t = self.rs.next ()
-        if not t:
+        try:
+            t = self.rs.next ()
+        except StopIteration:
             self.rs = iter (self.icursor.fetchmany ())
             if not self.rs:
                 raise StopIteration
