@@ -102,7 +102,7 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
                 self.fp.update_for_revision (aux_cursor, commit_id, self.repoid)
                 aux_cursor.close ()
 
-                relative_path = fp.get_path (file_id, commit_id, repoid).strip ("/")
+                relative_path = self.fp.get_path (file_id, commit_id, self.repoid).strip ("/")
             else:
                 raise e
 
