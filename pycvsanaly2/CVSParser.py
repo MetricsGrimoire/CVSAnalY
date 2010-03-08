@@ -66,14 +66,15 @@ class CVSParser (Parser):
         else:
             self.root_path = uri
 
-    def flush (self):
+    def _handle_commit (self):
         if self.commit is not None:
             # Remove trailing \n from commit message
             self.commit.message = self.commit.message[:-1]
-            
+
             self.handler.commit (self.commit)
             self.commit = None
-
+    def flush (self):
+        self._handle_commit ()
         if self.file is not None:
             self.handler.file (self.file)
             self.file_added_on_branch = None
@@ -84,9 +85,16 @@ class CVSParser (Parser):
 
     def _parse_line (self, line):
         if not line:
-            if self.commit is not None and self.commit.message:
+            if self.commit is None:
+                return
+
+            if self.rev_separator is not None:
+                self.rev_separator += '\n'
+            elif self.file_separator is not None:
+                self.file_separator += '\n'
+            elif self.commit.message is not None:
                 self.commit.message += '\n'
-                
+
             return
 
         # Revision Separator
@@ -154,8 +162,7 @@ class CVSParser (Parser):
         # Revision
         match = self.patterns['revision'].match (line)
         if match and self.rev_separator is not None:
-            if self.commit is not None:
-                self.handler.commit (self.commit)
+            self._handle_commit ()
 
             revision = match.group (1)
                 
