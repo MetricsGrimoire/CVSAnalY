@@ -1,3 +1,14 @@
+Description
+-----------
+
+The CVSAnalY tool extracts information out of source code repository logs and stores it into a database.
+
+How to get CVSAnalY2
+--------------------
+
+	git clone http://git.libresoft.es/cvsanaly
+        git clone git://git.libresoft.es/git/cvsanaly	
+
 Requirements
 ------------
 
@@ -22,6 +33,7 @@ You can install cvsanaly2 running setup.py script:
 If you don't have root privileges, add to your $PATH the directory which contains cvsanaly.
 
     $ export PATH=$PATH:$HOME/cvsanaly/
+
 
 You are ready to use cvsanaly2!
 
