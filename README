@@ -4,6 +4,8 @@ Requirements
 CVSAnalY needs the following dependencies:
 
     * Repository Handler
+	git clone http://git.libresoft.es/repositoryhandler
+        git clone git://git.libresoft.es/git/repositoryhandler
     * cvs (optional, for CVS support)
     * subversion (optional, for SVN support)
     * git (optional, for Git support)
