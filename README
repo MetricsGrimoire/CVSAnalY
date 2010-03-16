@@ -12,9 +12,9 @@ How to get CVSAnalY2
 Requirements
 ------------
 
-CVSAnalY needs the following dependencies:
+CVSAnalY has the following dependencies:
 
-    * Repository Handler
+    * RepositoryHandler
 	git clone http://git.libresoft.es/repositoryhandler
         git clone git://git.libresoft.es/git/repositoryhandler
     * cvs (optional, for CVS support)
@@ -30,10 +30,18 @@ You can install cvsanaly2 running setup.py script:
 
     # python setup.py install
 
-If you don't have root privileges, add to your $PATH the directory which contains cvsanaly.
+If you don't install CVSAnalY with root privileges, add to your $PATH
+the directory which contains cvsanaly (cvsanalydir is the directory
+where CVSAnalY is installed):
 
-    $ export PATH=$PATH:$HOME/cvsanaly/
+    $ export PATH=$PATH:cvsanalydir
 
+CVSAnalY needs RepositoryHandler. If it is not installed in the usual
+path for Python packages, PKG_CONFIG_PATH should include the directory
+where it is installed (repohandlerdir is the path where RepositoryHandler
+is installed):
+
+    $ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:repohandlerdir
 
 You are ready to use cvsanaly2!
 
