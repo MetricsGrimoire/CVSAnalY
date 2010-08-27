@@ -99,7 +99,7 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
             relative_path = self.fp.get_path (file_id, commit_id, self.repoid).strip ("/")
         except AttributeError, e:
             if self.fp.get_commit_id () != commit_id:
-                aux_cursor = cnn.cursor ()
+                aux_cursor = self.cnn.cursor ()
                 self.fp.update_for_revision (aux_cursor, commit_id, self.repoid)
                 aux_cursor.close ()
 
