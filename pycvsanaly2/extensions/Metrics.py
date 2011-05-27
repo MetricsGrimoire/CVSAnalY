@@ -67,6 +67,7 @@ class Measures:
             'halstead_vol'   : None,
             'halstead_level' : None,
             'halstead_md'    : None,
+            'src_struct'     : None,
         }
 
     def __getattr__ (self, name):
@@ -110,6 +111,9 @@ class FileMetrics:
         raise NotImplementedError
 
     def get_MccabeComplexity (self):
+        raise NotImplementedError
+
+    def get_SrcStructureMetrics (self):
         raise NotImplementedError
 
     def _get_mccabe_stats (nfunctions, mccabe_values):
@@ -364,7 +368,7 @@ class FileMetricsCCCC (FileMetrics):
     
     cccc_lang = None
     cccc = None
-    
+
     class XMLMetricsHandler (xmlhandler.ContentHandler):
         
         def __init__ (self):
@@ -393,6 +397,33 @@ class FileMetricsCCCC (FileMetrics):
         FileMetrics.__init__ (self, path, lang, sloc)
 
         self.handler = None
+        self.src_struct = {}
+
+    def __parser_out_func(self, line):
+        line = line.strip('\n')
+
+        if re.match('^[\r\t\b\n\s]+$', line):
+            return
+
+        m = re.match('\+\+\+ Module: (?P<module>.+), Start: (?P<start>[0-9]+), End: (?P<end>[0-9]+)', line)
+        if m:
+            if not self.src_struct.has_key(m.group('module')):
+                self.src_struct[m.group('module')] = {'functions' : {},
+                                                      'start' : None,
+                                                      'end'   : None}
+            self.src_struct[m.group('module')]['start'] = m.group('start')
+            self.src_struct[m.group('module')]['end'] = m.group('end')
+            return
+
+        m = re.match('\+\+\+ Function: (?P<func>.+), Module: (?P<module>.+), Start: (?P<start>[0-9]+), End: (?P<end>[0-9]+)', line)
+        if m:
+            if not self.src_struct.has_key(m.group('module')):
+                self.src_struct[m.group('module')] = {'functions' : {},
+                                                 'start' : None,
+                                                 'end'   : None}
+            self.src_struct[m.group('module')]['functions'] = {m.group('func') : {}}
+            self.src_struct[m.group('module')]['functions'][m.group('func')]['start'] = m.group('start')
+            self.src_struct[m.group('module')]['functions'][m.group('func')]['end'] = m.group('end')
 
     def __ensure_handler (self):
         if self.handler is not None:
@@ -411,7 +442,8 @@ class FileMetricsCCCC (FileMetrics):
         command = [cccc, '--outdir=%s' % tmpdir, '--lang=%s' % self.cccc_lang, self.path]
         cmd = Command (command, env = {'LC_ALL' : 'C'})
         try:
-            cmd.run ()
+            cmd.run (parser_out_func=self.__parser_out_func,
+                     parser_error_func=None)
         except CommandError, e:
             if e.error:
                 printerr ('Error running cccc: %s', (e.error,))
@@ -435,6 +467,11 @@ class FileMetricsCCCC (FileMetrics):
         fd.close ()
 
         remove_directory (tmpdir)
+
+    def get_SrcStructureMetrics (self):
+        self.__ensure_handler ()
+
+        return self.src_struct
 
     def get_CommentsBlank (self):
         self.__ensure_handler ()
@@ -569,7 +606,7 @@ class MetricsJob (Job):
             printerr ('Error running HalsteadComplexity for %s@%s. Exception: %s', (checkout_path, rev, str (e)))
             measures.halstead_length = measures.halstead_vol = measures.halstead_level = measures.halstead_md = -1
         profiler_stop ("[HalsteadComplexity] Measuring %s @ %s", (checkout_path, rev), True)
-                
+
         profiler_start ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev))
         try:
             measures.mccabe_sum, measures.mccabe_min, measures.mccabe_max, \
@@ -584,6 +621,19 @@ class MetricsJob (Job):
             measures.mccabe_sum = measures.mccabe_min = measures.mccabe_max = \
                 measures.mccabe_mean = measures.mccabe_median = measures.nfunctions = -1
         profiler_stop ("[MccabeComplexity] Measuring %s @ %s", (checkout_path, rev), True)
+
+        profiler_start ("[SrcStructureMetrics] Measuring %s @ %s", (checkout_path, rev))
+        try:
+             measures.src_struct = fm.get_SrcStructureMetrics ()
+        except NotImplementedError:
+            pass
+        except ProgramNotFound, e:
+            printout ('Program %s is not installed. Skipping src structure metrics', (e.program, ))
+            measures.src_struct = {}
+        except Exception, e:
+            printerr ('Error running SrcStructureMetrics for %s@%s. Exception: %s', (checkout_path, rev, str(e)))
+            measures.src_struct = {}
+        profiler_stop ("[SrcStructureMetrics] Measuring %s @ %s", (checkout_path, rev), True)
 
     def run (self, repo, repo_uri):
         def write_file (line, fd):
@@ -676,6 +726,10 @@ class Metrics (Extension):
                  'lcomment, lblank, nfunctions, mccabe_max, mccabe_min, mccabe_sum, mccabe_mean, ' + \
                  'mccabe_median, halstead_length, halstead_vol, halstead_level, halstead_md) ' + \
                  'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+    __insert_mod__ = 'INSERT INTO modules_src (id, file_id, commit_id, name, start_line, end_line) ' + \
+                     'VALUES (?,?,?,?,?,?)'
+    __insert_func__ = 'INSERT INTO functions_src (id, file_id, commit_id, module_id, header, start_line, end_line) ' + \
+                      'VALUES (?,?,?,?,?,?,?)'
     MAX_METRICS = 100
     INTERVAL_SIZE = 1000
 
@@ -683,8 +737,12 @@ class Metrics (Extension):
         self.db = None
         self.config = Config ()
         self.metrics = []
+        self.src_mods = []
+        self.src_funcs = []
+        self.id_counter_mod = 1
+        self.id_counter_func = 1
     
-    def __create_table (self, cnn):
+    def __create_tables (self, cnn):
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
@@ -711,6 +769,23 @@ class Metrics (Extension):
                                 "halstead_vol integer," +
                                 "halstead_level double,"+
                                 "halstead_md integer" +
+                                ")")
+                cursor.execute ("CREATE TABLE modules_src (" +
+                                "id integer primary key," +
+                                "file_id integer," +
+                                "commit_id integer," +
+                                "name text," +
+                                "start_line integer," +
+                                "end_line integer," +
+                                ")")
+                cursor.execute ("CREATE TABLE functions_src (" +
+                                "id integer primary key," +
+                                "file_id integer," +
+                                "commit_id integer," +
+                                "module_id integer," +
+                                "header text," +
+                                "start_line integer," +
+                                "end_line integer" +
                                 ")")
             except pysqlite2.dbapi2.OperationalError:
                 cursor.close ()
@@ -744,6 +819,28 @@ class Metrics (Extension):
                                 "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                                 "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
                                 ") CHARACTER SET=utf8")
+                cursor.execute ("CREATE TABLE modules_src (" +
+                                "id integer primary key not null," +
+                                "file_id integer," +
+                                "commit_id integer," +
+                                "name varchar(255)," +
+                                "start_line integer," +
+                                "end_line integer," +
+                                "FOREIGN KEY (file_id) REFERENCES tree(id)," +
+                                "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
+                                ") CHARACTER SET=utf8")
+                cursor.execute ("CREATE TABLE functions_src (" +
+                                "id integer primary key not null," +
+                                "file_id integer," +
+                                "commit_id integer," +
+                                "module_id integer," +
+                                "header varchar(255)," +
+                                "start_line integer," +
+                                "end_line integer," +
+                                "FOREIGN KEY (file_id) REFERENCES tree(id)," +
+                                "FOREIGN KEY (commit_id) REFERENCES scmlog(id)," +
+                                "FOREIGN KEY (module_id) REFERENCES modules_src(id)" +
+                                ") CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
                     cursor.close ()
@@ -775,12 +872,37 @@ class Metrics (Extension):
         cursor.execute (statement (query, self.db.place_holder), (repoid,))
         return [(res[0], res[1]) for res in cursor.fetchall ()]
 
+    def __create_src_struct_queries (self, src_struct, file_id, commit_id):
+        if not src_struct:
+            return
+
+        for m in src_struct.keys():
+            self.src_mods.append((self.id_counter_mod, file_id, commit_id,
+                                  m, src_struct[m]['start'], src_struct[m]['end']))
+
+            for f in src_struct[m]['functions'].keys():
+                self.src_funcs.append((self.id_counter_func, file_id, commit_id, self.id_counter_mod,
+                                       f, src_struct[m]['functions'][f]['start'],
+                                       src_struct[m]['functions'][f]['end']))
+                self.id_counter_func += 1
+
+            self.id_counter_mod += 1
+
     def __insert_many (self, cursor):
         if not self.metrics:
             return
-        
         cursor.executemany (statement (self.__insert__, self.db.place_holder), self.metrics)
         self.metrics = []
+
+        if not self.src_mods:
+            return
+        cursor.executemany (statement (self.__insert_mod__, self.db.place_holder), self.src_mods)
+        self.src_mods = []
+
+        if not self.src_funcs:
+            return
+        cursor.executemany (statement (self.__insert_func__, self.db.place_holder), self.src_funcs)
+        self.src_funcs = []
 
     def __process_finished_jobs (self, job_pool, write_cursor, unlocked = False):
         if unlocked:
@@ -813,6 +935,9 @@ class Metrics (Extension):
                                       measures.mccabe_max, measures.mccabe_min, measures.mccabe_sum, measures.mccabe_mean,
                                       measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
                                       measures.halstead_level, measures.halstead_md))
+
+            self.__create_src_struct_queries(measures.src_struct, file_id, commit_id)
+
             if unlocked:
                 job = job_pool.get_next_done_unlocked ()
             else:
@@ -845,7 +970,7 @@ class Metrics (Extension):
             raise ExtensionRunError ("Error creating repository %s. Exception: %s" % (repo.get_uri (), str (e)))
             
         try:
-            self.__create_table (cnn)
+            self.__create_tables (cnn)
         except TableAlreadyExists:
             cursor = cnn.cursor ()
             if not self.config.metrics_all:
@@ -855,12 +980,33 @@ class Metrics (Extension):
                         "where f.id = m.file_id and " + \
                         "f.repository_id = ?"
                 cursor.execute (statement (query, db.place_holder), (repoid,));
+
+                query = "DELETE msrc.* from modules_src msrc, files f " + \
+                        "where f.id = msrc.file_id and " + \
+                        "f.repository_id = ?"
+                cursor.execute (statement (query, db.place_holder), (repoid,));
+
+                query = "DELETE fsrc.* from functions_src fsrc, files f " + \
+                        "where f.id = fsrc.file_id and " + \
+                        "f.repository_id = ?"
+                cursor.execute (statement (query, db.place_holder), (repoid,));
+
                 cnn.commit ()
                 
             cursor.execute (statement ("SELECT max(id) from metrics", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
                 id_counter = id + 1
+
+            cursor.execute (statement ("SELECT max(id) from modules_src", db.place_holder))
+            id = cursor.fetchone ()[0]
+            if id is not None:
+                id_counter_mod = id + 1
+
+            cursor.execute (statement ("SELECT max(id) from functions_src", db.place_holder))
+            id = cursor.fetchone ()[0]
+            if id is not None:
+                id_counter_func = id + 1
 
             cursor.close ()
         except Exception, e:
