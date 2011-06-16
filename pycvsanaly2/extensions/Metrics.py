@@ -83,7 +83,8 @@ class Measures:
         keys = self.__dict__.keys ()
         keys.remove ('lang')
         for key in keys:
-            self.__dict__[key] = -1
+            if key != 'src_struct':
+                self.__dict__[key] = -1
 
 class FileMetrics:
 
@@ -936,7 +937,8 @@ class Metrics (Extension):
                                       measures.mccabe_median, measures.halstead_length, measures.halstead_vol,
                                       measures.halstead_level, measures.halstead_md))
 
-            self.__create_src_struct_queries(measures.src_struct, file_id, commit_id)
+            if measures.src_struct is not None:
+                self.__create_src_struct_queries(measures.src_struct, file_id, commit_id)
 
             if unlocked:
                 job = job_pool.get_next_done_unlocked ()
