@@ -1,67 +1,9 @@
 #!/usr/bin/make -f
 
-# Maintainer: Alvaro Navarro <anavarro@signal11.org>
-#
-package=cvsanaly
+DEB_PYTHON_SYSTEM=pysupport
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/python-distutils.mk
 
 
-# Directorio superior del codigo fuente (gracias Manoj)
-SRCTOP    := $(shell if  "$$PWD" != "" ; then echo $$PWD; else pwd; fi)
-# Directorio destino donde se instalaran los archivos
-DESTDIR    = $(SRCTOP)/debian/tmp/
-
-BIN_DIR = $(DESTDIR)/usr/bin
-SHARE_DIR = $(DESTDIR)/usr/share/cvsanaly
-PYTHON24 = /usr/bin/python2.4
-
-# rules
-build: build-stamp
-build-stamp:
-	dh_testdir
-
-	@echo "--- Compiling for python2.4"
-	$(PYTHON24) setup.py build
-
-	touch build-stamp
-
-install: install-stamp
-install-stamp: build
-	dh_testdir
-	dh_testroot
-
-	@echo "  -- Installing for python2.4"
-	$(PYTHON24) setup.py install --root $(DESTDIR)
-
-	@echo "  -- Cleaning build from *.py[co] files"
-	-find debian -name '*.py[co]' | xargs -n 50 rm -f
-
-	touch install-stamp
-
-clean:
-	dh_testdir
-	dh_testroot
-	@echo "-- Cleaning"
-	rm -f build-stamp install-stamp
-	rm -rf build
-	find . -name "*.py[co]" -exec rm -f {} \;
-	dh_clean
-
-# Build architecture-independent files here.
-binary-indep: install
-	dh_testdir -i
-	dh_testroot -i
-	dh_install -i
-	dh_installchangelogs -i ChangeLog
-	dh_installdocs -i	
-	dh_compress -i
-	dh_fixperms -i
-	dh_installdeb -i
-	dh_gencontrol -i
-	dh_md5sums -i
-	dh_builddeb -i
-
-# Build architecture-dependent files here.
-binary-arch: install
-
-binary: binary-indep binary-arch
-.PHONY: binary binary-arch binary-indep clean build
+# Add here any variable or target overrides you need.

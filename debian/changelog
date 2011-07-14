@@ -1,3 +1,15 @@
+cvsanaly (2.0.0) unstable; urgency=low
+
+  * New package version (Closes: #123456)
+
+ -- Juan Francisco Gato Luis <jfcogato@libresoft.es>  Tue, 12 Jul 2011 13:08:01 +0200
+
+cvsanaly (2.0.0) stable; urgency=low
+
+    * new package version
+
+ -- Juan Francisco Gato <jfcogato@libresoft.es> Fri, 18 Sep 2009 12:38:00 +2000
+
 cvsanaly (1.0.1) unstable; urgency=low
 
     * new package
