@@ -420,9 +420,9 @@ class FileMetricsCCCC (FileMetrics):
         if m:
             if not self.src_struct.has_key(m.group('module')):
                 self.src_struct[m.group('module')] = {'functions' : {},
-                                                 'start' : None,
-                                                 'end'   : None}
-            self.src_struct[m.group('module')]['functions'] = {m.group('func') : {}}
+                                                      'start' : None,
+                                                      'end'   : None}
+            self.src_struct[m.group('module')]['functions'][m.group('func')] = {}
             self.src_struct[m.group('module')]['functions'][m.group('func')]['start'] = m.group('start')
             self.src_struct[m.group('module')]['functions'][m.group('func')]['end'] = m.group('end')
 
