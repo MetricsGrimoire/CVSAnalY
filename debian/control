@@ -1,18 +1,16 @@
 Source: cvsanaly
 Section: misc
 Priority: optional
-Maintainer: Juan Francisco Gato Luis <jfcogato@libresoft.es>
-Build-Depends: cdbs, debhelper (>= 7.0.50~), python-support, debhelper (>= 8), python
-Standards-Version: 3.8.4
+Maintainer: Luis Cañas Díaz <lcanas@libresoft.es>
+Build-Depends: cdbs, debhelper (>= 7.0.50~), python-support, python
+Standards-Version: 3.9.2
 Homepage: http://projects.libresoft.es/projects/cvsanaly
 XS-Python-Version: >= 2.6
 
 Package: cvsanaly
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.4), pkg-config, python-mysqldb, repositoryhandler, cvs|subversion|git
+Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.4), pkg-config, python-mysqldb, repositoryhandler(>= 0.3), cvs|subversion|git
 Suggests:  cccc, cmetrics, pymetrics, sloccount, diffstat
 Description: repository analisys tool.
- Cvsanaly is a tool that extracts information out of source 
- code repository logs and stores it into a database.
- We can take info like the commits logs, the committers... 
- and metrics, like McCabe.
+ Cvsanaly is a tool that extracts information from source code repositories
+ like CVS, SVN and Git and stores it into a relational database.

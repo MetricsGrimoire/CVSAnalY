@@ -1,3 +1,15 @@
+cvsanaly (2.1.0-1) unstable; urgency=low
+
+  * New upstream bugfix release:
+    + debian/control:
+      - Maintainer changed
+      - Version number added to the repositoryhandler dependency
+    + debian/copyright:
+      - Upstream-Contact changed
+      - Initial copyright year fixed
+
+ -- Luis Cañas Díaz <lcanas@libresoft.es>  Wed, 28 Oct 2011 18:19:59 +0200
+
 cvsanaly (2.0.0) unstable; urgency=low
 
   * New package version (Closes: #123456)
@@ -8,7 +20,7 @@ cvsanaly (2.0.0) stable; urgency=low
 
     * new package version
 
- -- Juan Francisco Gato <jfcogato@libresoft.es> Fri, 18 Sep 2009 12:38:00 +2000
+ -- Juan Francisco Gato <jfcogato@libresoft.es>  Fri, 18 Sep 2009 12:38:00 +2000
 
 cvsanaly (1.0.1) unstable; urgency=low
 

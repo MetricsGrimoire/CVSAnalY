@@ -1,14 +1,14 @@
 Format: http://dep.debian.net/deps/dep5
 Upstream-Name: cvsanaly
-Upstream-Contact: Juan Francisco Gato Luis <jfcogato@libresoft.es>
+Upstream-Contact: Luis Cañas Díaz <lcanas@libresoft.es>
 Source: <http://projects.libresoft.es/projects/cvsanaly>
 
 Files: *
-Copyright: 2007-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
+Copyright: 2004-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
 License: GPL-2+
 
 Files: debian/*
-Copyright: 2007-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
+Copyright: 2004-2011 GSyC/LibreSoft, Universidad Rey Juan Carlos
 License: GPL-2+
 
 License: GPL-2+
