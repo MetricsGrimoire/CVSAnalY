@@ -9,8 +9,8 @@ XS-Python-Version: >= 2.6
 
 Package: cvsanaly
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.4), pkg-config, python-mysqldb, repositoryhandler(>= 0.3), cvs|subversion|git
-Suggests:  cccc, cmetrics, pymetrics, sloccount, diffstat
-Description: repository analisys tool.
+Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.4), pkg-config, python-mysqldb, repositoryhandler(>= 0.3), cvs|subversion|git, cccc
+Suggests: cmetrics, pymetrics, sloccount, diffstat
+Description: source code repository analisys tool.
  Cvsanaly is a tool that extracts information from source code repositories
  like CVS, SVN and Git and stores it into a relational database.
