@@ -1,5 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 # Copyright (C) 2006 Alvaro Navarro Clemente
+# Copyright (C) 2007-2011  GSyC/LibreSoft, Universidad Rey Juan Carlos
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +17,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 # Authors : Alvaro Navarro <anavarro@gsyc.escet.urjc.es>
+#           Luis Cañas Díaz <lcanas@libresoft.es>
 
 """
 Installer
@@ -31,21 +33,8 @@ import commands
 import os
 import sys
 
-from distutils.core import setup
-from pycvsanaly2.FindProgram import find_program
-
-def pkg_check_modules (deps):
-    pkg_config = find_program ('pkg-config')
-    if pkg_config is None:
-        print "pkg-config was not found and it's required to build cvsanaly2"
-        sys.exit (1)
-        
-    cmd = "%s --errors-to-stdout --print-errors --exists '%s'" % (pkg_config, ' '.join (deps))
-    out = commands.getoutput (cmd)
-
-    if out:
-        print out
-        sys.exit (1)
+#from distutils.core import setup
+from setuptools import setup
 
 def generate_changelog ():
     from subprocess import Popen, PIPE
@@ -68,7 +57,7 @@ def generate_changelog ():
 # Check dependencies
 deps = ['repositoryhandler >= 0.3']
 
-pkg_check_modules (deps)
+#pkg_check_modules (deps)
 
 if sys.argv[1] == 'sdist':
     generate_changelog ()
@@ -80,8 +69,8 @@ setup(name = PACKAGE,
       author =  AUTHOR,
       author_email = AUTHOR_EMAIL,
       description = DESCRIPTION,
+      install_requires = deps,
       url = "http://projects.libresoft.es/projects/cvsanaly/wiki/",
       packages = ['pycvsanaly2', 'pycvsanaly2.extensions'],
       data_files = [('share/man/man1',['help/cvsanaly2.1'])],
       scripts = ["cvsanaly2"])
-
