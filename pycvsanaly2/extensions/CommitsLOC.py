@@ -175,9 +175,12 @@ class GitLineCounter (LineCounter):
 
             self.lines[self.rev] = (added, removed)
         else:
-            # we only have two kind of lines,
+            # We only have two kinds of lines:
             # if it's not a diffstat, it's a rev line
-            self.rev = line.split (None, 1)[0]
+            # (except if it is an empty line, in which case it is just ignored)
+            parts = line.split (None, 1)
+            if len(parts) > 0:
+                self.rev = parts[0]
     
     def get_lines_for_revision (self, revision):
         return self.lines.get (revision, (0, 0))
