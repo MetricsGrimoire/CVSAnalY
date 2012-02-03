@@ -1,0 +1,318 @@
+# Copyright (C) 2008 LibreSoft
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+# Authors :
+#       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
+
+import os
+import re
+from subprocess import Popen, PIPE
+
+import pysqlite2.dbapi2
+import _mysql_exceptions
+
+from repositoryhandler.backends.watchers import DIFF
+
+from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase,
+                                  TableAlreadyExists,
+                                  statement, DBFile)
+from pycvsanaly2.Log import LogReader
+from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
+from pycvsanaly2.utils import to_utf8, printerr, uri_to_filename
+from pycvsanaly2.FindProgram import find_program
+from pycvsanaly2.Command import Command, CommandError
+
+class DBCommitLines:
+    """Class for managing the commits_lines table"""
+
+    def __init__ (self, db, cnn, repo):
+        """Initialize the table.
+
+        Initialization can be either by creating it or by getting rows
+        from and already existing table.
+        If the table already exists, rows are got from it, so that new rows
+        are compared with them before inserting (we don't want to
+        re-insert already inserted rows).
+        If the table does not exists, create it.
+        db: database holding the table.
+        cnn: connection to that database
+        repo: git repository
+        """
+
+        # Counter for unique row ids
+        self.counter = 1
+        # Rows already in table
+        self.table = []
+        # Rows still not inserted in the table table
+        self.pending = []
+        # SQL string for inserting a row in table
+        self.row_insert = "INSERT INTO commits_lines " + \
+            "(id, commit_id, added, removed) VALUES (%s, %s, %s, %s)"
+
+        # Initialize variables related to the database
+        self.db = db
+        self.cnn = cnn
+        self.repo = repo
+
+        cursor = cnn.cursor ()
+        try:
+            # Try to create the table (self.table will be empty)
+            self._create_table (cursor)
+        except TableAlreadyExists:
+            # If the table already exisits, fill in self.table with its data
+            self._init_from_table (cursor)
+        except Exception, e:
+            raise ExtensionRunError (str (e))
+        finally:
+            cursor.close ()
+
+    def _create_table_sqlite (self, cursor):
+        """Create the table for SQLite.
+        
+        Raises exception if the table already exists
+        """
+
+        try:
+            cursor.execute ("CREATE TABLE commits_lines (" +
+                            "id integer primary key," +
+                            "commit_id integer," +
+                            "added integer," +
+                            "removed integer" +
+                            ")")
+            self.cnn.commit ()
+        except pysqlite2.dbapi2.OperationalError:
+            raise TableAlreadyExists
+
+    def _create_table_mysql (self, cursor):
+        """Create the table for MySQL.
+
+        Raises exception if the table already exists
+        """
+
+        try:
+            cursor.execute ("CREATE TABLE commits_lines (" +
+                            "id INT primary key," +
+                            "commit_id integer," +
+                            "added int," +
+                            "removed int," +
+                            "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
+                            ") CHARACTER SET=utf8")
+            self.cnn.commit ()
+        except _mysql_exceptions.OperationalError, e:
+            if e.args[0] == 1050:
+                raise TableAlreadyExists
+            else:
+                raise
+
+    def _create_table (self, cursor):
+        """Create the table, and raise exception if it already exists.
+
+        TableAlreadyExists is the exception that may be raised."""
+
+        if isinstance (self.db, SqliteDatabase):
+            self._create_table_sqlite(cursor)
+        elif isinstance (self.db, MysqlDatabase):
+            self._create_table_mysql(cursor)
+        else:
+            raise ExtensionRunError ("Database type is not supported " + 
+                                     "by CommitsLOCDet extension")
+
+    def _init_from_table (self, cursor):
+        """Initialize self.table with all rows in commits_lines table."""
+
+        # Find max id in commits_lines, and update counter
+        cursor.execute ("SELECT max(id) FROM commits_lines")
+        id = cursor.fetchone ()[0]
+        if id is not None:
+            self.counter = id + 1
+        # Find all rows and init self.table with them
+        query = """SELECT cm.commit_id from commits_lines cm, scmlog s
+                WHERE cm.commit_id = s.id and repository_id = %s"""
+        cursor.execute (query % self.repo)
+        self.table = [res[0] for res in cursor.fetchall ()]
+
+    def in_commits (self, commit):
+        """Is this commit in self.table?"""
+
+        if commit in self.table:
+            return True
+        else:
+            return False
+
+    def add_pending_row (self, row):
+        """Add row to list of rows pending to be inserted in the table"""
+
+        (id, commit, added, removed) = row
+        if id is None:
+            id = self.counter
+            self.counter += 1
+        self.pending.append ((id, commit, added, removed))
+
+    def insert_rows (self, cursor):
+        """Inserts a list of pending rows into table.
+
+        It also empties the list of pending rows, after insertion."""
+
+        if self.pending:
+            cursor.executemany (self.row_insert, self.pending)
+            self.pending = []
+
+class LineCounter:
+    """Generic line counter, root of the hierarchy.
+
+    Will specialized in counters for specific kinds of repositories.
+    """
+
+    def __init__ (self, repo, uri):
+        self.repo = repo
+        self.uri = uri
+    
+    def get_lines_for_revision (self, revision):
+        raise NotImplementedError
+
+class GitLineCounter (LineCounter):
+
+    diffstat_pattern = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
+
+
+    def __init__ (self, repo, uri):
+        LineCounter.__init__ (self, repo, uri)
+
+        self.commit_pattern = re.compile ("^(\w+) ")
+        self.file_pattern = re.compile ("^(\d+)\s+(\d+)\s+([^\s].*)$")
+        
+        self.git = find_program ('git')
+        if self.git is None:
+            raise ExtensionRunError ("Error running CommitsLOCDet extension: " + \
+                                     "required git command cannot be found in path")
+        self.lines = {}
+        cmd = [self.git, 'log',
+               '--all', '--topo-order', '--numstat', '--pretty=oneline',
+               'origin']
+        c = Command (cmd, uri)
+        try:
+            c.run (parser_out_func=self.__parse_line)
+        except CommandError, e:
+            if e.error:
+                printerr ("Error running git log command: %s", (e.error,))
+            raise ExtensionRunError ("Error running " +
+                                     "CommitsLOCDet extension: %s", str (e))
+
+    def __parse_line (self, line):
+
+#        print (line)
+        match = self.commit_pattern.match (line)
+        if match:
+            self.commit = match.group (1)
+            self.added = 0
+            self.removed = 0
+#            print "Commit: " + self.commit + ": " + line
+        else:
+            match = self.file_pattern.match (line)
+            if match:
+                file_added = match.group (1)
+                file_removed = match.group (2)
+                file_name = match.group (3)
+                self.added += int (file_added)
+                self.removed += int (file_removed)
+                self.lines[self.commit] = (self.added, self.removed)
+#                print "Commit (" + str(self.added) + ", " + \
+#                    str(self.removed) + "), " + \
+#                    file_name + ": " + \
+#                    file_added + ", " + \
+#                    file_removed
+    
+    def get_lines_for_revision (self, revision):
+        return self.lines.get (revision, (0, 0))
+
+_counters = {
+    'git' : GitLineCounter
+}
+
+def create_line_counter_for_repository (repo, uri):
+    """Creates and returns a counter for the kind of repository specified.
+
+    Raises exception if repository is not supported.
+    """
+
+    try:
+        counter = _counters[repo.get_type ()]
+    except KeyError:
+        raise ExtensionRunError ("Repository type %s is not supported " +
+                                 "by CommitsLOCDet extension" % 
+                                 (repo.get_type ()))
+    return counter (repo, uri)
+
+class CommitsLOCDet (Extension):
+
+    def _get_repo_id (self, repo, uri, cursor):
+        """Get repository id from repositories table"""
+    
+        path = uri_to_filename (uri)
+        if path is not None:
+            repo_uri = repo.get_uri_for_path (path)
+        else:
+            repo_uri = uri
+        cursor.execute ("SELECT id FROM repositories WHERE uri = '%s'" % 
+                        repo_uri)
+        return (cursor.fetchone ()[0])
+
+    def run (self, repo, uri, db):
+        """Fill in the commits_lines table.
+
+        Create a counter to find number of lines added and removed
+        for each commit in repo,
+        create an object to manage the commits_lines table,
+        for each commit in repo, create an entry in commit_lines table
+        (except for those that already were in the table).
+        """
+
+        cnn = db.connect ()
+        # Cursor for reading from the database
+        cursor = cnn.cursor ()
+        # Cursor for writing to the database
+        write_cursor = cnn.cursor ()
+        repo_id = self._get_repo_id (repo, uri, cursor)
+        # Counter to find lines added, removed for each commit
+        counter = create_line_counter_for_repository (repo, uri)
+        # Object to manage the commits_lines table
+        theDBCommitLines = DBCommitLines(db, cnn, repo_id)
+
+        cursor.execute ("SELECT id, rev, composed_rev " +
+                        "FROM scmlog WHERE repository_id = '%s'",
+                        repo_id)
+        rows_left = True
+        while rows_left:
+            rows = cursor.fetchmany ()
+            for commit, revision, composed_rev in rows:
+                if theDBCommitLines.in_commits (commit):
+                    continue
+                if composed_rev:
+                    rev = revision.split ("|")[0]
+                else:
+                    rev = revision
+                (added, removed) = counter.get_lines_for_revision (rev)
+                theDBCommitLines.add_pending_row ((None, commit,
+                                                   added, removed))
+            theDBCommitLines.insert_rows (write_cursor)
+            if not rows:
+                rows_left = False
+        cnn.commit ()
+        write_cursor.close ()
+        cursor.close ()
+        cnn.close ()
+
+register_extension ("CommitsLOCDet", CommitsLOCDet)
