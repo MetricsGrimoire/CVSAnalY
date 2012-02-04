@@ -28,7 +28,7 @@ Produces two tables:
 
 - commits_files_lines: Lines added, removed for each commit of each file.
 
-Currently only works with git.
+Currently only works for git repositories.
 """
 
 import os
@@ -262,7 +262,7 @@ class TableComFilLines (DBTable):
     # (rows already in table), corresponding to repository_id
     # Should return a unique identifier which will be key in self.table
     # In this case, this is the concatenation of the commit id and path
-    # (for each file and each commit in repository_id)
+    # (for each file and each commit in repository_id), separated by ','
     _sql_select_rows = "SELECT CONCAT (c.commit, ',', c.path) " + \
         "FROM commits_files_lines c, scmlog s " + \
         "WHERE c.commit = s.id AND s.repository_id = %s"
@@ -427,7 +427,7 @@ class CommitsLOCDet (Extension):
                     theTableComLines.add_pending_row ((None, id,
                                                            added, removed))
                 for path in counter.get_paths_for_commit(commit):
-                    if not theTableComFilLines.in_table (commit + ',' + path):
+                    if not theTableComFilLines.in_table (str(id) + ',' + path):
                         (added, removed) = \
                             counter.get_lines_for_commit_file(commit, path)
                         theTableComFilLines.add_pending_row ((None, id, path,
