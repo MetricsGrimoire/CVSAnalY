@@ -340,6 +340,8 @@ class GitLineCounter (LineCounter):
                 self.added += int (file_added)
                 self.removed += int (file_removed)
                 self.lines[self.commit] = (self.added, self.removed)
+            else:
+                print line
     
     def get_lines_for_commit (self, commit):
         """Get lines added, removed for a given commit."""
@@ -422,16 +424,25 @@ class CommitsLOCDet (Extension):
                     commit = revision.split ("|")[0]
                 else:
                     commit = revision
+                cadded = cremoved = 0
                 if not theTableComLines.in_table (id):
-                    (added, removed) = counter.get_lines_for_commit (commit)
+                    (cadded, cremoved) = counter.get_lines_for_commit (commit)
                     theTableComLines.add_pending_row ((None, id,
-                                                           added, removed))
+                                                       cadded, cremoved))
+                tadded = tremoved = 0
                 for path in counter.get_paths_for_commit(commit):
                     if not theTableComFilLines.in_table (str(id) + ',' + path):
                         (added, removed) = \
                             counter.get_lines_for_commit_file(commit, path)
                         theTableComFilLines.add_pending_row ((None, id, path,
                                                               added, removed))
+                        tadded += int(added)
+                        tremoved += int(removed)
+                # Sanity check
+                if (cadded != tadded) or (cremoved != tremoved):
+                    print "Sanity check failed: %d, %s, %d, %d, %d, %d" % \
+                        (id, commit, cadded, tadded, cremoved, tremoved)
+                    print counter.get_paths_for_commit(commit)
             theTableComLines.insert_rows (write_cursor)
             theTableComFilLines.insert_rows (write_cursor)
             if not rows:
