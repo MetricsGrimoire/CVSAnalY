@@ -26,22 +26,29 @@ CVSAnalY has the following dependencies:
 Install
 -------
 
-You can install cvsanaly2 running setup.py script:
+You can install cvsanaly2 just by running setup.py script:
 
     # python setup.py install
 
-If you don't install CVSAnalY with root privileges, add to your $PATH
-the directory which contains cvsanaly (cvsanalydir is the directory
-where CVSAnalY is installed):
+This will install it in the python default directories in your system.
+
+If you don't install CVSAnalY with root privileges, or don't want
+to install it in the default directories, you can also use the source
+code directory, as cloned from the main git repo. It is enough to
+configure your PATH and PYTHONPATH so that cvsanaly2, and the Python
+modules it needs, are found.
+
+Add to your $PATH the directory which contains cvsanaly 
+(cvsanalydir is the directory where CVSAnalY is installed):
 
     $ export PATH=$PATH:cvsanalydir
 
-CVSAnalY needs RepositoryHandler. If it is not installed in the usual
-path for Python packages, PKG_CONFIG_PATH should include the directory
-where it is installed (repohandlerdir is the path where RepositoryHandler
-is installed):
+In PYHTONPATH, you need to include both the dirs for CVSAnalY and
+RepositoryHandler (except if it is installed in the default Python dirs
+in your system). If repohandlerdir is the path where RepositoryHandler
+is installed:
 
-    $ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:repohandlerdir
+    $ export PYTHONPATH=$PYTHONPATH:cvsanalydir:repohandlerdir
 
 You are ready to use cvsanaly2!
 
