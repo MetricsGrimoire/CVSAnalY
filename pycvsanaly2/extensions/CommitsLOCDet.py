@@ -31,19 +31,14 @@ Produces two tables:
 Currently only works for git repositories.
 """
 
-import os
 import re
-from subprocess import Popen, PIPE
 
 import pysqlite2.dbapi2
 import _mysql_exceptions
 
-from repositoryhandler.backends.watchers import DIFF
-
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase,
                                   TableAlreadyExists,
                                   statement, DBFile)
-from pycvsanaly2.Log import LogReader
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.utils import to_utf8, printerr, uri_to_filename
 from pycvsanaly2.FindProgram import find_program
