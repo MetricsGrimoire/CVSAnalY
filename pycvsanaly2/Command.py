@@ -179,10 +179,12 @@ class Command:
         def out_cb (out_chunk, out_data_l):
             out_data = out_data_l[0]
             out_data += out_chunk
-            while len(out_data) > 0 :
-                pos = out_data.find ('\n')
-                if pos < 0 :
-                    pos = len(out_data)
+#            while len(out_data) > 0 :
+#                pos = out_data.find ('\n')
+#                if pos < 0 :
+#                    pos = len(out_data)
+            while '\n' in out_data:
+                pos = out_data.find('\n')
                 parser_out_func (out_data[:pos + 1])
                 out_data = out_data[pos + 1:]
             out_data_l[0] = out_data
@@ -190,10 +192,12 @@ class Command:
         def err_cb (err_chunk, err_data_l):
             err_data = err_data_l[0]
             err_data += err_chunk
-            while len(err_data) > 0 :
-                pos = err_data.find ('\n')
-                if pos < 0 :
-                    pos = len(err_data)
+#            while len(err_data) > 0 :
+#                pos = err_data.find ('\n')
+#                if pos < 0 :
+#                    pos = len(err_data)
+            while '\n' in out_data:
+                pos = err_data.find('\n')
                 parser_error_func (err_data[:pos + 1])
                 err_data = err_data[pos + 1:]
             err_data_l[0] = err_data
