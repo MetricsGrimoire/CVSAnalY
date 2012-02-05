@@ -320,6 +320,12 @@ class GitLineCounter (LineCounter):
         """Parse a line from the git log.
 
         Fills in the dictionaries self.lines and self.lines_files.
+
+        Two kinds of patterns are matched to the lines in the git log:
+        - self.commit_pattern.match. commit lines: commit hash, comment
+        - self.file_pattern.match. file lines: added, removed, path
+           In some cases, added, removed are not numbers, but "-".
+           For now, those lines are silently removed.
         """
 
         match = self.commit_pattern.match (line)
@@ -340,8 +346,6 @@ class GitLineCounter (LineCounter):
                 self.added += int (file_added)
                 self.removed += int (file_removed)
                 self.lines[self.commit] = (self.added, self.removed)
-            else:
-                print line
     
     def get_lines_for_commit (self, commit):
         """Get lines added, removed for a given commit."""
@@ -440,9 +444,9 @@ class CommitsLOCDet (Extension):
                         tremoved += int(removed)
                 # Sanity check
                 if (cadded != tadded) or (cremoved != tremoved):
-                    print "Sanity check failed: %d, %s, %d, %d, %d, %d" % \
-                        (id, commit, cadded, tadded, cremoved, tremoved)
-                    print counter.get_paths_for_commit(commit)
+                    printerr ("Sanity check failed: %d, %s, %d, %d, %d, %d" %
+                              (id, commit, cadded, tadded, cremoved, tremoved))
+                    printerr (counter.get_paths_for_commit(commit))
             theTableComLines.insert_rows (write_cursor)
             theTableComFilLines.insert_rows (write_cursor)
             if not rows:
