@@ -158,7 +158,7 @@ class DBTable:
             self.counter = id + 1
         # Find all rows and init self.table with them
         cursor.execute (self._sql_select_rows % self.repo)
-        self.table = [res[0] for res in cursor.fetchall ()]
+        self.table = cursor.fetchall()
 
     def in_table (self, element):
         """Is this element in self.table?"""
@@ -256,9 +256,8 @@ class TableComFilLines (DBTable):
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
     # Should return a unique identifier which will be key in self.table
-    # In this case, this is the concatenation of the commit id and path
-    # (for each file and each commit in repository_id), separated by ','
-    _sql_select_rows = "SELECT CONCAT (c.commit, ',', c.path) " + \
+    # In this case, this is the pair commit id and path
+    _sql_select_rows = "SELECT c.commit, c.path " + \
         "FROM commits_files_lines c, scmlog s " + \
         "WHERE c.commit = s.id AND s.repository_id = %s"
 
