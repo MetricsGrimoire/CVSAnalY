@@ -1,4 +1,114 @@
 ================
+cvsanaly   2.1.0
+================
+
+This is the CVSAnalY which bring together a lot of commits done during
+2009, 2010 and 2011.
+
+Bug fixes:
+
+    * Fix --version command line option
+    * [metrics] Fix file extension extraction from paths
+    * [metrics] Fix path building in cvs when module is '.'
+    * Encode strings to utf-8 before writing to stdout/stderr
+    * Fix prefix branch for paths in multi-paths actions. In SVN it's
+    possible to copy/move/replace a path from one branch into
+    another. In this case the action branch is different from the
+    branch of the second path. This usually happens when creating a
+    branch:   A /branches/foo (from /trunk: 1234)
+    * Remove leading / from path before querying the cache.
+    For repositories like git where paths don't start with / we have to
+    remove the leading / from the built path before inserting in into
+    the cache, but also before querying the cache
+    * Fix compatibility in SQL statement LIMIT.
+    The previous declaration of the LIMIT statement in the class
+    ICursor is incompatible with Postgresql.  However, both SQLite
+    and MySQL supports the statement LIMIT ... OFFSET which also
+    support Postgresql.
+    * Fix SQL portability issue in view action_files.
+    The syntax used when the view action_files is created is not
+    compatible with Postgresql, which requires the clause 'AS' when
+    an alias is defined.  The clause 'AS' is optional in MySQL and
+    SQLite. Fixes bug #28.
+    * Add conditional use of args when executing a query.
+    SQLite cursor's does not handle extra parameters in a query that
+    does not have paraments.  Instead of passing None, it should not
+    pass any argument at all.  Fix Bug #30.
+    * [git] Fix a crash when there's a commit in a svn tag. Fixes #75
+    * [cvs] Remove additional trailing \n added to commit messages.
+    Problem spotted by David Gray.
+    * Fixes incorrect licence header in most of the files. Fixes #240
+    * [extensions] Missing self before class attribute. Fixes #248
+
+New features:
+
+    * Add a flag command line option to ignore errors in metrics
+    extension
+    * Add ICursor class to split up queries.
+    The result of a query is always stored in memory, which means that
+    queries that return a large amount of data might fill up the
+    memory.
+    ICursor is a class that uses a real cursor emulating the execute +
+    fetchmany API, but splitting up the query by using limit, so that
+    the query is executed with different limit values everytime a
+    fetchmany is required.
+    * [extensions] Add Blame extension.
+    It adds a new table with information about the amount of lines
+    owned by every author of every file for every revision
+    * [extensions] Add Patches extension to save diffs of changes.
+    It adds a new table to store the patch of every commit
+    * Add a configuration sample file. Fixes bug #27
+
+Performance fixes and improvements:
+
+    * Do not save caches to disk on every database commit since it's a
+    very heavy operation, it is done only once at the end of the
+    parsing process
+    * Paths in different branches are now considered as different
+    files. That was obvious with SVN because branches are directories,
+    but in CVS and Git exactly the same path can be in different
+    branches.
+    * Use cat instead of checkout/update to get the contents of files
+    in metrics extension. Multiple cat commands can run in parallel
+    which improves performance quite a lot.
+    * Proccess finished jobs every 100 jobs to make sure there are jobs
+    in the done queue and removing the timeout the first time
+    job_pool.get_next_done is called to make sure we always get a job.
+    * Update the adjacency matrix sequentially instead of re-create it
+    for every revision. It drastically improves the performance of the
+    Metrics extension
+    * Add debug messages to git parser
+    * [git] Rework git parser to save memory with large repos
+    * [metrics] Remove unnecessary code
+    * Add get_filename() to FilePaths to get just the file name of a
+    given file_id
+    * Detect and ignore empty branches in git
+    * [git] Ignore commits done on svn tags directory. This is a
+    workaround for a bug in the GNOME Git migration
+    * DBContentHandler.py refactored
+    * Do not call DBContentHandler methods until proxy has finished.
+    DBContentHandler creates a database connection in begin() and
+    keeps it opened until proxy finishes. For repos with a very long
+    history it might take a long time until proxy finishes and mysql
+    resets the connection of the DBContentHandler because of
+    inactivity timeout.
+    * Improved Debian files
+
+Documentation:
+
+    * Rename ChangeLog to ChangeLog.pre-git and autogenerate it
+    * Improved README file
+
+Thanks to all contributors:
+    Santiago Dueñas
+    Jesus M. Gonzalez-Barahona
+    Carlos Garcia Campos
+    Germán Póo-Caamaño
+    Juan Francisco Gato Luis
+    David Gray
+    Luis Cañas Díaz
+
+================
 cvsanaly   2.0.0
 ================
 
@@ -78,7 +188,7 @@ Documentation:
 
     * Add documentation in texi format. Not finished yet.
     * Update the manpage
-      
+
 Bug Fixes:
 
     * Remove the tempdir used in Metrics extension when the extension
