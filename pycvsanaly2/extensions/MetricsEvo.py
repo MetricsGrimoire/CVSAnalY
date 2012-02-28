@@ -31,7 +31,7 @@ class MetricsEvo (Extension):
     """Extension to calculate the metrics for files at different points in time.
 
     It assumes the Metrics extension was already run, and the tables it
-    generated are available
+    generates are available
     """
 
     def _get_repo_id (self, repo, uri, cursor):
@@ -67,24 +67,33 @@ class MetricsEvo (Extension):
         maxDate = cursor.fetchone ()[0]
         for year in range (minDate.year, maxDate.year + 1):
             for month in range (1, 13):
-                limit = str(year) + "-" + str(month) + "-01 00:00:00"
-                query = "SELECT met.file_id, MAX(met.commit_id), " + \
-                    "met.sloc, met.loc " + \
-                    "FROM metrics met, scmlog log " + \
-                    "WHERE met.commit_id = log.id " + \
-                    'AND log.date < "%s" ' + \
-                    "GROUP by met.file_id"
+                limit = str(year) + "-" + str(month) + "-01"
+                query = """
+                  SELECT SUM(m.sloc), SUM(m.loc) 
+                  FROM
+                   (SELECT maxcommits.file_id, max_commit, type
+                    FROM
+                     (SELECT file_id, MAX(commit_id) max_commit
+                      FROM 
+                       (SELECT a.file_id, a.commit_id, a.type 
+                        FROM actions a, scmlog s
+                        WHERE a.commit_id = s.id AND 
+                          a.branch_id=1 AND 
+                          s.date < "%s"
+                       ) actdate
+                      GROUP BY file_id
+                     ) maxcommits, actions a
+                    WHERE maxcommits.file_id = a.file_id AND 
+                      maxcommits.max_commit = a.commit_id AND
+                      type <> 'D'
+                   ) c, metrics m
+                  WHERE c.file_id = m.file_id AND
+                    c.max_commit = m.commit_id"""
                 cursor.execute (query % limit)
-                rows = cursor.fetchall()
-                total_sloc = 0
-                total_loc = 0
-                for file, commit, sloc, loc in rows:
-                    print (file, commit, sloc, loc)
-                    total_sloc += sloc
-                    total_loc += loc
-                print "*** Year: " + str(year) + ", " + str(month) + \
-                    ", " + str (total_sloc) + \
-                    ", " + str(total_loc)
+                (sloc, loc) = cursor.fetchone()
+                print "*** Year: " + str(year) + "-" + str(month) + \
+                    "-01: " + str (sloc) + \
+                    ", " + str(loc)
 
         #cnn.commit ()
         write_cursor.close ()
