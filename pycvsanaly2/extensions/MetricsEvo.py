@@ -23,9 +23,45 @@
 # It assumes the Metrics extension was already run, and the tables it
 # generated are available
 
+import datetime
 from pycvsanaly2.extensions import Extension, register_extension
 from pycvsanaly2.utils import uri_to_filename
-import datetime
+from pycvsanaly2.extensions.DBTable import DBTable
+
+class TableMetricsEvo (DBTable):
+    """Class for managing the metrics_evo table.
+
+    This table is used for storing the evolution over time
+    of the considered metrics"""
+
+    # SQL string for creating the table, specialized for SQLite
+    _sql_create_table_sqlite = "CREATE TABLE metrics_evo (" + \
+        "id integer primary key," + \
+        "date datetime," + \
+        "loc integer," + \
+        "sloc integer" + \
+        ")"
+
+    # SQL string for creating the table, specialized for MySQL
+    _sql_create_table_mysql = "CREATE TABLE metrics_evo (" + \
+        "id INTEGER PRIMARY KEY," + \
+        "date DATETIME," + \
+        "loc INTEGER," + \
+        "sloc INTEGER" + \
+        ") CHARACTER SET=utf8"
+
+    # SQL string for getting the max id in table
+    _sql_max_id = "SELECT max(id) FROM metrics_evo"
+
+    # SQL string for inserting a row in table
+    _sql_row_insert = "INSERT INTO metrics_evo " + \
+        "(id, date, loc, sloc) VALUES (%s, %s, %s, %s)"
+
+    # SQL string for selecting all rows to fill self.table
+    # (rows already in table), corresponding to repository_id
+    # Should return a unique identifier which will be key in self.table
+    # In this case, this is the commit id (for commits in repository_id)
+    _sql_select_rows = "SELECT id FROM metrics_evo # %s"
 
 class MetricsEvo (Extension):
     """Extension to calculate the metrics for files at different points in time.
@@ -65,11 +101,27 @@ class MetricsEvo (Extension):
         minDate = cursor.fetchone ()[0]
         cursor.execute ("SELECT MAX(date) FROM scmlog")
         maxDate = cursor.fetchone ()[0]
-        for year in range (minDate.year, maxDate.year + 1):
-            for month in range (1, 13):
-                limit = str(year) + "-" + str(month) + "-01"
-                query = """
-                  SELECT SUM(m.sloc), SUM(m.loc) 
+
+        theTableMetricsEvo = TableMetricsEvo (db, cnn, repo_id)
+
+        # First month is 0, last month is lastMonth
+        lastMonth = (maxDate.year - minDate.year) * 12 + \
+            maxDate.month - minDate.month
+        for period in range (0, lastMonth):
+            year = minDate.year + period // 12
+            month = period % 12
+            limit = str(year) + "-" + str(month) + "-01"
+            # Next SELECT is not that complex.
+            # Get all file, commit, type from actions, for a
+            # given branch, that are prior to the given date.
+            # Then, group them by file, and get the max commit for each group.
+            # That is the most recent commit for each file prior to the date.
+            # Then, for each of those file, max commit, get
+            # only those that are not delete actions (which would mean
+            # the file is no longer in the repo for the date)
+            # get the metrics for each of those files, and sum them
+            query = """
+                  SELECT SUM(m.loc), SUM(m.sloc) 
                   FROM
                    (SELECT maxcommits.file_id, max_commit, type
                     FROM
@@ -89,13 +141,17 @@ class MetricsEvo (Extension):
                    ) c, metrics m
                   WHERE c.file_id = m.file_id AND
                     c.max_commit = m.commit_id"""
-                cursor.execute (query % limit)
-                (sloc, loc) = cursor.fetchone()
-                print "*** Year: " + str(year) + "-" + str(month) + \
-                    "-01: " + str (sloc) + \
-                    ", " + str(loc)
-
-        #cnn.commit ()
+            cursor.execute (query % limit)
+            (loc, sloc) = cursor.fetchone()
+            if loc is None:
+                loc = 0
+            if sloc is None:
+                sloc = 0
+            date = str(year) + "-" + str(month) + "-01"
+            print "*** Year: " + date + ": " + str(loc) + ", " + str(sloc)
+            theTableMetricsEvo.add_pending_row ((None, date, loc, sloc))
+        theTableMetricsEvo.insert_rows (write_cursor)
+        cnn.commit ()
         write_cursor.close ()
         cursor.close ()
         cnn.close ()
