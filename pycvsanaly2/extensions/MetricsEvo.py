@@ -108,8 +108,8 @@ class MetricsEvo (Extension):
         lastMonth = (maxDate.year - minDate.year) * 12 + \
             maxDate.month - minDate.month
         for period in range (0, lastMonth):
-            year = minDate.year + period // 12
-            month = period % 12
+            month = (minDate.month + period) % 12 + 1
+            year = minDate.year + (period + minDate.month) // 12
             limit = str(year) + "-" + str(month) + "-01"
             # Next SELECT is not that complex.
             # Get all file, commit, type from actions, for a
