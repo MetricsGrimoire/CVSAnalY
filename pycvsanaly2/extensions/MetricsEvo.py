@@ -40,7 +40,8 @@ class TableMetricsEvo (DBTable):
         "branch_id integer," + \
         "date datetime," + \
         "loc integer," + \
-        "sloc integer" + \
+        "sloc integer," + \
+        "files integer" + \
         ")"
 
     # SQL string for creating the table, specialized for MySQL
@@ -49,7 +50,8 @@ class TableMetricsEvo (DBTable):
         "branch_id INTEGER," + \
         "date DATETIME," + \
         "loc INTEGER," + \
-        "sloc INTEGER" + \
+        "sloc INTEGER," + \
+        "files INTEGER" + \
         ") CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
@@ -57,7 +59,7 @@ class TableMetricsEvo (DBTable):
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO metrics_evo " + \
-        "(id, branch_id, date, loc, sloc) VALUES (%s, %s, %s, %s, %s)"
+        "(id, branch_id, date, loc, sloc, files) VALUES (%s,%s,%s,%s,%s,%s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
@@ -103,7 +105,7 @@ class MetricsEvo (Extension):
         # the file is no longer in the repo for the date)
         # get the metrics for each of those files, and sum them
         query = """
-            SELECT SUM(m.loc), SUM(m.sloc) 
+            SELECT SUM(m.loc), SUM(m.sloc), COUNT(m.loc) 
             FROM
              (SELECT maxcommits.file_id, max_commit, type
               FROM
@@ -124,13 +126,12 @@ class MetricsEvo (Extension):
             WHERE c.file_id = m.file_id AND
               c.max_commit = m.commit_id"""
         self.cursor.execute (query % (branch, date))
-        (loc, sloc) = self.cursor.fetchone()
+        (loc, sloc, files) = self.cursor.fetchone()
         if loc is None:
             loc = 0
         if sloc is None:
             sloc = 0
-        #print "*** Date: " + date + ": " + str(loc) + ", " + str(sloc)
-        return (loc, sloc)
+        return (loc, sloc, files)
 
 
     def run (self, repo, uri, db):
@@ -165,9 +166,9 @@ class MetricsEvo (Extension):
                 month = (minDate.month + period) % 12 + 1
                 year = minDate.year + (period + minDate.month) // 12
                 date = str(year) + "-" + str(month) + "-01"
-                (loc, sloc) = self._metrics_period (branch, date)
+                (loc, sloc, files) = self._metrics_period (branch, date)
                 theTableMetricsEvo.add_pending_row (
-                    (None, branch, date, loc, sloc))
+                    (None, branch, date, loc, sloc, files))
             theTableMetricsEvo.insert_rows (write_cursor)
         cnn.commit ()
         write_cursor.close ()
