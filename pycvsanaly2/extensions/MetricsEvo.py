@@ -37,6 +37,7 @@ class TableMetricsEvo (DBTable):
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE metrics_evo (" + \
         "id integer primary key," + \
+        "branch_id integer," + \
         "date datetime," + \
         "loc integer," + \
         "sloc integer" + \
@@ -45,6 +46,7 @@ class TableMetricsEvo (DBTable):
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE metrics_evo (" + \
         "id INTEGER PRIMARY KEY," + \
+        "branch_id INTEGER," + \
         "date DATETIME," + \
         "loc INTEGER," + \
         "sloc INTEGER" + \
@@ -55,7 +57,7 @@ class TableMetricsEvo (DBTable):
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO metrics_evo " + \
-        "(id, date, loc, sloc) VALUES (%s, %s, %s, %s)"
+        "(id, branch_id, date, loc, sloc) VALUES (%s, %s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
@@ -70,7 +72,7 @@ class MetricsEvo (Extension):
     generates are available
     """
 
-    def _get_repo_id (self, repo, uri, cursor):
+    def _get_repo_id (self, repo, uri):
         """Get repository id from repositories table"""
     
         path = uri_to_filename (uri)
@@ -78,82 +80,98 @@ class MetricsEvo (Extension):
             repo_uri = repo.get_uri_for_path (path)
         else:
             repo_uri = uri
-        cursor.execute ("SELECT id FROM repositories WHERE uri = '%s'" % 
+        self.cursor.execute ("SELECT id FROM repositories WHERE uri = '%s'" % 
                         repo_uri)
-        return (cursor.fetchone ()[0])
+        return (self.cursor.fetchone ()[0])
+
+    def _metrics_period (self, branch, date):
+        """Gets the sum of metrics for all files present in the repo.
+
+        Uses a query to learn which files are present in the repository
+        at a certain date, for a given branch. Returns metrics learned.
+
+        Uses self.cursor for reading from the database
+        """
+
+        # Next SELECT is not that complex.
+        # Get all file, commit, type from actions, for a
+        # given branch, that are prior to the given date.
+        # Then, group them by file, and get the max commit for each group.
+        # That is the most recent commit for each file prior to the date.
+        # Then, for each of those file, max commit, get
+        # only those that are not delete actions (which would mean
+        # the file is no longer in the repo for the date)
+        # get the metrics for each of those files, and sum them
+        query = """
+            SELECT SUM(m.loc), SUM(m.sloc) 
+            FROM
+             (SELECT maxcommits.file_id, max_commit, type
+              FROM
+               (SELECT file_id, MAX(commit_id) max_commit
+                FROM 
+                 (SELECT a.file_id, a.commit_id, a.type 
+                  FROM actions a, scmlog s
+                  WHERE a.commit_id = s.id AND 
+                    a.branch_id=%s AND 
+                    s.date < "%s"
+                 ) actdate
+                GROUP BY file_id
+               ) maxcommits, actions a
+              WHERE maxcommits.file_id = a.file_id AND 
+                maxcommits.max_commit = a.commit_id AND
+                type <> 'D'
+             ) c, metrics m
+            WHERE c.file_id = m.file_id AND
+              c.max_commit = m.commit_id"""
+        self.cursor.execute (query % (branch, date))
+        (loc, sloc) = self.cursor.fetchone()
+        if loc is None:
+            loc = 0
+        if sloc is None:
+            sloc = 0
+        #print "*** Date: " + date + ": " + str(loc) + ", " + str(sloc)
+        return (loc, sloc)
+
 
     def run (self, repo, uri, db):
         """Fill in the annual_metrics table.
 
         For each file in the repository, and for each year since the repository
         started, find the most recent metrics calculated for that file, but not
-        older than the end of the year
+        older than the end of the year. Do that for all the branches
         """
 
         cnn = db.connect ()
         # Cursor for reading from the database
-        cursor = cnn.cursor ()
+        self.cursor = cnn.cursor ()
         # Cursor for writing to the database
         write_cursor = cnn.cursor ()
-        repo_id = self._get_repo_id (repo, uri, cursor)
+        repo_id = self._get_repo_id (repo, uri)
 
-        cursor.execute ("SELECT MIN(date) FROM scmlog")
-        minDate = cursor.fetchone ()[0]
-        cursor.execute ("SELECT MAX(date) FROM scmlog")
-        maxDate = cursor.fetchone ()[0]
+        self.cursor.execute ("SELECT MIN(date) FROM scmlog")
+        minDate = self.cursor.fetchone ()[0]
+        self.cursor.execute ("SELECT MAX(date) FROM scmlog")
+        maxDate = self.cursor.fetchone ()[0]
 
         theTableMetricsEvo = TableMetricsEvo (db, cnn, repo_id)
 
         # First month is 0, last month is lastMonth
         lastMonth = (maxDate.year - minDate.year) * 12 + \
             maxDate.month - minDate.month
-        for period in range (0, lastMonth):
-            month = (minDate.month + period) % 12 + 1
-            year = minDate.year + (period + minDate.month) // 12
-            limit = str(year) + "-" + str(month) + "-01"
-            # Next SELECT is not that complex.
-            # Get all file, commit, type from actions, for a
-            # given branch, that are prior to the given date.
-            # Then, group them by file, and get the max commit for each group.
-            # That is the most recent commit for each file prior to the date.
-            # Then, for each of those file, max commit, get
-            # only those that are not delete actions (which would mean
-            # the file is no longer in the repo for the date)
-            # get the metrics for each of those files, and sum them
-            query = """
-                  SELECT SUM(m.loc), SUM(m.sloc) 
-                  FROM
-                   (SELECT maxcommits.file_id, max_commit, type
-                    FROM
-                     (SELECT file_id, MAX(commit_id) max_commit
-                      FROM 
-                       (SELECT a.file_id, a.commit_id, a.type 
-                        FROM actions a, scmlog s
-                        WHERE a.commit_id = s.id AND 
-                          a.branch_id=1 AND 
-                          s.date < "%s"
-                       ) actdate
-                      GROUP BY file_id
-                     ) maxcommits, actions a
-                    WHERE maxcommits.file_id = a.file_id AND 
-                      maxcommits.max_commit = a.commit_id AND
-                      type <> 'D'
-                   ) c, metrics m
-                  WHERE c.file_id = m.file_id AND
-                    c.max_commit = m.commit_id"""
-            cursor.execute (query % limit)
-            (loc, sloc) = cursor.fetchone()
-            if loc is None:
-                loc = 0
-            if sloc is None:
-                sloc = 0
-            date = str(year) + "-" + str(month) + "-01"
-            print "*** Year: " + date + ": " + str(loc) + ", " + str(sloc)
-            theTableMetricsEvo.add_pending_row ((None, date, loc, sloc))
-        theTableMetricsEvo.insert_rows (write_cursor)
+        self.cursor.execute("SELECT id FROM branches")
+        branches = [row[0] for row in self.cursor.fetchall()]
+        for branch in branches:
+            for period in range (0, lastMonth):
+                month = (minDate.month + period) % 12 + 1
+                year = minDate.year + (period + minDate.month) // 12
+                date = str(year) + "-" + str(month) + "-01"
+                (loc, sloc) = self._metrics_period (branch, date)
+                theTableMetricsEvo.add_pending_row (
+                    (None, branch, date, loc, sloc))
+            theTableMetricsEvo.insert_rows (write_cursor)
         cnn.commit ()
         write_cursor.close ()
-        cursor.close ()
+        self.cursor.close ()
         cnn.close ()
 
 register_extension ("MetricsEvo", MetricsEvo)
