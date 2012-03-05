@@ -67,6 +67,38 @@ class TableMetricsEvo (DBTable):
     # In this case, this is the commit id (for commits in repository_id)
     _sql_select_rows = "SELECT id FROM metrics_evo # %s"
 
+
+class TableMonths (DBTable):
+    """Class having one month per row.
+
+    This table is used for joining for some queries"""
+
+    # SQL string for creating the table, specialized for SQLite
+    _sql_create_table_sqlite = "CREATE TABLE months (" + \
+        "id integer primary key," + \
+        "date datetime" + \
+        ")"
+
+    # SQL string for creating the table, specialized for MySQL
+    _sql_create_table_mysql = "CREATE TABLE months (" + \
+        "id INTEGER PRIMARY KEY," + \
+        "date DATETIME" + \
+        ") CHARACTER SET=utf8"
+
+    # SQL string for getting the max id in table
+    _sql_max_id = "SELECT max(id) FROM months"
+
+    # SQL string for inserting a row in table
+    _sql_row_insert = "INSERT INTO months " + \
+        "(id, date) VALUES (%s, %s)"
+
+    # SQL string for selecting all rows to fill self.table
+    # (rows already in table), corresponding to repository_id
+    # Should return a unique identifier which will be key in self.table
+    # In this case, this is the commit id (for commits in repository_id)
+    _sql_select_rows = "SELECT id FROM months # %s"
+
+
 class MetricsEvo (Extension):
     """Extension to calculate the metrics for files at different points in time.
 
@@ -154,13 +186,25 @@ class MetricsEvo (Extension):
         self.cursor.execute ("SELECT MAX(date) FROM scmlog")
         maxDate = self.cursor.fetchone ()[0]
 
-        theTableMetricsEvo = TableMetricsEvo (db, cnn, repo_id)
 
         # First month is 0, last month is lastMonth
         lastMonth = (maxDate.year - minDate.year) * 12 + \
             maxDate.month - minDate.month
         self.cursor.execute("SELECT id FROM branches")
         branches = [row[0] for row in self.cursor.fetchall()]
+
+        # Fill in months, with months considered
+        theTableMonths = TableMonths (db, cnn, repo_id)
+        for period in range (0, lastMonth):
+            month = (minDate.month + period) % 12 + 1
+            year = minDate.year + (period + minDate.month) // 12
+            date = str(year) + "-" + str(month) + "-01"
+            theTableMonths.add_pending_row (
+                (None, date))
+        theTableMonths.insert_rows (write_cursor)
+        
+        # Fill in metrics_evo, with the metrics for monthly snapshots
+        theTableMetricsEvo = TableMetricsEvo (db, cnn, repo_id)
         for branch in branches:
             for period in range (0, lastMonth):
                 month = (minDate.month + period) % 12 + 1
