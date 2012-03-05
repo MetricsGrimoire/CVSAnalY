@@ -111,7 +111,6 @@ class MessageWords (Extension):
             rows = cursor.fetchall()
             for message in rows:
                 words = message[0].lower().split ()
-                #print words
                 for word in words:
                     if word in wordsFreq:
                         wordsFreq[word] += 1
