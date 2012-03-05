@@ -33,7 +33,7 @@ class TableWords (DBTable):
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE words_freq (" + \
         "id integer primary key," + \
-        "period integer," + \
+        "date datetime," + \
         "word varchar," + \
         "times integer" + \
         ")"
@@ -41,7 +41,7 @@ class TableWords (DBTable):
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE words_freq (" + \
         "id INTEGER PRIMARY KEY," + \
-        "period INTEGER," + \
+        "date DATETIME," + \
         "word VARCHAR(80)," + \
         "times INTEGER" + \
         ") CHARACTER SET=utf8"
@@ -51,7 +51,7 @@ class TableWords (DBTable):
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO words_freq " + \
-        "(id, period, word, times) VALUES (%s, %s, %s, %s)"
+        "(id, date, word, times) VALUES (%s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
@@ -100,15 +100,15 @@ class MessageWords (Extension):
             maxDate.month - minDate.month
         for period in range (0, lastMonth):
             wordsFreq = {}
-            year = minDate.year + period // 12
-            month = period % 12
+            month = (minDate.month + period) % 12 + 1
+            year = minDate.year + (period + minDate.month) // 12
+            date = str(year) + "-" + str(month) + "-01"
             query = "SELECT log.message " + \
                 "FROM scmlog log " + \
                 "WHERE year(log.date) = %s " + \
                 "AND month(log.date) = %s "
             cursor.execute (query % (year, month))
             rows = cursor.fetchall()
-            print "*** Year, month: " + str(year) + ", " + str(month)
             for message in rows:
                 words = message[0].lower().split ()
                 #print words
@@ -119,7 +119,7 @@ class MessageWords (Extension):
                         wordsFreq[word] = 1
             #print wordsFreq
             for word in wordsFreq:
-                theTableWords.add_pending_row ((None, period,
+                theTableWords.add_pending_row ((None, date,
                                                 word, wordsFreq[word]))
             theTableWords.insert_rows (write_cursor)
         #cnn.commit ()
