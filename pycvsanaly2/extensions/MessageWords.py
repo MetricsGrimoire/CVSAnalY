@@ -110,13 +110,14 @@ class MessageWords (Extension):
             cursor.execute (query % (year, month))
             rows = cursor.fetchall()
             for message in rows:
-                words = message[0].lower().split ()
+                words = [word.strip(":(),.#<>*'`~")
+                         for word in message[0].lower().split ()]
                 for word in words:
-                    if word in wordsFreq:
-                        wordsFreq[word] += 1
-                    else:
-                        wordsFreq[word] = 1
-            #print wordsFreq
+                    if len(word) > 2:
+                        if word in wordsFreq:
+                            wordsFreq[word] += 1
+                        else:
+                            wordsFreq[word] = 1
             for word in wordsFreq:
                 theTableWords.add_pending_row ((None, date,
                                                 word, wordsFreq[word]))
