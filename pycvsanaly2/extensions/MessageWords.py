@@ -110,7 +110,7 @@ class MessageWords (Extension):
             cursor.execute (query % (year, month))
             rows = cursor.fetchall()
             for message in rows:
-                words = [word.strip(":(),.#<>*'`~")
+                words = [word.strip(":()[],.#<>*'`~")
                          for word in message[0].lower().split ()]
                 for word in words:
                     if len(word) > 2:

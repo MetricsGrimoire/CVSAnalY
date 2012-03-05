@@ -1000,3 +1000,30 @@ servants
 calling       
 fallen        
 supper    
+# Some words common in glibc repository
+jan
+feb
+mar
+apr
+may
+jun
+jul
+aug
+sep
+oct
+nov
+dec
+likewise
+file
+formerly
+commit
+# glibc devels
+ulrich
+drepper
+jelinek
+jakub
+roland
+andreas
+jaeger
+schwab
+mcgrath
