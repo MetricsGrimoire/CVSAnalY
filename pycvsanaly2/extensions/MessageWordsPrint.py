@@ -23,6 +23,26 @@
 
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.utils import uri_to_filename
+from os.path import dirname
+
+class CommonWords:
+    """Class with common words in English, read from a file"""
+
+    def is_in (self, word):
+        """Is word in common words?"""
+
+        return (word in self.words)
+
+    def __init__ (self):
+        """Initialize the class by reading from file"""
+
+        self.words = []
+        filename = dirname(__file__) + "/list_words.txt"
+#        filename = '/home/jgb/src/cvsanaly/pycvsanaly2/extensions/list_words.txt'
+        file = open(filename, 'r')
+        for line in file:
+            self.words.append(line.strip())
+        file.close()
 
 class MessageWordsPrint (Extension):
     """Extension to print data about word frequencies.
@@ -53,6 +73,8 @@ class MessageWordsPrint (Extension):
         write_cursor = cnn.cursor ()
         repo_id = self._get_repo_id (repo, uri, cursor)
 
+        theCommonWords = CommonWords()
+
         cursor.execute ("SELECT MIN(date) FROM words_freq")
         minDate = cursor.fetchone ()[0]
         cursor.execute ("SELECT MAX(date) FROM words_freq")
@@ -70,13 +92,15 @@ class MessageWordsPrint (Extension):
                WHERE date = '%s' ORDER BY times DESC"""
             cursor.execute (query % date)
             rows = cursor.fetchall()
-            print '*** ' + date + ":"
+            print '*** ' + date + ":",
             count = 0
             for (text, times) in rows:
-                print text + " (" + str(times) + ")",
-                count += 1
+                if not theCommonWords.is_in(text):
+                    print text + " (" + str(times) + ")",
+                    count += 1
                 if count > 10:
                     break
+            print
 
 register_extension ("MessageWordsPrint", MessageWordsPrint)
 
