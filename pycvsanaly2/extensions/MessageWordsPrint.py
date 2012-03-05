@@ -38,12 +38,20 @@ class CommonWords:
 
         self.words = []
         filename = dirname(__file__) + "/list_words.txt"
-#        filename = '/home/jgb/src/cvsanaly/pycvsanaly2/extensions/list_words.txt'
         file = open(filename, 'r')
         for line in file:
-            self.words.append(line.strip())
+            if not line.startswith('#'):
+                self.words.append(line.strip())
         file.close()
 
+def wordToExclude (word):
+    """Is this a word to exclude?"""
+
+    if "@" in word or "/" in word or "_" in word:
+        return True
+    else:
+        return False
+    
 class MessageWordsPrint (Extension):
     """Extension to print data about word frequencies.
 
@@ -95,7 +103,7 @@ class MessageWordsPrint (Extension):
             print '*** ' + date + ":",
             count = 0
             for (text, times) in rows:
-                if not theCommonWords.is_in(text):
+                if not (theCommonWords.is_in(text) or wordToExclude (text)):
                     print text + " (" + str(times) + ")",
                     count += 1
                 if count > 10:
