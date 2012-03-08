@@ -366,9 +366,9 @@ def create_line_counter_for_repository (repo, uri):
     try:
         counter = _counters[repo.get_type ()]
     except KeyError:
-        raise ExtensionRunError ("Repository type %s is not supported " +
-                                 "by CommitsLOCDet extension" % 
-                                 (repo.get_type ()))
+        error = "Repository type %s is not supported " + \
+            "by CommitsLOCDet extension"
+        raise ExtensionRunError (error % (repo.get_type ()))
     return counter (repo, uri)
 
 class CommitsLOCDet (Extension):
