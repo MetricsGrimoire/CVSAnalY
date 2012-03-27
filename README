@@ -23,6 +23,19 @@ CVSAnalY has the following dependencies:
     * Python MySQLDB (optional but recommended)
     * Python SQLite (optional)
 
+Scripts
+-------
+
+Some useful scripts for performing reseach studies (activity,
+generations, etc) can be found in the next link:
+
+        http://git.libresoft.es/libcvsanaly2
+
+You can get the code from the git repository:
+
+        git clone git://git.libresoft.es/git/libcvsanaly2
+        git clone http://git.libresoft.es/libcvsanaly2
+
 Install
 -------
 
