@@ -68,7 +68,7 @@ Credits
 -------
 
 CVSAnalY is developed by the GSyC/LibreSoft group at the
-Universidad Rey Juan Carlos in Móstoles, near Madrid (Spain). It is
+Universidad Rey Juan Carlos, Madrid (Spain). It is
 part of a wider research on libre software engineering, aimed to gain
 knowledge on how libre software is developed and maintained.
 
@@ -76,7 +76,7 @@ More information
 ----------------
 
 CVSAnalY:
-  https://forge.morfeo-project.org/projects/libresoft-tools/
+  http://projects.libresoft.es/projects/cvsanaly
 
 The GSyC/LibreSoft group:
   http://libresoft.es
@@ -97,5 +97,4 @@ Israel Herraiz                  <herraiz at gsyc.escet.urjc.es>
 Juan Jose Amor                  <jjamor at gsyc.escet.urjc.es>
 Martin Michlmayr                <tbm at debian.org>
 Alvaro del Castillo             <acs at barrapunto.com>
-Santiago Dueñas                 <sduenas at libresoft.es>
-
+Santiago DueÃ±as                 <sduenas at libresoft.es>
