@@ -199,7 +199,7 @@ class Command:
         def err_cb (err_chunk, err_data_l, flush=False):
             err_data = err_data_l[0]
             err_data += err_chunk
-            while '\n' in out_data:
+            while '\n' in err_data:
                 pos = err_data.find('\n')
                 parser_error_func (err_data[:pos + 1])
                 err_data = err_data[pos + 1:]
