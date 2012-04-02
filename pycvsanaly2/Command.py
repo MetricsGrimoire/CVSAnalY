@@ -161,7 +161,13 @@ class Command:
                         err_data += err_chunk
                     else:
                         err_data_cb[0] (err_chunk, err_data_cb[1])
-                    
+
+            if out_data_cb and out_data_cb[1]:
+                out_data_cb[0]("", out_data_cb[1], True)
+
+            if err_data_cb and err_data_cb[1]:
+                err_data_cb[0]("", err_data_cb[1], True)
+
         except KeyboardInterrupt:
             try:
                 os.kill (p.pid, SIGINT)
@@ -176,31 +182,33 @@ class Command:
     def _run_with_callbacks (self, stdin = None, parser_out_func = None, parser_error_func = None, timeout = None):
         out_func = err_func = None
         
-        def out_cb (out_chunk, out_data_l):
+        def out_cb (out_chunk, out_data_l, flush=False):
             out_data = out_data_l[0]
             out_data += out_chunk
-#            while len(out_data) > 0 :
-#                pos = out_data.find ('\n')
-#                if pos < 0 :
-#                    pos = len(out_data)
             while '\n' in out_data:
                 pos = out_data.find('\n')
                 parser_out_func (out_data[:pos + 1])
                 out_data = out_data[pos + 1:]
-            out_data_l[0] = out_data
 
-        def err_cb (err_chunk, err_data_l):
+            if flush and out_data != "":
+                parser_out_func(out_data)
+                out_data_l[0] = ""
+            else:
+                out_data_l[0] = out_data
+
+        def err_cb (err_chunk, err_data_l, flush=False):
             err_data = err_data_l[0]
             err_data += err_chunk
-#            while len(err_data) > 0 :
-#                pos = err_data.find ('\n')
-#                if pos < 0 :
-#                    pos = len(err_data)
             while '\n' in out_data:
                 pos = err_data.find('\n')
                 parser_error_func (err_data[:pos + 1])
                 err_data = err_data[pos + 1:]
-            err_data_l[0] = err_data
+
+            if flush and err_data != "":
+                parser_out_func(err_data)
+                err_data_l[0] = ""
+            else:
+                err_data_l[0] = err_data
 
         if parser_out_func is not None:
             out_data = [""]
