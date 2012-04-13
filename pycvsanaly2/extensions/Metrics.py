@@ -1003,12 +1003,12 @@ class Metrics (Extension):
             cursor.execute (statement ("SELECT max(id) from modules_src", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
-                id_counter_mod = id + 1
+                self.id_counter_mod = id + 1
 
             cursor.execute (statement ("SELECT max(id) from functions_src", db.place_holder))
             id = cursor.fetchone ()[0]
             if id is not None:
-                id_counter_func = id + 1
+                self.id_counter_func = id + 1
 
             cursor.close ()
         except Exception, e:
