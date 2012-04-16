@@ -19,7 +19,7 @@
 
 import datetime
 
-from utils import to_utf8, printdbg
+from utils import to_unicode, printdbg
 
 class DBRepository:
 
@@ -34,9 +34,9 @@ class DBRepository:
         else:
             self.id = id
 
-        self.uri = to_utf8 (uri)
-        self.name = to_utf8 (name)
-        self.type = to_utf8 (type)
+        self.uri = to_unicode (uri)
+        self.name = to_unicode (name)
+        self.type = to_unicode (type)
 
 class DBLog:
 
@@ -51,11 +51,11 @@ class DBLog:
         else:
             self.id = id
             
-        self.rev = to_utf8 (commit.revision)
+        self.rev = to_unicode (commit.revision)
         self.committer = None
         self.author = None
         self.date = commit.date
-        self.message = to_utf8 (commit.message)
+        self.message = to_unicode (commit.message)
         self.composed_rev = commit.composed_rev
 
 class DBFile:
@@ -71,7 +71,7 @@ class DBFile:
         else:
             self.id = id
             
-        self.file_name = to_utf8 (file_name)
+        self.file_name = to_unicode (file_name)
         self.repository_id = None
 
 class DBFileLink:
@@ -104,7 +104,7 @@ class DBPerson:
         else:
             self.id = id
             
-        self.name = to_utf8 (person.name)
+        self.name = to_unicode (person.name)
         self.email = person.email or None
         
 class DBBranch:
@@ -120,7 +120,7 @@ class DBBranch:
         else:
             self.id = id
             
-        self.name = to_utf8 (name)
+        self.name = to_unicode (name)
         
 class DBAction:
 
@@ -173,7 +173,7 @@ class DBTag:
         else:
             self.id = id
 
-        self.name = to_utf8 (name)
+        self.name = to_unicode (name)
 
 class DBTagRev:
 
@@ -353,8 +353,9 @@ class SqliteDatabase (Database):
 
     def connect (self):
         import pysqlite2.dbapi2 as db
-
-        return db.connect (self.database)
+        connection = db.connect (self.database) 
+        connection.text_factory = str
+        return connection
 
     def _create_views (self, cursor):
         Database._create_views (self, cursor)
