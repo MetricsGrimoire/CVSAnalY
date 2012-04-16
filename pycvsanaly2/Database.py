@@ -491,12 +491,14 @@ class MysqlDatabase (Database):
                             "uri varchar(255)," +
                             "name varchar(255)," +
                             "type varchar(30)" + 
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE people (" +
                             "id INT primary key," +
                             "name varchar(255)," +
                             "email varchar(255)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE scmlog (" +
                             "id INT primary key," +
                             "rev mediumtext," +
@@ -509,14 +511,16 @@ class MysqlDatabase (Database):
                             "FOREIGN KEY (committer_id) REFERENCES people(id)," +
                             "FOREIGN KEY (author_id) REFERENCES people(id)," +
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" + 
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE files (" +
                             "id INT primary key," +
                             "file_name varchar(255)," +
                             "repository_id INT," +
                             "INDEX (file_name)," +
                             "FOREIGN KEY (repository_id) REFERENCES repositories(id)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE file_links (" +
                             "id INT primary key," +
                             "parent_id INT," +
@@ -525,11 +529,13 @@ class MysqlDatabase (Database):
                             "FOREIGN KEY (parent_id) REFERENCES files(id)," +
                             "FOREIGN KEY (file_id) REFERENCES files(id)," +
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE branches (" +
                             "id INT primary key," +
                             "name varchar(255)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE actions (" +
                             "id INT," +
                             "type varchar(1)," +
@@ -540,7 +546,8 @@ class MysqlDatabase (Database):
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)," +
                             "FOREIGN KEY (branch_id) REFERENCES branches(id), " +
                             "PRIMARY KEY (id)" + 
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE file_copies (" +
                             "id INT primary key," +
                             "to_id integer," +
@@ -552,18 +559,21 @@ class MysqlDatabase (Database):
                             "FOREIGN KEY (to_id) REFERENCES files(id)," +
                             "FOREIGN KEY (from_commit_id) REFERENCES scmlog(id)," +
                             "FOREIGN KEY (action_id) REFERENCES actions(id)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE tags (" +
                             "id INT primary key," +
                             "name varchar(255)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             cursor.execute ("CREATE TABLE tag_revisions (" +
                             "id INT primary key," +
                             "tag_id integer," +
                             "commit_id integer," +
                             "FOREIGN KEY (tag_id) REFERENCES tags(id)," +
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
-                            ") CHARACTER SET=utf8")
+                            ") ENGINE=MyISAM" +
+                            " CHARACTER SET=utf8")
             self._create_views (cursor)
         except _mysql_exceptions.OperationalError, e:
             if e.args[0] == 1050:
