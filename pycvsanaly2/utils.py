@@ -35,10 +35,42 @@ def to_utf8 (string):
             except:
                 continue
             break
-
         return s.encode ('utf-8')
     else:
         return string
+
+def to_unicode (string):
+    """Converts a string type to an object of unicode type.
+
+    Gets an string object as argument, and tries several
+    encoding to convert it to unicode. It basically tries
+    encodings in sequence, until one of them doesn't raise 
+    an exception, since conversion into unicode using a
+    given encoding raises an exception of one unknown character
+    (for that encoding) is found.
+
+    The string should usually be of str type (8-bit encoding),
+    and the returned object is of unicode type.
+    If the string is already of unicode type, just return it.""" 
+
+    if isinstance (string, unicode):
+        return string
+    elif isinstance (string, str):
+        encoded = False
+        for encoding in ['ascii', 'utf-8', 'iso-8859-15']:
+            try:
+                uni_string = unicode (string, encoding)
+            except:
+                continue
+            encoded = True
+            break
+        if encoded:
+            return uni_string
+        else:
+            # All conversions failed, get unicode with unknown characters
+            return (unicode (string, errors='replace'))
+    else:
+        raise TypeError ("string should be of str type")
 
 def uri_is_remote (uri):
     match = re.compile ("^.*://.*$").match (uri)
