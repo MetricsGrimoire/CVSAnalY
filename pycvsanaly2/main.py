@@ -216,6 +216,7 @@ def main (argv):
         uri = repo.get_uri_for_path (path)
     else:
         uri = uri.strip ('/')
+        # Get an object of the backends class for managing the repository
         repo = create_repository ('svn', uri)
         # Check uri actually points to a valid svn repo
         if repo.get_last_revision (uri) is None:
