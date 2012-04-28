@@ -38,6 +38,8 @@ class MonthsTable (DBTable):
 
     Each record in the table has two fields:
       - id: an integer with a month identifier (year * 12 + month)
+      - year: an integer with the numeral of the year (eg. 2012)
+      - month: an integer with the numeral of the month (eg. 1 for January)
       - date: a date for the beginning of the month, eg. 2012-01-01
          for Jan 2012
     """
@@ -45,12 +47,16 @@ class MonthsTable (DBTable):
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE months (" + \
         "id integer primary key," + \
+        "year integer," + \
+        "month integer," + \
         "date datetime" + \
         ")"
 
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE months (" + \
         "id INTEGER PRIMARY KEY," + \
+        "year INTEGER," + \
+        "month INTEGER," + \
         "date DATETIME" + \
         ") CHARACTER SET=utf8"
 
@@ -59,7 +65,7 @@ class MonthsTable (DBTable):
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO months " + \
-        "(id, date) VALUES (%s, %s)"
+        "(id, year, month, date) VALUES (%s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
@@ -100,7 +106,7 @@ class Months (Extension):
             month = (period -1 ) % 12 + 1 
             year = (period - 1)// 12
             date = str(year) + "-" + str(month) + "-01"
-            theMonthsTable.add_pending_row ((period, date))
+            theMonthsTable.add_pending_row ((period, year, month, date))
         theMonthsTable.insert_rows (write_cursor)
         write_cursor.close ()
         cursor.close ()
