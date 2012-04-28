@@ -94,12 +94,15 @@ class Months (Extension):
         theMonthsTable = MonthsTable(db, cnn, repo)
 
         firstMonth = minDate.year * 12 + minDate.month
+        print (firstMonth, minDate, minDate.year, minDate.month)
         lastMonth = maxDate.year * 12 + maxDate.month
+        print (lastMonth, maxDate, maxDate.year, maxDate.month)
 
-        for period in range (firstMonth, lastMonth):
-            month = period % 12 + 1
-            year = period // 12
+        for period in range (firstMonth, lastMonth+1):
+            month = (period -1 ) % 12 + 1 
+            year = (period - 1)// 12
             date = str(year) + "-" + str(month) + "-01"
+            print (period, month, year, date)
             theMonthsTable.add_pending_row ((period, date))
         theMonthsTable.insert_rows (write_cursor)
         write_cursor.close ()
