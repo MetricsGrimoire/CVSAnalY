@@ -108,6 +108,7 @@ class Months (Extension):
             date = str(year) + "-" + str(month) + "-01"
             theMonthsTable.add_pending_row ((period, year, month, date))
         theMonthsTable.insert_rows (write_cursor)
+        cnn.commit ()
         write_cursor.close ()
         cursor.close ()
         cnn.close ()
