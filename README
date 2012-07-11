@@ -29,8 +29,7 @@ Latest version:
 CVSAnalY has the following dependencies:
 
     * RepositoryHandler
-	git clone http://git.libresoft.es/repositoryhandler
-        git clone git://git.libresoft.es/git/repositoryhandler
+        git clone git://github.com/MetricsGrimoire/RepositoryHandler.git
     * cvs (optional, for CVS support)
     * subversion (optional, for SVN support)
     * git (optional, for Git support)
