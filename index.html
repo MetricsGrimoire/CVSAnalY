@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>CVSAnalY by MetricsGrimoire</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>CVSAnalY</h1>
+        <p>The CVSAnalY tool extracts information out of source code repository logs and stores it into a database.</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/MetricsGrimoire/CVSAnalY" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/MetricsGrimoire/CVSAnalY/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/MetricsGrimoire/CVSAnalY/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <p>CVSAnalY extracts information out of source code repository logs and stores it into a database.</p>
+
+<h2>How to get CVSAnalY2</h2>
+
+<ul>
+<li>git clone git://github.com/MetricsGrimoire/CVSAnalY.git</li>
+<li>git clone <a href="mailto:git@github.com">git@github.com</a>:MetricsGrimoire/CVSAnalY.git</li>
+</ul><h2>Requirements</h2>
+
+<p>CVSAnalY has the following dependencies:</p>
+
+<ul>
+<li>RepositoryHandler
+** git clone git://github.com/MetricsGrimoire/RepositoryHandler.git</li>
+<li>cvs (optional, for CVS support)</li>
+<li>subversion (optional, for SVN support)</li>
+<li>git (optional, for Git support)</li>
+<li>Python MySQLDB (optional but recommended)</li>
+<li>Python SQLite (optional)</li>
+</ul><h2>Scripts</h2>
+
+<p>Some useful scripts for performing research studies (activity, generations, etc) can be found in the next link:</p>
+
+<ul>
+<li><a href="http://git.libresoft.es/libcvsanaly2">http://git.libresoft.es/libcvsanaly2</a></li>
+</ul><p>You can get the code from the git repository:</p>
+
+<ul>
+<li>git clone git://git.libresoft.es/git/libcvsanaly2</li>
+<li>git clone <a href="http://git.libresoft.es/libcvsanaly2">http://git.libresoft.es/libcvsanaly2</a>
+</li>
+</ul><h2>Install</h2>
+
+<p>You can install cvsanaly2 just by running setup.py script:</p>
+
+<p><code>
+python setup.py install
+</code></p>
+
+<p>This will install it in the python default directories in your system.</p>
+
+<p>If you don't install CVSAnalY with root privileges, or don't want to install it in the default directories, you can also use the source code directory, as cloned from the main git repo. It is enough to
+configure your PATH and PYTHONPATH so that cvsanaly2, and the Python modules it needs, are found.</p>
+
+<p>Add to your $PATH the directory which contains cvsanaly (cvsanalydir is the directory where CVSAnalY is installed):</p>
+
+<p><code>
+$ export PATH=$PATH:cvsanalydir
+</code></p>
+
+<p>In PYTHONPATH, you need to include both the dirs for CVSAnalY and RepositoryHandler (except if it is installed in the default Python dirs in your system). If repohandlerdir is the path where RepositoryHandler is installed:</p>
+
+<p><code>
+$ export PYTHONPATH=$PYTHONPATH:cvsanalydir:repohandlerdir
+</code></p>
+
+<p>You are ready to use cvsanaly2!</p>
+
+<h2>Running cvsanaly2</h2>
+
+<p>For the impatient people: just checkout (from svn or cvs) to obtain a local version of your repository, and then run cvsanaly2:</p>
+
+<p><code>
+$ cd project/
+~/project$ cvsanaly2 
+</code></p>
+
+<p>More options, and a more detailed info about the options, can be learnt by running "cvsanaly2 --help"</p>
+
+<h2>Credits</h2>
+
+<p>CVSAnalY is developed by the GSyC/LibreSoft group at the Universidad Rey Juan Carlos, Madrid (Spain). It is part of a wider research on libre software engineering, aimed to gain knowledge on how libre software is developed and maintained.</p>
+
+<h2>More information</h2>
+
+<p>CVSAnalY:</p>
+
+<ul>
+<li><a href="https://github.com/MetricsGrimoire/CVSAnalY">https://github.com/MetricsGrimoire/CVSAnalY</a></li>
+</ul><p>The GSyC/LibreSoft group:</p>
+
+<ul>
+<li><a href="http://libresoft.es">http://libresoft.es</a></li>
+</ul><p>Bitergia:</p>
+
+<ul>
+<li><a href="http://www.bitergia.com">http://www.bitergia.com</a></li>
+</ul><h2>Main authors</h2>
+
+<ul>
+<li>Carlos Garcia Campos </li>
+</ul><h2>Contributors</h2>
+
+<ul>
+<li>Gregorio Robles</li>
+<li>Alvaro Navarro</li>
+<li>Jesus M. Gonzalez-Barahona</li>
+<li>Israel Herraiz</li>
+<li>Juan Jose Amor</li>
+<li>Martin Michlmayr</li>
+<li>Alvaro del Castillo</li>
+<li>Santiago Dueñas</li>
+</ul>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/MetricsGrimoire">MetricsGrimoire</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+    
+  </body>
+</html>
