@@ -78,9 +78,9 @@ class DBFileLink:
     
     id_counter = 1
 
-    __insert__ = "INSERT INTO file_links (id, parent_id, file_id, commit_id) values (?, ?, ?, ?)"
+    __insert__ = "INSERT INTO file_links (id, parent_id, file_id, commit_id, file_path) values (?, ?, ?, ?, ?)"
 
-    def __init__ (self, id, parent, child):
+    def __init__ (self, id, parent, child, file_path):
         if id is None:
             self.id = DBFileLink.id_counter
             DBFileLink.id_counter += 1
@@ -90,6 +90,7 @@ class DBFileLink:
         self.parent = parent
         self.child = child
         self.commit_id = None
+        self.file_path = file_path
 
 class DBPerson:
 
@@ -418,7 +419,8 @@ class SqliteDatabase (Database):
                             "id integer primary key," +
                             "parent_id integer," +
                             "file_id integer," +
-                            "commit_id integer" +
+                            "commit_id integer," +
+                            "file_path varchar(4096)" +
                             ")")
             cursor.execute ("CREATE TABLE tags (" +
                             "id integer primary key," +
@@ -435,6 +437,7 @@ class SqliteDatabase (Database):
             raise TableAlreadyExists
         except:
             raise
+
 
     def to_binary (self, data):
         import pysqlite2.dbapi2
@@ -526,6 +529,7 @@ class MysqlDatabase (Database):
                             "parent_id INT," +
                             "file_id INT," +
                             "commit_id INT," +
+                            "file_path VARCHAR(4096)," +
                             "FOREIGN KEY (parent_id) REFERENCES files(id)," +
                             "FOREIGN KEY (file_id) REFERENCES files(id)," +
                             "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
