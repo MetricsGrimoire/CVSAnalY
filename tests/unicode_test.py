@@ -19,9 +19,12 @@
 #
 # Authors :
 #       Eduardo Menezes de Morais <companheiro.vermelho@gmail.com>
+#
+# To execute this test, run: "python -m unittest tests.unicode_test" in the root
+# of the project
 
 import unittest
-import utils
+from pycvsanaly2 import utils
 
 class UnicodeTestCase(unittest.TestCase):
 
@@ -46,4 +49,5 @@ class UnicodeTestCase(unittest.TestCase):
         self.assertRaises(TypeError, utils.to_unicode, 5)
 
 if __name__ == "__main__":
-    unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(UnicodeTestCase)
+    unittest.TextTestRunner(verbosity=2).run(suite)

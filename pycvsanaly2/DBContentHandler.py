@@ -159,16 +159,19 @@ class DBContentHandler (ContentHandler):
         self.cnn.commit ()
         profiler_stop ("Committing inserts for repository %d", (self.repo_id,))
         
-    def __add_new_file_and_link (self, file_name, parent_id, commit_id):
+    def __add_new_file_and_link (self, file_name, parent_id, commit_id, file_path):
         dbfile = DBFile (None, file_name)
         dbfile.repository_id = self.repo_id
         self.cursor.execute (statement (DBFile.__insert__, self.db.place_holder), (dbfile.id, dbfile.file_name, dbfile.repository_id))
         
-        dblink = DBFileLink (None, parent_id, dbfile.id)
+        dblink = DBFileLink (None, parent_id, dbfile.id, file_path)
         dblink.commit_id = commit_id
-        self.cursor.execute (statement (DBFileLink.__insert__, self.db.place_holder), (dblink.id, dblink.parent, dblink.child, dblink.commit_id))
+        self.cursor.execute (statement (DBFileLink.__insert__, self.db.place_holder), (dblink.id, dblink.parent, dblink.child, dblink.commit_id, dblink.file_path))
 
         return dbfile.id
+
+    def __remove_branch_from_file_path(self, path):
+        return path.split("://", 1)[1]
 
     def __add_new_copy (self, dbfilecopy):
         self.cursor.execute (statement (DBFileCopy.__insert__, self.db.place_holder),
@@ -330,7 +333,8 @@ class DBContentHandler (ContentHandler):
             parent = -1
             node_id = None
             for i, token in enumerate (tokens):
-                rpath = prefix + '/' + '/'.join (tokens[:i + 1])
+                file_path = '/'.join (tokens[:i + 1])
+                rpath = prefix + '/' + file_path
                 if not ":///" in path:
                     # If the repo paths don't start with /
                     # remove it here
@@ -344,7 +348,7 @@ class DBContentHandler (ContentHandler):
                     pass
 
                 # Rpath not in cache, add it
-                node_id = self.__add_new_file_and_link (token, parent, commit_id)
+                node_id = self.__add_new_file_and_link (token, parent, commit_id, file_path)
                 parent_id = parent
                 parent = node_id
 
@@ -396,7 +400,7 @@ class DBContentHandler (ContentHandler):
         else:
             parent_id = self.__get_file_for_path (parent_path, log.id)[0]
 
-        file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+        file_id = self.__add_new_file_and_link (file_name, parent_id, log.id, self.__remove_branch_from_file_path(path))
         self.file_cache[path] = (file_id, parent_id)
 
         return file_id
@@ -441,12 +445,12 @@ class DBContentHandler (ContentHandler):
             # It's not a simple rename, but a move operation
             # we have to write down the new link
             parent_id = new_parent_id
-            dblink = DBFileLink (None, parent_id, file_id)
+            dblink = DBFileLink (None, parent_id, file_id, self.__remove_branch_from_file_path(path))
             dblink.commit_id = log.id
             self.cursor.execute (statement (DBFileLink.__insert__,
                                  self.db.place_holder),
                                  (dblink.id, dblink.parent, dblink.child,
-                                 dblink.commit_id))
+                                 dblink.commit_id, dblink.file_path))
             self.moves_cache[path] = old_path
 
         self.file_cache[path] = (file_id, parent_id)
@@ -492,7 +496,7 @@ class DBContentHandler (ContentHandler):
         else:
             parent_id = self.__get_file_for_path (parent_path, log.id)[0]
 
-        file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+        file_id = self.__add_new_file_and_link (file_name, parent_id, log.id, self.__remove_branch_from_file_path(path))
         self.file_cache[path] = (file_id, parent_id)
 
         dbfilecopy = DBFileCopy (None, file_id)
@@ -547,7 +551,7 @@ class DBContentHandler (ContentHandler):
                 self.__move_path_to_deletes_cache (cpath)
 
         # Add the new path
-        new_file_id = self.__add_new_file_and_link (file_name, parent_id, log.id)
+        new_file_id = self.__add_new_file_and_link (file_name, parent_id, log.id, self.__remove_branch_from_file_path(path))
         self.file_cache[path] = (new_file_id, parent_id)
 
         # Register the action in the copies table in order to
