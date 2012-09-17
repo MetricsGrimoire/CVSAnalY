@@ -1,4 +1,5 @@
-# Copyright (C) 2009 LibreSoft
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009-2012 LibreSoft
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +17,9 @@
 #
 # Authors :
 #       Carlos Garcia Campos  <carlosgc@libresoft.es>
+#       Santiago Dueñas <sduenas@libresoft.es>
 
 from pycvsanaly2.Database import statement, ICursor
-from FilePaths import FilePaths
 
 if __name__ == '__main__':
     import sys
@@ -29,6 +30,11 @@ class FileRevs:
     INTERVAL_SIZE = 1000
     __query__ = '''select s.rev rev, s.id commit_id, af.file_id, af.action_type, s.composed_rev 
 from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ? order by s.id'''
+    # This query selects the newest entry for those cases with two filepaths
+    # for the same file. See https://github.com/MetricsGrimoire/CVSAnalY/issues/3 for more info.
+    __path_query__ = '''SELECT file_path FROM file_links,
+(SELECT MAX(id) id FROM file_links WHERE file_id = ? AND commit_id <= ? ORDER BY commit_id DESC) fp
+WHERE file_links.id = fp.id'''
 
     def __init__ (self, db, cnn, cursor, repoid):
         self.db = db
@@ -40,8 +46,6 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
         self.rs = iter (self.icursor.fetchmany ())
         self.prev_commit = -1
         self.current = None
-
-        self.fp = FilePaths (db)
 
     def __iter__ (self):
         return self
@@ -69,9 +73,6 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
                 if self.prev_commit != commit_id:
                     # Get the matrix for revision
                     self.prev_commit = commit_id
-                    aux_cursor = self.cnn.cursor ()
-                    self.fp.update_for_revision (aux_cursor, commit_id, self.repoid)
-                    aux_cursor.close ()
                     continue
             elif action_type == 'D':
                 continue
@@ -79,35 +80,33 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
                 if self.prev_commit != commit_id:
                     # Get the matrix for revision
                     self.prev_commit = commit_id
-                    aux_cursor = self.cnn.cursor ()
-                    self.fp.update_for_revision (aux_cursor, commit_id, self.repoid)
-                    aux_cursor.close ()
 
             return self.current
 
-    def get_path (self):
+    def get_path(self):
         if not self.current:
             return None
 
         revision, commit_id, file_id, action_type, composed = self.current
         if composed:
-            rev = revision.split ("|")[0]
+            rev = revision.split("|")[0]
         else:
             rev = revision
 
-        try:
-            relative_path = self.fp.get_path (file_id, commit_id, self.repoid).strip ("/")
-        except AttributeError, e:
-            if self.fp.get_commit_id () != commit_id:
-                aux_cursor = self.cnn.cursor ()
-                self.fp.update_for_revision (aux_cursor, commit_id, self.repoid)
-                aux_cursor.close ()
-
-                relative_path = self.fp.get_path (file_id, commit_id, self.repoid).strip ("/")
-            else:
-                raise e
+        relative_path = self.__get_path_from_db(file_id, commit_id).strip("/")
 
         return relative_path
+    
+    def __get_path_from_db(self, file_id, commit_id):
+        cursor = self.cnn.cursor()
+
+        cursor.execute(statement(self.__path_query__, self.db.place_holder),
+                       (file_id, commit_id))
+        path = cursor.fetchone()[0]
+
+        cursor.close ()
+
+        return "/" + path
 
 if __name__ == '__main__':
     import sys
