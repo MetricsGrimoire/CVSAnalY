@@ -441,17 +441,14 @@ class DBContentHandler (ContentHandler):
             new_parent_id = -1
         else:
             new_parent_id = self.__get_file_for_path (new_parent_path, log.id)[0]
-        if new_parent_id != parent_id:
-            # It's not a simple rename, but a move operation
-            # we have to write down the new link
-            parent_id = new_parent_id
-            dblink = DBFileLink (None, parent_id, file_id, self.__remove_branch_from_file_path(path))
-            dblink.commit_id = log.id
-            self.cursor.execute (statement (DBFileLink.__insert__,
-                                 self.db.place_holder),
-                                 (dblink.id, dblink.parent, dblink.child,
-                                 dblink.commit_id, dblink.file_path))
-            self.moves_cache[path] = old_path
+
+        parent_id = new_parent_id
+        dblink = DBFileLink (None, parent_id, file_id, self.__remove_branch_from_file_path(path))
+        dblink.commit_id = log.id
+        self.cursor.execute (statement (DBFileLink.__insert__, self.db.place_holder),
+                             (dblink.id, dblink.parent, dblink.child,
+                              dblink.commit_id, dblink.file_path))
+        self.moves_cache[path] = old_path
 
         self.file_cache[path] = (file_id, parent_id)
 
