@@ -204,11 +204,11 @@ class TableComLines (DBTable):
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE commits_lines (" + \
         "id INT primary key," + \
-        "commit_id integer," + \
+        "commit_id INT(11) NOT NULL," + \
         "added int," + \
         "removed int," + \
         "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" + \
-        ") CHARACTER SET=utf8"
+        ") ENGINE=MyISAM DEFAULT CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM commits_lines"
@@ -239,12 +239,12 @@ class TableComFilLines (DBTable):
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE commits_files_lines (" + \
         "id INTEGER PRIMARY KEY," + \
-        "commit INTEGER," + \
+        "commit INT(11) NOT NULL," + \
         "path VARCHAR(255)," + \
         "added INTEGER," + \
         "removed INTEGER," + \
         "FOREIGN KEY (commit) REFERENCES scmlog(id)" + \
-        ") CHARACTER SET=utf8"
+        ") ENGINE=MyISAM DEFAULT CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM commits_files_lines"
