@@ -96,6 +96,7 @@ class Months (Extension):
         minDate = cursor.fetchone ()[0]
         cursor.execute ("SELECT MAX(date) FROM scmlog")
         maxDate = cursor.fetchone ()[0]
+        cursor.execute ("DROP TABLE IF EXISTS months")
 
         theMonthsTable = MonthsTable(db, cnn, repo)
 
