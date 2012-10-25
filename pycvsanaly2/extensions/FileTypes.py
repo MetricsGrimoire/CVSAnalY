@@ -66,10 +66,11 @@ class FileTypes (Extension):
             try:
                 cursor.execute ("CREATE TABLE file_types (" +
                                 "id INT primary key," +
-                                "file_id integer," +
+                                "file_id INT," +
                                 "type mediumtext," +
                                 "FOREIGN KEY (file_id) REFERENCES files(id)" +
-                                ") CHARACTER SET=utf8")
+                                ") ENGINE=MyISAM" + 
+                                " CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
                     cursor.close ()
