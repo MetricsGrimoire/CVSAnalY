@@ -743,7 +743,8 @@ class Metrics (Extension):
                                 "halstead_md integer," +
                                 "FOREIGN KEY (file_id) REFERENCES tree(id)," +
                                 "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
-                                ") CHARACTER SET=utf8")
+                                ") ENGINE=MyISAM" +
+                                " CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
                     cursor.close ()
