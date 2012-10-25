@@ -80,7 +80,8 @@ class Patches (Extension):
                                 "commit_id integer," +
                                 "patch LONGBLOB," +
                                 "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
-                                ") CHARACTER SET=utf8")
+                                ") ENGINE=MyISAM" +
+                                " CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
                     cursor.close ()
