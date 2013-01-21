@@ -193,8 +193,8 @@ class DBContentHandler (ContentHandler):
 
             name = to_utf8 (person.name)
             email = person.email
-            cursor.execute (statement ("SELECT id from people where name = ?",
-                            self.db.place_holder), (name,))
+            cursor.execute (statement ("SELECT id from people where name = ? and email = ?",
+                            self.db.place_holder), (name, email))
             rs = cursor.fetchone ()
             if not rs:
                 p = DBPerson (None, person)
@@ -209,13 +209,13 @@ class DBContentHandler (ContentHandler):
 
             return person_id
 
-        name = to_utf8 (person.name)
+        name, email = to_utf8 (person.name), person.email
 
-        if name in self.people_cache:
-            person_id = self.people_cache[name]
+        if (name, email) in self.people_cache:
+            person_id = self.people_cache[name, email]
         else:
             person_id = ensure_person (person)
-            self.people_cache[name] = person_id
+            self.people_cache[name, email] = person_id
 
         return person_id
 
