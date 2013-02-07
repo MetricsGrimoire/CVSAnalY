@@ -97,11 +97,14 @@ class Weeks (Extension):
         cursor = cnn.cursor ()
         # Cursor for writing to the database
         write_cursor = cnn.cursor ()
+        
+        cursor.execute ("DROP TABLE IF EXISTS weeks")
 
         cursor.execute ("SELECT MIN(date) FROM scmlog")
         minDate = cursor.fetchone ()[0]
         cursor.execute ("SELECT MAX(date) FROM scmlog")
         maxDate = cursor.fetchone ()[0]
+
 
         theWeeksTable = WeeksTable(db, cnn, repo)
 
