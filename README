@@ -92,6 +92,10 @@ version of your repository, and then run cvsanaly2:
 More options, and a more detailed info about the options, can be
 learnt by running "cvsanaly2 --help"
 
+Useful settings
+-------
+* Raise your `max_allowed_packet`-setting of your database (MySQL). 1 or 16 MB might be to low (depends on your repository)
+
  Analysis
 ---------
 
