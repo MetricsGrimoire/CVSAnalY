@@ -142,7 +142,7 @@ class SVNLineCounter (LineCounter):
 
 class GitLineCounter (LineCounter):
 
-    diffstat_pattern = re.compile ("^ \d+ files changed(, (\d+) insertions\(\+\))?(, (\d+) deletions\(\-\))?$")
+    diffstat_pattern = re.compile ("^ \d+ files? changed(, (\d+) insertions?\(\+\))?(, (\d+) deletions?\(\-\))?$")
 
     def __init__ (self, repo, uri):
         LineCounter.__init__ (self, repo, uri)
