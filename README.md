@@ -1,44 +1,35 @@
- Description
------------
+# CVSAnaly
+
+## Description
 
 The CVSAnalY tool extracts information out of source code repository logs and stores it into a database.
 
 
- License
---------
+## License
 
 Licensed under GNU General Public License (GPL), version 2 or later.
 
 
- Download
----------
+## Download
 
-Home page:
-* https://github.com/MetricsGrimoire/CVSAnalY
-
-Releases:
-* https://github.com/MetricsGrimoire/CVSAnalY/downloads
-
-Latest version:
-* git://github.com/MetricsGrimoire/CVSAnalY.git
+* Home page: https://github.com/MetricsGrimoire/CVSAnalY
+* Releases: https://github.com/MetricsGrimoire/CVSAnalY/downloads
+* Latest version: `git://github.com/MetricsGrimoire/CVSAnalY.git`
 
 
- Requirements
--------------
+## Requirements
 
 CVSAnalY has the following dependencies:
 
-    * RepositoryHandler
-        git clone git://github.com/MetricsGrimoire/RepositoryHandler.git
-    * cvs (optional, for CVS support)
-    * subversion (optional, for SVN support)
-    * git (optional, for Git support)
-    * Python MySQLDB (optional but recommended)
-    * Python SQLite (optional)
+* RepositoryHandler: `git clone git://github.com/MetricsGrimoire/RepositoryHandler.git`
+* CVS (optional, for CVS support)
+* Subversion (optional, for SVN support)
+* git (optional, for Git support)
+* Python MySQLDB (optional, but recommended)
+* Python SQLite (optional)
 
 
-Scripts
--------
+## Scripts
 
 Some useful scripts for performing reseach studies (activity,
 generations, etc) can be found in the next link:
@@ -50,8 +41,8 @@ You can get the code from the git repository:
         git clone git://git.libresoft.es/git/libcvsanaly2
         git clone http://git.libresoft.es/libcvsanaly2
 
- Installation
--------------
+
+## Installation
 
 You can install cvsanaly2 just by running setup.py script:
 
@@ -80,8 +71,7 @@ is installed:
 You are ready to use cvsanaly2!
 
 
- Running cvsanaly2
-------------------
+## Running cvsanaly2
 
 For the impatients: just checkout (from svn or cvs) to obtain a local
 version of your repository, and then run cvsanaly2:
@@ -92,51 +82,43 @@ version of your repository, and then run cvsanaly2:
 More options, and a more detailed info about the options, can be
 learnt by running "cvsanaly2 --help"
 
-Useful settings
--------
+
+## Useful settings
+
 * Raise your `max_allowed_packet`-setting of your database (MySQL). 1 or 16 MB might be to low (depends on your repository)
 
- Analysis
----------
+
+## Analysis
 
 [To be written]
 
 
- Improving CVSAnalY
----------------------------
+## Improving CVSAnalY
 
-Source code, wiki and ITS available on Github:
-* https://github.com/MetricsGrimoire/CVSAnalY
+Source code, wiki and ITS available on Github: https://github.com/MetricsGrimoire/CVSAnalY
 
-If you want to receive updates about new versions, and keep in touch
-with the development team, consider subscribing to the mailing list. 
-It is a very low traffic list (< 1 msg a day):
-
-* https://lists.libresoft.es/listinfo/metrics-grimoire
+If you want to receive updates about new versions, and keep in touch with the development team, consider subscribing to the mailing list. 
+It is a very low traffic list (< 1 msg a day): https://lists.libresoft.es/listinfo/metrics-grimoire
 
 
- Credits
---------
+## Credits
 
-CVSAnalY was initially developed by the GSyC/LibreSoft group at the
-Universidad Rey Juan Carlos, Madrid (Spain). It is
-part of a wider research on libre software engineering, aimed to gain
-knowledge on how libre software is developed and maintained.
+CVSAnalY was initially developed by the GSyC/LibreSoft group at the Universidad Rey Juan Carlos, Madrid (Spain). 
+It is part of a wider research on libre software engineering, aimed to gain knowledge on how libre software is developed and maintained.
 
 
- Main authors
--------------
+## Main authors
 
-Carlos Garcia Campos            <carlosgc at gsyc.es>
+* Carlos Garcia Campos (carlosgc at gsyc.es)
 
- Contributors
--------------
 
-Gregorio Robles                 <grex at gsyc.escet.urjc.es>
-Alvaro Navarro                  <anavarro at gsyc.escet.urjc.es>
-Jesus M. Gonzalez-Barahona      <jgb at gsyc.escet.urjc.es>
-Israel Herraiz                  <herraiz at gsyc.escet.urjc.es>
-Juan Jose Amor                  <jjamor at gsyc.escet.urjc.es>
-Martin Michlmayr                <tbm at debian.org>
-Alvaro del Castillo             <acs at barrapunto.com>
-Santiago Dueñas                 <sduenas at libresoft.es>
+## Contributors
+
+* Gregorio Robles (grex at gsyc.escet.urjc.es)
+* Alvaro Navarro (anavarro at gsyc.escet.urjc.es)
+* Jesus M. Gonzalez-Barahona (jgb at gsyc.escet.urjc.es)
+* Israel Herraiz (herraiz at gsyc.escet.urjc.es)
+* Juan Jose Amor (jjamor at gsyc.escet.urjc.es)
+* Martin Michlmayr (tbm at debian.org)
+* Alvaro del Castillo (acs at barrapunto.com)
+* Santiago Dueñas (sduenas at libresoft.es)
