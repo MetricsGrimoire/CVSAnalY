@@ -64,7 +64,8 @@ class WeeksTable (DBTable):
         "year INTEGER," + \
         "week INTEGER," + \
         "date DATETIME" + \
-        ") CHARACTER SET=utf8"
+        ") ENGINE=MyISAM" + \
+        " CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM weeks"

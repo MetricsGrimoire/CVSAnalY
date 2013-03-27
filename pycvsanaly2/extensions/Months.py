@@ -58,7 +58,8 @@ class MonthsTable (DBTable):
         "year INTEGER," + \
         "month INTEGER," + \
         "date DATETIME" + \
-        ") CHARACTER SET=utf8"
+        ") ENGINE=MyISAM" + \
+        " CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM months"
