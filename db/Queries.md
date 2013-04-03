@@ -1,39 +1,55 @@
-= Useful queries for CVSAnalY2 database =
+# Useful queries for CVSAnalY2 database
 
-== Commits ==
+## Commits
 
 1) Total number of commits
-  
-SELECT count(id)
-FROM scmlog;
+
+```mysql
+SELECT COUNT(id) FROM scmlog;
+```
 
 2) Number of commits per unit of time
 
-SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, count(s.id)
-FROM scmlog s group by date_format(s.date,'%Y%m');
+```mysql
+SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id)
+FROM scmlog s 
+GROUP BY DATE_FORMAT(s.date,'%Y%m');
+```
 
 3) Aggregated number of commits up to time
 
+```mysql
 SELECT g.myyear, g.mymonth, g.numcommits, (@sumacu:=@sumacu+g.numcommits) aggregated_numcommits
-FROM (SELECT @sumacu:=0) r,
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(s.id) numcommits
-FROM scmlog s
-GROUP BY date_format(s.date,'%Y%m')) g;
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
+    FROM scmlog s
+    GROUP BY DATE_FORMAT(s.date,'%Y%m')
+  ) g;
+```
 
 4) Maximum and minimum number of commits per unit of time
 
+```mysql
 SELECT MAX(g.numcommits), MIN(g.numcommits)
-FROM ( SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, count(s.id) numcommits
-FROM scmlog s
-GROUP BY date_format(s.date,'%Y%m') ) g;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
+  FROM scmlog s
+  GROUP BY DATE_FORMAT(s.date,'%Y%m') 
+) g;
+```
 
 5) Mean and median of commits per unit of time
 
+```mysql
 SELECT AVG(g.numcommits)
-FROM
-( SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, count(s.id) numcommits
-FROM scmlog s
-GROUP BY date_format(s.date,'%Y%m') ) g;
+FROM ( 
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
+  FROM scmlog s
+  GROUP BY DATE_FORMAT(s.date,'%Y%m') 
+) g;
+```
 
 == Actions ==
 
