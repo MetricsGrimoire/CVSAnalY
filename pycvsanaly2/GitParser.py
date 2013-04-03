@@ -52,12 +52,6 @@ class GitParser (Parser):
         def is_my_parent (self, git_commit):
             return git_commit.is_my_child (self.tail)
 
-        def is_remote (self):
-            return self.type == self.REMOTE
-
-        def is_local (self):
-            return self.type == self.LOCAL
-
         def is_stash (self):
             return self.type == self.STASH
 
@@ -95,8 +89,7 @@ class GitParser (Parser):
 
     def flush (self):
         if self.branches:
-            if self.branch.is_remote ():
-                self.handler.commit (self.branch.tail.commit)
+            self.handler.commit (self.branch.tail.commit)
             self.branch = None
             self.branches = None
 
@@ -112,7 +105,7 @@ class GitParser (Parser):
         # Commit
         match = self.patterns['commit'].match (line)
         if match:
-            if self.commit is not None and self.branch.is_remote ():
+            if self.commit is not None:
                 if self.branch.tail.svn_tag is None: # Skip commits on svn tags
                     self.handler.commit (self.branch.tail.commit)
 
@@ -194,7 +187,7 @@ class GitParser (Parser):
                 self.branch = branch
 
                 # Insert master always at the end
-                if branch.is_remote () and branch.name == 'master':
+                if branch.name == 'master':
                     self.branches.append (self.branch)
                 else:
                     self.branches.insert (0, self.branch)
