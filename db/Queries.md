@@ -165,107 +165,148 @@ FROM (
 ) g;
 ```
 
-== Files ==
+## Files
 
 16) Total number of files in the whole history of the project
 
-SELECT COUNT(distinct a.file_id)
-FROM actions a ;
+```mysql
+SELECT COUNT(DISTINCT a.file_id)
+FROM actions a;
+```
 
 17) Number of files per unit of time
 
-SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id)
+```mysql
+SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id)
 FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m');
+WHERE s.id = a.commit_id
+GROUP BY DATE_FORMAT(s.date, '%Y%m');
+```
 
 18) Aggregated number of files up to time
 
-SELECT g.myyear, g.mymonth, g.numfiles, if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.numfiles) aggregated_numfiles
-FROM (SELECT @sumacu:=0) r,
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m')) g;
+```mysql
+SELECT g.myyear, g.mymonth, g.numfiles, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.numfiles) aggregated_numfiles
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
+    FROM scmlog s, actions a
+    WHERE s.id = a.commit_id
+    GROUP BY DATE_FORMAT(s.date, '%Y%m')
+  ) g;
+```
 
 19) Maximum and minimum number of active (not deleted) files
 
+```mysql
 SELECT MAX(g.numfiles), MIN(g.numfiles)
-FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-AND a.file_id NOT IN
-(SELECT distinct file_id FROM actions WHERE type='D' )
-GROUP BY date_format(s.date,'%Y%m')) g;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
+  FROM scmlog s, actions a
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id NOT IN (SELECT DISTINCT file_id FROM actions WHERE type = 'D')
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
 20) Mean and median of active (not deleted) files per unit of time
 
+```mysql
 SELECT AVG(g.numfiles)
-FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-AND a.file_id NOT IN
-(SELECT distinct file_id FROM actions WHERE type='D' )
-GROUP BY date_format(s.date,'%Y%m')) g;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
+  FROM scmlog s, actions a
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id NOT IN (SELECT DISTINCT file_id FROM actions WHERE type = 'D')
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
 21) Total number of files per type in the whole history of the project
 
-SELECT a.type, COUNT(distinct a.file_id) numfiles
+```mysql
+SELECT a.type, COUNT(DISTINCT a.file_id) numfiles
 FROM actions a
 GROUP BY a.type;
+```
 
 22) Number of files per type and per unit of time
 
-SELECT a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
+```mysql
+SELECT a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
 FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY a.type, date_format(s.date,'%Y%m');
+WHERE s.id = a.commit_id
+GROUP BY a.type, DATE_FORMAT(s.date, '%Y%m');
+```
 
 23) Aggregated number of files per type up to time
 
-SELECT g.type, g.myyear, g.mymonth, g.numfiles, if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.numfiles) aggregated_numfiles
-FROM (SELECT @sumacu:=0) r,
-(SELECT type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY type, date_format(s.date, '%Y'), date_format(s.date, '%m') WITH ROLLUP) g
-WHERE (g.myyear is NULL OR g.mymonth is not NULL) and g.type is not NULL;
+```mysql
+SELECT g.type, g.myyear, g.mymonth, g.numfiles, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.numfiles) aggregated_numfiles
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
+    FROM scmlog s, actions a
+    WHERE s.id = a.commit_id
+    GROUP BY type, DATE_FORMAT(s.date, '%Y'), DATE_FORMAT(s.date, '%m') WITH ROLLUP
+  ) g
+WHERE (g.myyear IS NULL OR g.mymonth IS NOT NULL) AND g.type IS NOT NULL;
+```
 
 24) Maximum and minimum number of active (not deleted) files per type
 
+```mysql
 SELECT g.type, MAX(g.numfiles), MIN(g.numfiles)
-FROM (SELECT a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-AND a.file_id NOT IN
-(SELECT distinct file_id FROM actions WHERE type='D' )
-GROUP BY a.type, date_format(s.date,'%Y%m'))g
+FROM (
+  SELECT a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
+  FROM scmlog s, actions a
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id NOT IN (SELECT DISTINCT file_id FROM actions WHERE type = 'D')
+  GROUP BY a.type, DATE_FORMAT(s.date, '%Y%m')
+)g
 GROUP BY g.type;
+```
 
 25) Mean and median of active (not deleted) files per type
 
+```mysql
 SELECT g.type, AVG(g.numfiles)
-FROM (SELECT a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(distinct a.file_id) numfiles
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-AND a.file_id NOT IN
-(SELECT distinct file_id FROM actions WHERE type='D' )
-GROUP BY a.type, date_format(s.date,'%Y%m'))g
+FROM (
+  SELECT a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(DISTINCT a.file_id) numfiles
+  FROM scmlog s, actions a
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id NOT IN (SELECT DISTINCT file_id FROM actions WHERE type = 'D')
+    GROUP BY a.type, DATE_FORMAT(s.date, '%Y%m')
+) g
 GROUP BY g.type;
+```
 
-26) Number of files per language
+26) Number of files per language (extension `Metrics` needed)
 
-SELECT m.lang, COUNT(distinct m.file_id) numfiles
+```mysql
+SELECT m.lang, COUNT(DISTINCT m.file_id) numfiles
 FROM metrics m
 GROUP BY m.lang;
+```
 
-27) Accumulated number of files per language
+27) Accumulated number of files per language (extension `Metrics` needed)
 
+```mysql
 SELECT g.lang, g.numfiles, (@sumacu:=@sumacu+g.numfiles) aggregated_numfiles
-FROM (SELECT @sumacu:=0) r,
-(SELECT m.lang, COUNT(distinct m.file_id) numfiles
-FROM metrics m
-GROUP BY m.lang) g;
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT m.lang, COUNT(DISTINCT m.file_id) numfiles
+    FROM metrics m
+    GROUP BY m.lang
+  ) g;
+```
 
 == Commits - Files ==
 
