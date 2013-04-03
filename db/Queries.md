@@ -13,7 +13,7 @@ SELECT COUNT(id) FROM scmlog;
 ```mysql
 SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id)
 FROM scmlog s 
-GROUP BY DATE_FORMAT(s.date,'%Y%m');
+GROUP BY DATE_FORMAT(s.date, '%Y%m');
 ```
 
 3) Aggregated number of commits up to time
@@ -25,7 +25,7 @@ FROM
   (
     SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
     FROM scmlog s
-    GROUP BY DATE_FORMAT(s.date,'%Y%m')
+    GROUP BY DATE_FORMAT(s.date, '%Y%m')
   ) g;
 ```
 
@@ -36,7 +36,7 @@ SELECT MAX(g.numcommits), MIN(g.numcommits)
 FROM (
   SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
   FROM scmlog s
-  GROUP BY DATE_FORMAT(s.date,'%Y%m') 
+  GROUP BY DATE_FORMAT(s.date, '%Y%m') 
 ) g;
 ```
 
@@ -47,88 +47,123 @@ SELECT AVG(g.numcommits)
 FROM ( 
   SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
   FROM scmlog s
-  GROUP BY DATE_FORMAT(s.date,'%Y%m') 
+  GROUP BY DATE_FORMAT(s.date, '%Y%m') 
 ) g;
 ```
 
-== Actions ==
+## Actions
 
 6) Total number of actions
 
-SELECT count(a.id)
+```mysql
+SELECT COUNT(a.id)
 FROM actions a;
+```
 
 7) Total number of actions per type
 
+```mysql
 SELECT type, COUNT(a.id)
 FROM actions a
 GROUP BY type
+```
 
 8) Number of actions per unit of time
 
+```mysql
 SELECT MIN(g.numactions), MAX(g.numactions)
-FROM
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, a.type,COUNT(a.id) numactions
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m'), a.type) g ;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, a.type, COUNT(a.id) numactions
+  FROM scmlog s, actions a
+  WHERE s.id = a.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m'), a.type
+) g;
+```
 
 9) Aggregated number of actions up to time
 
+```mysql
 SELECT g.myyear, g.mymonth, g.numactions, (@sumacu:=@sumacu+g.numactions) aggregated_numactions
-FROM (SELECT @sumacu:=0) r,
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a where s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m') )g;
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+    FROM scmlog s, actions a where s.id = a.commit_id
+    GROUP BY DATE_FORMAT(s.date, '%Y%m')
+  ) g;
+```
 
 10) Maximum and minimum number of actions per unit of time
 
+```mysql
 SELECT MAX(g.numactions), MIN(g.numactions)
-FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth,COUNT(a.id) numactions
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m'))g;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+  FROM scmlog s, actions a
+  WHERE s.id = a.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
 11) Mean and median of actions per unit of time
 
+```mysql
 SELECT AVG(g.numactions)
-FROM (SELECT date_format(s.date, '%Y') myyear,date_format(s.date, '%m') mymonth,COUNT(a.id) numactions
-FROM scmlog s, actions a WHERE s.id=a.commit_id GROUP BY date_format(s.date,'%Y%m'))g;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+  FROM scmlog s, actions a 
+  WHERE s.id = a.commit_id 
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
 12) Number of actions per unit of time and per type
 
-SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, a.type,COUNT(a.id)
+```mysql
+SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, a.type, COUNT(a.id)
 FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m'), a.type;
+WHERE s.id = a.commit_id
+GROUP BY DATE_FORMAT(s.date, '%Y%m'), a.type;
+```
 
 13) Aggregated number of actions per type and up to time
 
-SELECT g.type, g.myyear, g.mymonth, g.numactions, if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.numactions) aggregated_numactions
-FROM (SELECT @sumacu:=0) r,
-(SELECT type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY type, date_format(s.date, '%Y'), date_format(s.date, '%m') WITH ROLLUP) g
-WHERE (g.myyear is NULL OR g.mymonth is not NULL) and g.type is not NULL;
+```mysql
+SELECT g.type, g.myyear, g.mymonth, g.numactions, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.numactions) aggregated_numactions
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+    FROM scmlog s, actions a
+    WHERE s.id = a.commit_id
+    GROUP BY type, DATE_FORMAT(s.date, '%Y'), DATE_FORMAT(s.date, '%m') WITH ROLLUP
+  ) g
+WHERE (g.myyear IS NULL OR g.mymonth IS NOT NULL) AND g.type IS NOT NULL;
+```
 
 14) Maximum and minimum number of actions per unit of time and per type
 
+```mysql
 SELECT MIN(g.numactions), MAX(g.numactions)
-FROM
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, a.type, COUNT(a.id) numactions
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m'), a.type) g ;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, a.type, COUNT(a.id) numactions
+  FROM scmlog s, actions a
+  WHERE s.id = a.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m'), a.type
+) g;
+```
 
 15) Mean and median of actions per unit of type and per type
 
+```mysql
 SELECT AVG(g.numactions)
-FROM
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, a.type, COUNT(a.id) numactions
-FROM scmlog s, actions a
-WHERE s.id=a.commit_id
-GROUP BY date_format(s.date,'%Y%m'), a.type) g ;
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, a.type, COUNT(a.id) numactions
+  FROM scmlog s, actions a
+  WHERE s.id = a.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m'), a.type
+) g;
+```
 
 == Files ==
 
