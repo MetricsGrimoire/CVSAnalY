@@ -507,40 +507,77 @@ FROM (
 GROUP BY g.id;
 ```
 
-== Size variables ==
+## Size variables (extension `Metrics` needed)
 
 43) Total LOC/SLOC of the project in the whole history of the project
+
+```mysql
 SELECT SUM(m.loc) FROM metrics m;
+```
+
+```mysql
 SELECT SUM(m.sloc) FROM metrics m;
+```
 
-44) Project size in LOC/SLOC per unit of time
-SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, sum(m.loc) result
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY date_format(s.date,'%Y%m');
+44) Project size in LOC / SLOC per unit of time
 
-SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, sum(m.sloc) result
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY date_format(s.date,'%Y%m');
+```mysql
+SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, SUM(m.loc) result
+FROM metrics m, scmlog s 
+WHERE s.id = m.commit_id
+GROUP BY DATE_FORMAT(s.date, '%Y%m');
+```
 
-45) Maximum and minimum size in LOC/SLOC per unit of time
+```mysql
+SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, SUM(m.sloc) result
+FROM metrics m, scmlog s 
+WHERE s.id = m.commit_id
+GROUP BY DATE_FORMAT(s.date, '%Y%m');
+```
 
-SELECT MAX(g.loc), MIN(g.loc) FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, sum(m.loc) loc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY date_format(s.date,'%Y%m')) g;
+45) Maximum and minimum size in LOC / SLOC per unit of time
 
-SELECT MAX(g.sloc), MIN(g.sloc) FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, sum(m.sloc) sloc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY date_format(s.date,'%Y%m')) g;
+```mysql
+SELECT MAX(g.loc), MIN(g.loc) 
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, SUM(m.loc) loc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
-46) Mean and median of size in LOC/SLOC per unit of time
+```mysql
+SELECT MAX(g.sloc), MIN(g.sloc) 
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, SUM(m.sloc) sloc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
-SELECT AVG(g.loc) FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, sum(m.loc) loc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY date_format(s.date,'%Y%m')) g;
+46) Mean and median of size in LOC / SLOC per unit of time
 
-SELECT AVG(g.sloc) FROM (SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, sum(m.sloc) sloc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY date_format(s.date,'%Y%m')) g;
+```mysql
+SELECT AVG(g.loc) 
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, SUM(m.loc) loc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
+
+```mysql
+SELECT AVG(g.sloc) 
+FROM (
+  SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, SUM(m.sloc) sloc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY DATE_FORMAT(s.date, '%Y%m')
+) g;
+```
 
 == Files - Size variables  ==
 
