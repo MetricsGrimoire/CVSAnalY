@@ -377,90 +377,135 @@ FROM (
 GROUP BY g.id;
 ```
 
-== Actions - Files ==
+## Actions - Files
 
 33) Total number of actions per file
+
+```mysql
 SELECT f.id, COUNT(a.id) numactions
 FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
+WHERE s.id = a.commit_id AND a.file_id = f.id
 GROUP BY f.id;
+```
 
 34) Number of actions per file and per unit of time
-SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
+
+```mysql
+SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
 FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
-GROUP BY f.id, date_format(s.date,'%Y%m');
+WHERE 
+  s.id = a.commit_id
+  AND a.file_id = f.id
+GROUP BY f.id, DATE_FORMAT(s.date, '%Y%m');
+```
 
 35) Accumulated number of actions per file up to time
 
-SELECT g.id, g.myyear, g.mymonth, g.numactions, if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.numactions) aggregated_numfiles
-FROM (SELECT @sumacu:=0) r,
-(SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id GROUP BY f.id, date_format(s.date, '%Y'), date_format(s.date, '%m') WITH ROLLUP) g
-WHERE (g.myyear is NULL OR g.mymonth is not NULL) AND g.id is not NULL;
+```mysql
+SELECT g.id, g.myyear, g.mymonth, g.numactions, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.numactions) aggregated_numfiles
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+    FROM scmlog s, actions a, files f
+    WHERE 
+      s.id = a.commit_id
+      AND a.file_id = f.id 
+    GROUP BY f.id, DATE_FORMAT(s.date, '%Y'), DATE_FORMAT(s.date, '%m') WITH ROLLUP
+  ) g
+WHERE (g.myyear IS NULL OR g.mymonth IS NOT NULL) AND g.id IS NOT NULL;
+```
 
 36) Maximum and minimum number of actions over files per unit of time
 
+```mysql
 SELECT g.id, MAX(numactions), MIN(numactions)
-FROM (SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
-GROUP BY f.id, date_format(s.date,'%Y%m')) g
+FROM (
+  SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+  FROM scmlog s, actions a, files f
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id = f.id
+  GROUP BY f.id, DATE_FORMAT(s.date, '%Y%m')
+) g
 GROUP BY g.id;
+```
 
 37) Mean and median of actions over files per unit of time
 
+```mysql
 SELECT g.id, AVG(numactions)
-FROM (SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
-GROUP BY f.id, date_format(s.date,'%Y%m')) g
+FROM (
+  SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+  FROM scmlog s, actions a, files f
+  WHERE 
+    s.id = a.commit_id 
+    AND a.file_id = f.id
+  GROUP BY f.id, DATE_FORMAT(s.date, '%Y%m')
+) g
 GROUP BY g.id;
+```
 
 38) Total number of actions per type and per file
+
+```mysql
 SELECT f.id, a.type, COUNT(a.id) numactions
 FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
+WHERE s.id = a.commit_id AND a.file_id = f.id
 GROUP BY f.id, a.type;
+```
 
 39) Number of actions per type, file and unit of time
-SELECT f.id, a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
+
+```mysql
+SELECT f.id, a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
 FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
-GROUP BY f.id, a.type, date_format(s.date,'%Y%m');
+WHERE s.id = a.commit_id AND a.file_id = f.id
+GROUP BY f.id, a.type, DATE_FORMAT(s.date, '%Y%m');
+```
 
 40) Accumulated number of actions per type, file up to time
 
-SELECT g.id, g.type, g.myyear, g.mymonth, g.numactions, if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.numactions) aggregated_numfiles
-FROM (SELECT @sumacu:=0) r,
-(SELECT f.id, a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
-GROUP BY f.id, a.type, date_format(s.date, '%Y'), date_format(s.date, '%m') WITH ROLLUP) g
-WHERE (g.type is NULL OR g.myyear is NULL OR g.mymonth is not NULL) AND g.id is not NULL;
+```mysql
+SELECT g.id, g.type, g.myyear, g.mymonth, g.numactions, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.numactions) aggregated_numfiles
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT f.id, a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+    FROM scmlog s, actions a, files f
+    WHERE s.id = a.commit_id AND a.file_id = f.id
+    GROUP BY f.id, a.type, DATE_FORMAT(s.date, '%Y'), DATE_FORMAT(s.date, '%m') WITH ROLLUP
+  ) g
+WHERE (g.type IS NULL OR g.myyear IS NULL OR g.mymonth IS NOT NULL) AND g.id IS NOT NULL;
+```
 
 41) Maximum and minimum number of actions over files per type and per unit of time
 
+```mysql
 SELECT g.id, g.type, MAX(numactions), MIN(numactions)
-FROM (SELECT f.id,a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
-GROUP BY f.id, a.type, date_format(s.date,'%Y%m')) g
+FROM (
+  SELECT f.id, a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+  FROM scmlog s, actions a, files f
+  WHERE s.id = a.commit_id AND a.file_id = f.id
+  GROUP BY f.id, a.type, DATE_FORMAT(s.date, '%Y%m')
+) g
 GROUP BY g.id;
+```
 
 42) Mean and median of actions over files per type and per unit of time
 
+```mysql
 SELECT g.id, g.type, AVG(numactions)
-FROM (SELECT f.id,a.type, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(a.id) numactions
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
-GROUP BY f.id, a.type, date_format(s.date,'%Y%m')) g
+FROM (
+  SELECT f.id, a.type, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(a.id) numactions
+  FROM scmlog s, actions a, files f
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id = f.id
+  GROUP BY f.id, a.type, DATE_FORMAT(s.date, '%Y%m')
+) g
 GROUP BY g.id;
+```
 
 == Size variables ==
 
