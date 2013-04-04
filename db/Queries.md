@@ -308,52 +308,74 @@ FROM
   ) g;
 ```
 
-== Commits - Files ==
+## Commits - Files
 
 28) Total number of commits per file
 
+```mysql
 SELECT f.id, COUNT(s.id)
 FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
+WHERE 
+  s.id = a.commit_id
+  AND a.file_id = f.id
 GROUP BY f.id;
+```
 
 29) Number of commits per file and per unit of time
 
-SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(s.id)
+```mysql
+SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id)
 FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
-GROUP BY f.id,date_format(s.date,'%Y%m');”
+WHERE 
+  s.id = a.commit_id
+  AND a.file_id = f.id
+GROUP BY f.id, DATE_FORMAT(s.date, '%Y%m');
+```
 
 30) Accumulated number of commits per file up to time
 
-SELECT g.id, g.myyear, g.mymonth, g.numcommits, if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.numcommits) aggregated_numfiles
-FROM (SELECT @sumacu:=0) r,
-(SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(s.id) numcommits
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
-GROUP BY f.id, date_format(s.date, '%Y'), date_format(s.date, '%m') WITH ROLLUP) g
-WHERE (g.myyear is NULL OR g.mymonth is not NULL) and g.id is not NULL;
+```mysql
+SELECT g.id, g.myyear, g.mymonth, g.numcommits, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.numcommits) aggregated_numfiles
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
+    FROM scmlog s, actions a, files f
+    WHERE 
+      s.id = a.commit_id
+      AND a.file_id = f.id
+    GROUP BY f.id, DATE_FORMAT(s.date, '%Y'), DATE_FORMAT(s.date, '%m') WITH ROLLUP
+  ) g
+WHERE (g.myyear IS NULL OR g.mymonth IS NOT NULL) AND g.id IS NOT NULL;
+```
 
 31) Maximum and minimum number of commits over files per unit of time
 
+```mysql
 SELECT g.id, MAX(numcommits), MIN(numcommits)
-FROM (SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(s.id) numcommits
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id
-AND a.file_id=f.id
-GROUP BY f.id, date_format(s.date,'%Y%m')) g GROUP BY g.id;
+FROM (
+  SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
+  FROM scmlog s, actions a, files f
+  WHERE 
+    s.id = a.commit_id
+    AND a.file_id = f.id
+  GROUP BY f.id, DATE_FORMAT(s.date, '%Y%m')
+) g 
+GROUP BY g.id;
+```
 
 32) Mean and median of commits over files per unit of time
 
+```mysql
 SELECT g.id, AVG(numcommits)
-FROM (SELECT f.id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, COUNT(s.id) numcommits
-FROM scmlog s, actions a, files f
-WHERE s.id=a.commit_id AND a.file_id=f.id
-GROUP BY f.id, date_format(s.date,'%Y%m')) g
+FROM (
+  SELECT f.id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, COUNT(s.id) numcommits
+  FROM scmlog s, actions a, files f
+  WHERE s.id = a.commit_id AND a.file_id = f.id
+  GROUP BY f.id, DATE_FORMAT(s.date, '%Y%m')
+) g
 GROUP BY g.id;
+```
 
 == Actions - Files ==
 
