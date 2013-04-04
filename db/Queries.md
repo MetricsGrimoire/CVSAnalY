@@ -673,23 +673,32 @@ FROM (
 GROUP BY g.file_id;
 ```
 
-== Committers - Authors  ==
+## Committers - Authors
 
-51) Total number of committers/authors
+51) Total number of committers / authors
 
-SELECT if( COUNT(distinct s.author_id)=0, 0, COUNT(distinct s.committer_id)/COUNT(distinct s.author_id))
+```mysql
+SELECT IF(COUNT(DISTINCT s.author_id) = 0, 0, COUNT(DISTINCT s.committer_id) / COUNT(DISTINCT s.author_id))
 FROM scmlog s;
+```
 
-52) Number of distinct committers/authors per unit of time
+52) Number of distinct committers / authors per unit of time
 
-SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, if( COUNT(distinct s.author_id)=0, 0, COUNT(distinct s.committer_id)/COUNT(distinct s.author_id)) committer_author
+```mysql
+SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, IF(COUNT(DISTINCT s.author_id) = 0, 0, COUNT(DISTINCT s.committer_id) / COUNT(DISTINCT s.author_id)) committer_author
 FROM scmlog s
-GROUP BY date_format(s.date,'%Y%m');
+GROUP BY DATE_FORMAT(s.date, '%Y%m');
+```
 
-53) Aggregated number of distinct committers/authors up to time
+53) Aggregated number of distinct committers / authors up to time
 
-SELECT g.myyear, g.mymonth, g.committer_author , if(myyear is NULL, @sumacu:=0, @sumacu:=@sumacu+g.committer_author ) aggregated_committer_author
-FROM (SELECT @sumacu:=0) r,
-(SELECT date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, if( COUNT(distinct s.author_id)=0, 0, COUNT(distinct s.committer_id)/COUNT(distinct s.author_id)) committer_author
-FROM scmlog s
-GROUP BY date_format(s.date,'%Y%m')) g;
+```mysql
+SELECT g.myyear, g.mymonth, g.committer_author, IF(myyear IS NULL, @sumacu:=0, @sumacu:=@sumacu+g.committer_author ) aggregated_committer_author
+FROM 
+  (SELECT @sumacu:=0) r,
+  (
+    SELECT DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, IF(COUNT(DISTINCT s.author_id) = 0, 0, COUNT(DISTINCT s.committer_id) / COUNT(DISTINCT s.author_id)) committer_author
+    FROM scmlog s
+    GROUP BY DATE_FORMAT(s.date, '%Y%m')
+  ) g;
+```
