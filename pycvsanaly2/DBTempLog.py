@@ -20,7 +20,7 @@
 from ContentHandler import ContentHandler
 from Database import SqliteDatabase, MysqlDatabase, TableAlreadyExists, statement, ICursor
 from Repository import Commit
-from AsyncQueue import AsyncQueue, TimeOut
+from AsyncQueue import AsyncQueue
 
 import threading
 from cStringIO import StringIO

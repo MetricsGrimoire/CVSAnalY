@@ -26,7 +26,6 @@
 
 import unittest
 import os
-import os.path
 import shutil
 import tempfile
 import pysqlite2.dbapi2 as db

@@ -22,7 +22,7 @@
 # This extension extracts words from commit messages, and does some
 # analysis on them
 
-from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
+from pycvsanaly2.extensions import Extension, register_extension
 from pycvsanaly2.utils import uri_to_filename
 from pycvsanaly2.extensions.DBTable import DBTable
 

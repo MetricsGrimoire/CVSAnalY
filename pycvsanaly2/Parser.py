@@ -20,7 +20,6 @@
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
 from ContentHandler import ContentHandler
-from utils import printerr, printout
 
 class Parser:
 
