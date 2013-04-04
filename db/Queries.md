@@ -579,50 +579,99 @@ FROM (
 ) g;
 ```
 
-== Files - Size variables  ==
+## Files - Size variables (extension `Metrics` needed)
 
-47) Maximum and minimum size in LOC/SLOC per file
+47) Maximum and minimum size in LOC / SLOC per file
 
-SELECT SUM(min_loc),SUM(max_loc) FROM
-(SELECT m.file_id, MIN(m.loc) min_loc, MAX(m.loc) max_loc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY m.file_id) g ;
+```mysql
+SELECT SUM(min_loc), SUM(max_loc) 
+FROM (
+  SELECT m.file_id, MIN(m.loc) min_loc, MAX(m.loc) max_loc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY m.file_id
+) g;
+```
 
-SELECT SUM(min_sloc),SUM(max_sloc) FROM
-(SELECT m.file_id, MIN(m.sloc) min_sloc, MAX(m.sloc) max_sloc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY m.file_id) g ;
+```mysql
+SELECT SUM(min_sloc), SUM(max_sloc) 
+FROM (
+  SELECT m.file_id, MIN(m.sloc) min_sloc, MAX(m.sloc) max_sloc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY m.file_id
+) g;
+```
 
-48) Mean and median of size in LOC/SLOC per file
+48) Mean and median of size in LOC / SLOC per file
 
-SELECT SUM(avg_loc) FROM
-(SELECT m.file_id, AVG(m.loc) avg_loc FROM metrics m, scmlog s
-WHERE s.id=m.commit_id GROUP BY m.file_id) g ;
+```mysql
+SELECT SUM(avg_loc) 
+FROM (
+  SELECT m.file_id, AVG(m.loc) avg_loc 
+  FROM metrics m, scmlog s
+  WHERE s.id = m.commit_id 
+  GROUP BY m.file_id
+) g;
+```
 
-SELECT SUM(avg_sloc) FROM
-(SELECT m.file_id, AVG(m.sloc) avg_sloc FROM metrics m, scmlog s
-WHERE s.id=m.commit_id GROUP BY m.file_id) g ;
+```mysql
+SELECT SUM(avg_sloc) 
+FROM (
+  SELECT m.file_id, AVG(m.sloc) avg_sloc 
+  FROM metrics m, scmlog s
+  WHERE s.id = m.commit_id 
+  GROUP BY m.file_id
+) g;
+```
 
-49) Maximum and minimum file sizes in LOC/SLOC per unit of time
+49) Maximum and minimum file sizes in LOC / SLOC per unit of time
 
-SELECT g.file_id, SUM(g.max_loc), SUM(g.min_loc) FROM
-(SELECT m.file_id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, MIN(m.loc) min_loc, MAX(m.loc) max_loc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id GROUP BY m.file_id, date_format(s.date,'%Y%m')) g GROUP BY g.file_id;
+```mysql
+SELECT g.file_id, SUM(g.max_loc), SUM(g.min_loc) 
+FROM (
+  SELECT m.file_id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, MIN(m.loc) min_loc, MAX(m.loc) max_loc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id 
+  GROUP BY m.file_id, DATE_FORMAT(s.date, '%Y%m')
+) g 
+GROUP BY g.file_id;
+```
 
-SELECT g.file_id, SUM(g.max_sloc), SUM(g.min_sloc) FROM
-(SELECT m.file_id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, MIN(m.sloc) min_sloc, MAX(m.sloc) max_sloc
-FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY m.file_id, date_format(s.date,'%Y%m')) g GROUP BY g.file_id;
+```mysql
+SELECT g.file_id, SUM(g.max_sloc), SUM(g.min_sloc) 
+FROM (
+  SELECT m.file_id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, MIN(m.sloc) min_sloc, MAX(m.sloc) max_sloc
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY m.file_id, DATE_FORMAT(s.date, '%Y%m')
+) g 
+GROUP BY g.file_id;
+```
 
-50) Mean and median of file sizes in LOC/SLOC per unit of time
+50) Mean and median of file sizes in LOC / SLOC per unit of time
 
-SELECT g.file_id, SUM(g.avg_loc) FROM
-(SELECT m.file_id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, AVG(m.loc) avg_loc FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY m.file_id, date_format(s.date,'%Y%m')) g GROUP BY g.file_id;
+```mysql
+SELECT g.file_id, SUM(g.avg_loc) 
+FROM (
+  SELECT m.file_id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, AVG(m.loc) avg_loc 
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY m.file_id, DATE_FORMAT(s.date, '%Y%m')
+) g 
+GROUP BY g.file_id;
+```
 
-SELECT g.file_id, SUM(g.avg_sloc) FROM
-(SELECT m.file_id, date_format(s.date, '%Y') myyear, date_format(s.date, '%m') mymonth, AVG(m.sloc) avg_sloc FROM metrics m, scmlog s WHERE s.id=m.commit_id
-GROUP BY m.file_id, date_format(s.date,'%Y%m')) g GROUP BY g.file_id;
+```mysql
+SELECT g.file_id, SUM(g.avg_sloc) 
+FROM (
+  SELECT m.file_id, DATE_FORMAT(s.date, '%Y') myyear, DATE_FORMAT(s.date, '%m') mymonth, AVG(m.sloc) avg_sloc 
+  FROM metrics m, scmlog s 
+  WHERE s.id = m.commit_id
+  GROUP BY m.file_id, DATE_FORMAT(s.date, '%Y%m')
+) g 
+GROUP BY g.file_id;
+```
 
 == Committers - Authors  ==
 
