@@ -64,7 +64,6 @@ Options:
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
   -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
-      --extensions=ext1,ext2,    List of extensions to run        
 
 Database:
 
@@ -78,16 +77,22 @@ Metrics Options:
 
       --metrics-all              Get metrics for every revision, not only for HEAD
       --metrics-noerr            Ignore errors when calculating metrics
+
+Extensions:
+
+  -e, --list-extensions          Show all available extensions
+      --extensions=ext1,ext2     List of extensions to run
+
 """
 
 def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVgqnf:l:s:u:p:d:H:"
+    short_opts = "hVgqnf:l:s:u:p:d:H:e"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
                  "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
                  "db-hostname=", "db-database=", "db-driver=", "extensions=",
-                 "metrics-all", "metrics-noerr"]
+                 "metrics-all", "metrics-noerr", "list-extensions"]
 
     # Default options
     debug = None
@@ -115,6 +120,11 @@ def main (argv):
     for opt, value in opts:
         if opt in ("-h", "--help", "-help"):
             usage ()
+            return 0
+        elif opt in ("-e", "--list-extensions"):
+            emg = ExtensionsManager ([])
+            allExtensions = emg.load_all_extensions()
+            print ", ".join(sorted(allExtensions))
             return 0
         elif opt in ("-V", "--version"):
             print VERSION

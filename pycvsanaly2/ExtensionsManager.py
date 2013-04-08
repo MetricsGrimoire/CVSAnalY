@@ -19,6 +19,7 @@
 
 from extensions import get_extension, ExtensionRunError, ExtensionUnknownError
 from utils import printerr, printout
+import os
 
 class ExtensionException (Exception):
     '''ExtensionException'''
@@ -83,4 +84,17 @@ class ExtensionsManager:
                 continue
                     
             self.run_extension (name, extension, repo, uri, db)
-    
+
+    def load_all_extensions (self):
+        extensions = {}
+        dir = os.path.dirname(os.path.realpath(__file__))
+        for files in os.listdir(dir + "/extensions"):
+            if files.endswith(".py"):
+                ext = files[:-3]
+                try:
+                    extensions[ext] = get_extension(ext)
+                except ExtensionUnknownError:
+                    # Do nothing here, because we ignore errors during showing "help" ;)
+                    pass
+
+        return extensions.keys()
