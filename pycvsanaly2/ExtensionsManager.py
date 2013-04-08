@@ -24,8 +24,9 @@ class ExtensionException (Exception):
     '''ExtensionException'''
 
 class InvalidExtension (ExtensionException):
-    def __init__ (self, name):
+    def __init__ (self, name, message):
         self.name = name
+        self.message = message
 
 class InvalidDependency (ExtensionException):
     def __init__ (self, name1, name2):
@@ -39,8 +40,8 @@ class ExtensionsManager:
         for ext in exts:
             try:
                 self.exts[ext] = get_extension (ext)
-            except ExtensionUnknownError:
-                raise InvalidExtension (ext)
+            except ExtensionUnknownError as e:
+                raise InvalidExtension (ext, e.message)
 
             # Add dependencies
             for dep in self.exts[ext].deps:

@@ -246,7 +246,7 @@ def main (argv):
     try:
         emg = ExtensionsManager (config.extensions)
     except InvalidExtension, e:
-        printerr ("Invalid extension %s", (e.name,))
+        printerr ("Invalid extension %s (%s)", (e.name, e.message,))
         return 1
     except InvalidDependency, e:
         printerr ("Extension %s depends on extension %s which is not a valid extension", (e.name1, e.name2))
