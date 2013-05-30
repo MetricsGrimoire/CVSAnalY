@@ -20,8 +20,6 @@
 # Description
 # -----------
 # This extension calculates the metrics for files at different points in time.
-# It assumes the Metrics extension was already run, and the tables it
-# generated are available
 
 import datetime
 from pycvsanaly2.extensions import Extension, register_extension
@@ -100,11 +98,9 @@ class TableMonths (DBTable):
 
 
 class MetricsEvo (Extension):
-    """Extension to calculate the metrics for files at different points in time.
+    """Extension to calculate the metrics for files at different points in time."""
 
-    It assumes the Metrics extension was already run, and the tables it
-    generates are available
-    """
+    deps = ['Metrics']
 
     def _get_repo_id (self, repo, uri):
         """Get repository id from repositories table"""
