@@ -42,7 +42,7 @@ class TableWords (DBTable):
     _sql_create_table_mysql = "CREATE TABLE words_freq (" + \
         "id INTEGER PRIMARY KEY," + \
         "date DATETIME," + \
-        "word VARCHAR(80)," + \
+        "word VARCHAR(150)," + \
         "times INTEGER" + \
         ") CHARACTER SET=utf8"
 
@@ -122,7 +122,7 @@ class MessageWords (Extension):
                 theTableWords.add_pending_row ((None, date,
                                                 word, wordsFreq[word]))
             theTableWords.insert_rows (write_cursor)
-        #cnn.commit ()
+        cnn.commit ()
         write_cursor.close ()
         cursor.close ()
         cnn.close ()
