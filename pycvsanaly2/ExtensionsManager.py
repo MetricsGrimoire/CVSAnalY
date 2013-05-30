@@ -43,12 +43,17 @@ class ExtensionsManager:
                 raise InvalidExtension (ext)
 
             # Add dependencies
-            for dep in self.exts[ext].deps:
-                if dep not in self.exts.keys ():
-                    try:
-                        self.exts[dep] = get_extension (dep)
-                    except:
-                        raise InvalidDependency (ext, dep)
+            self.determine_deps (ext)
+
+    def determine_deps (self, ext):
+        for dep in self.exts[ext].deps:
+            if dep not in self.exts.keys ():
+                try:
+                    self.exts[dep] = get_extension (dep)
+                    if self.exts[dep].deps:
+                        self.determine_deps (dep)
+                except:
+                    raise InvalidDependency (ext, dep)
 
     def run_extension (self, name, extension, repo, uri, db):
         printout ("Executing extension %s", (name,))
