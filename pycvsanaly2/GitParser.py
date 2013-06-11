@@ -64,7 +64,7 @@ class GitParser(Parser):
     patterns['committer'] = re.compile("^Commit:[ \t]+(.*)[ \t]+<(.*)>$")
     patterns['date'] = re.compile(
         "^CommitDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
-    patterns['file'] = re.compile("^([MAD])[ \t]+(.*)$")
+    patterns['file'] = re.compile("^([MAD]+)[ \t]+(.*)$")
     patterns['file-moved'] = re.compile("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
     patterns['branch'] = re.compile("refs/remotes/origin/([^,]*)")
     patterns['local-branch'] = re.compile("refs/heads/([^,]*)")

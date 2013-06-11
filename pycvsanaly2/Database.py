@@ -407,7 +407,7 @@ class SqliteDatabase(Database):
                            ")")
             cursor.execute("CREATE TABLE actions (" +
                            "id integer primary key," +
-                           "type varchar(1)," +
+                           "type varchar(2)," +
                            "file_id integer," +
                            "commit_id integer," +
                            "branch_id integer" +
@@ -556,7 +556,7 @@ class MysqlDatabase(Database):
                            " CHARACTER SET=utf8")
             cursor.execute("CREATE TABLE actions (" +
                            "id INT," +
-                           "type varchar(1)," +
+                           "type varchar(2)," +
                            "file_id integer," +
                            "commit_id integer," +
                            "branch_id integer," +
