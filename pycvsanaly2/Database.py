@@ -21,6 +21,7 @@ from utils import to_unicode, printdbg
 
 
 class DBRepository:
+
     id_counter = 1
 
     __insert__ = "INSERT INTO repositories (id, uri, name, type) values (?, ?, ?, ?)"
@@ -56,6 +57,10 @@ class DBLog:
         self.author_date = commit.author_date
         self.message = to_unicode(commit.message)
         self.composed_rev = commit.composed_rev
+        
+class DBGraph:
+    
+    __insert__ = "INSERT INTO commit_graph (commit_id, parent_id) values (?, ?)"
 
 
 class DBFile:
@@ -445,7 +450,13 @@ class SqliteDatabase(Database):
                            "tag_id integer, " +
                            "commit_id integer" +
                            ")")
+            cursor.execute("CREATE TABLE commit_graph (" +
+                           "commit_id integer," +
+                           "parent_id integer" +
+                           ")")
             cursor.execute("CREATE index files_file_name on files(file_name)")
+            cursor.execute("CREATE index commit_id on commit_graph(commit_id)")
+            cursor.execute("CREATE index parent_id on commit_graph(parent_id)")
             self._create_views(cursor)
         except sqlite3.OperationalError:
             raise TableAlreadyExists
@@ -592,6 +603,12 @@ class MysqlDatabase(Database):
                            "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" +
                            ") ENGINE=MyISAM" +
                            " CHARACTER SET=utf8")
+            cursor.execute("CREATE TABLE commit_graph (" +
+                           "commit_id integer REFERENCES scmlog(id)," +
+                           "parent_id integer REFERENCES scmlog(id)" +
+                           ")")
+            cursor.execute("CREATE index commit_id on commit_graph(commit_id)")
+            cursor.execute("CREATE index parent_id on commit_graph(parent_id)")
             self._create_views(cursor)
         except _mysql_exceptions.OperationalError, e:
             if e.args[0] == 1050:

@@ -22,7 +22,7 @@ import os
 from ContentHandler import ContentHandler
 from Database import (DBRepository, DBLog, DBFile, DBFileLink, DBAction,
                       DBFileCopy, DBBranch, DBPerson, DBTag, DBTagRev,
-                      statement)
+                      DBGraph, statement)
 from profile import profiler_start, profiler_stop
 from utils import printdbg, printout, to_utf8, cvsanaly_cache_dir
 from cPickle import dump, load
@@ -641,6 +641,14 @@ class DBContentHandler(ContentHandler):
                 tag_revs.append((db_tagrev.id, tag_id, log.id))
 
             self.cursor.executemany(statement(DBTagRev.__insert__, self.db.place_holder), tag_revs)
+            
+        # Commit Graph
+        if len(commit.parents) > 0:
+            edges = []
+            for p in commit.parents:
+                edges.append((log.id, self.revision_cache[p]))
+                
+            self.cursor.executemany(statement(DBGraph.__insert__, self.db.place_holder), edges)
 
         if len(self.actions) >= self.MAX_ACTIONS:
             printdbg("DBContentHandler: %d actions inserting", (len(self.actions),))
