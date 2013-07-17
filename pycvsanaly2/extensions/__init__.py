@@ -43,5 +43,10 @@ def get_extension (extension_name):
         except ImportError as e:
             raise ExtensionUnknownError (e.message)
 
+    # If the file can be loaded, but no register_extension() is called
+    # this is not a valid extension. Raise an ExtensionUnknownError
+    if extension_name not in _extensions:
+        raise ExtensionUnknownError("Extension %s unknown" % extension_name)
+
     return _extensions[extension_name]
 
