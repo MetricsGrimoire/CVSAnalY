@@ -64,7 +64,25 @@ class ExtensionsManager:
             return False
 
         return True
-                    
+
+    def run_extension_deps (self, deps, repo, uri, db, done):
+        result = True
+        for dep in deps:
+
+            if dep in done:
+                continue
+
+            if self.exts[dep].deps:
+                result = self.run_extension_deps (self.exts[dep].deps, repo, uri, db, done)
+
+            if not result:
+                break
+
+            result = self.run_extension (dep, self.exts[dep] (), repo, uri, db)
+            done.append (dep)
+
+        return result
+
     def run_extensions (self, repo, uri, db):
         done = []
         for name, extension in [(ext, self.exts[ext] ()) for ext in self.exts]:
@@ -73,14 +91,7 @@ class ExtensionsManager:
             done.append (name)
 
             result = True
-            # Run dependencies first
-            for dep in extension.deps:
-                if dep in done:
-                    continue
-                result = self.run_extension (dep, self.exts[dep] (), repo, uri, db)
-                done.append (dep)
-                if not result:
-                    break
+            result = self.run_extension_deps (extension.deps, repo, uri, db, done)
 
             if not result:
                 printout ("Skipping extension %s since one or more of its dependencies failed", (name,))
