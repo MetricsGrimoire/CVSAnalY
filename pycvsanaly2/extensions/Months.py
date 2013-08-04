@@ -26,7 +26,7 @@ with the month of the last commit found in the repository.
 This table can be used to select "solid" sets of months. GROUP BY would
 not produce entries for months with no results in the select (eg., months
 with no commits at all). But in many cases, you need a row with some
-paraeter for all the months, including a 0 when no activity is found. That
+parameter for all the months, including a 0 when no activity is found. That
 can be easily done using this auxiliary table.
 """
 
