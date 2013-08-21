@@ -2,7 +2,7 @@
 # debug = False
 #
 ## Run quiet
-# quit = False
+# quiet = False
 #
 ## Enable profiling
 # profile = False
