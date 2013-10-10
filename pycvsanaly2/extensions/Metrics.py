@@ -24,8 +24,7 @@
 # versions of all the files stored in the control version system.
 #
 
-from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists,
-                                  statement, DBFile)
+from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists, statement)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
 from pycvsanaly2.Config import Config
 from pycvsanaly2.utils import printdbg, printerr, printout, remove_directory, uri_to_filename

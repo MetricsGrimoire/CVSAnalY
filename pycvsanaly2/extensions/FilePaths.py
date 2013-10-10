@@ -22,7 +22,6 @@ if __name__ == '__main__':
     sys.path.insert (0, "../../")
 
 from pycvsanaly2.Database import statement
-from pycvsanaly2.utils import to_utf8
 from pycvsanaly2.profile import profiler_start, profiler_stop
 
 class FilePaths:

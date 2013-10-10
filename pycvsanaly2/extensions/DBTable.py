@@ -21,9 +21,7 @@
 
 import pysqlite2.dbapi2
 import _mysql_exceptions
-from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase,
-                                  TableAlreadyExists,
-                                  statement, DBFile)
+from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists)
 
 class DBTable:
     """Table class, for managing tables with certain common characteristics.

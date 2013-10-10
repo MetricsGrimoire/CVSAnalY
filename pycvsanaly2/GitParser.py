@@ -17,7 +17,6 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-import os
 import re
 import time
 import datetime

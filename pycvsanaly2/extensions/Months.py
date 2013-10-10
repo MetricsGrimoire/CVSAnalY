@@ -30,7 +30,7 @@ parameter for all the months, including a 0 when no activity is found. That
 can be easily done using this auxiliary table.
 """
 
-from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
+from pycvsanaly2.extensions import Extension, register_extension
 from pycvsanaly2.extensions.DBTable import DBTable
 
 class MonthsTable (DBTable):

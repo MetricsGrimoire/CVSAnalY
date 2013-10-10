@@ -19,7 +19,6 @@
 import os
 import select
 import subprocess
-import sys
 import errno
 from signal import SIGINT, SIGTERM
 

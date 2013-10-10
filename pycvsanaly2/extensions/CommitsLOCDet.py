@@ -36,11 +36,9 @@ import re
 import pysqlite2.dbapi2
 import _mysql_exceptions
 
-from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase,
-                                  TableAlreadyExists,
-                                  statement, DBFile)
+from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists)
 from pycvsanaly2.extensions import Extension, register_extension, ExtensionRunError
-from pycvsanaly2.utils import to_utf8, printerr, uri_to_filename
+from pycvsanaly2.utils import printerr, uri_to_filename
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.Command import Command, CommandError
 

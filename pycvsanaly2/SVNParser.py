@@ -19,13 +19,11 @@
 #       Gregorio Robles <grex@gsyc.escet.urjc.es>
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-import os
 import re
 import datetime
 
 from Parser import Parser
 from Repository import Commit, Action, Person
-from repositoryhandler.backends import create_repository
 from utils import printout, printdbg
 
 class SVNParser (Parser):

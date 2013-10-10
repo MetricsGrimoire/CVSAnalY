@@ -17,8 +17,6 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-import datetime
-
 from utils import to_unicode, printdbg
 
 class DBRepository:

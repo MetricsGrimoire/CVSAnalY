@@ -29,11 +29,9 @@ Installer
 @contact:      libresoft-tools-devel@lists.morfeo-project.org
 """
 
-import commands
 import os
 import sys
 
-#from distutils.core import setup
 from setuptools import setup
 
 def generate_changelog ():

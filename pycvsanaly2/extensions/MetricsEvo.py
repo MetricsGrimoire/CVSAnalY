@@ -21,7 +21,6 @@
 # -----------
 # This extension calculates the metrics for files at different points in time.
 
-import datetime
 from pycvsanaly2.extensions import Extension, register_extension
 from pycvsanaly2.utils import uri_to_filename
 from pycvsanaly2.extensions.DBTable import DBTable
