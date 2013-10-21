@@ -122,3 +122,4 @@ It is part of a wider research on libre software engineering, aimed to gain know
 * Martin Michlmayr (tbm at debian.org)
 * Alvaro del Castillo (acs at barrapunto.com)
 * Santiago Dueñas (sduenas at libresoft.es)
+* and a lot of other [awesome contributer via github](https://github.com/MetricsGrimoire/CVSAnalY/graphs/contributors)
