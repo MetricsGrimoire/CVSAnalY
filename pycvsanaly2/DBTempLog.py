@@ -54,7 +54,7 @@ class DBTempLog:
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
+            import sqlite3
             
             try:
                 cursor.execute ("CREATE TABLE _temp_log (" +
@@ -63,7 +63,7 @@ class DBTempLog:
                                 "date datetime," +
                                 "object blob" +
                                 ")")
-            except pysqlite2.dbapi2.OperationalError:
+            except sqlite3.OperationalError:
                 cursor.close ()
                 raise TableAlreadyExists
             except:

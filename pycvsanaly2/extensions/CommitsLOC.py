@@ -207,7 +207,7 @@ class CommitsLOC (Extension):
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
+            import sqlite3
             
             try:
                 cursor.execute ("CREATE TABLE commits_lines (" +
@@ -216,7 +216,7 @@ class CommitsLOC (Extension):
                                 "added integer," +
                                 "removed integer" +
                                 ")")
-            except pysqlite2.dbapi2.OperationalError:
+            except sqlite3.OperationalError:
                 cursor.close ()
                 raise TableAlreadyExists
             except:
