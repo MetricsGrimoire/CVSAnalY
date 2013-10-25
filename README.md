@@ -21,12 +21,12 @@ Licensed under GNU General Public License (GPL), version 2 or later.
 
 CVSAnalY has the following dependencies:
 
+* Python >= 2.5
 * RepositoryHandler: `git clone git://github.com/MetricsGrimoire/RepositoryHandler.git`
 * CVS (optional, for CVS support)
 * Subversion (optional, for SVN support)
 * git (optional, for Git support)
 * Python MySQLDB (optional, but recommended)
-* Python SQLite (optional)
 
 
 ## Scripts
