@@ -47,7 +47,7 @@ class FileTypes (Extension):
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
+            import sqlite3
             
             try:
                 cursor.execute ("CREATE TABLE file_types (" +
@@ -55,7 +55,7 @@ class FileTypes (Extension):
                                 "file_id integer," +
                                 "type varchar" +
                                 ")")
-            except pysqlite2.dbapi2.OperationalError:
+            except sqlite3.OperationalError:
                 cursor.close ()
                 raise TableAlreadyExists
             except:

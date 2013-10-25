@@ -50,7 +50,7 @@ class Patches (Extension):
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
+            import sqlite3
 
             try:
                 cursor.execute ("CREATE TABLE patches (" +
@@ -58,7 +58,7 @@ class Patches (Extension):
                                 "commit_id integer," +
                                 "patch blob" +
                                 ")")
-            except pysqlite2.dbapi2.OperationalError:
+            except sqlite3.OperationalError:
                 cursor.close ()
                 raise TableAlreadyExists
             except:

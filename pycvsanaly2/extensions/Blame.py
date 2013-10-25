@@ -113,7 +113,7 @@ class Blame (Extension):
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
+            import sqlite3
 
             try:
                 cursor.execute ("CREATE TABLE blame (" +
@@ -123,7 +123,7 @@ class Blame (Extension):
                                 "author_id integer," +
                                 "n_lines integer" +
                                 ")")
-            except pysqlite2.dbapi2.OperationalError:
+            except sqlite3.OperationalError:
                 cursor.close ()
                 raise TableAlreadyExists
             except:

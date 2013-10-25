@@ -19,7 +19,7 @@
 
 """Some common code for managing database tables"""
 
-import pysqlite2.dbapi2
+import sqlite3
 import _mysql_exceptions
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists)
 
@@ -96,7 +96,7 @@ class DBTable:
         try:
             cursor.execute (self._sql_create_table_sqlite)
             self.cnn.commit ()
-        except pysqlite2.dbapi2.OperationalError:
+        except sqlite3.OperationalError:
             raise TableAlreadyExists
 
     def _create_table_mysql (self, cursor):

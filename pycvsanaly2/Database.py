@@ -352,7 +352,7 @@ class SqliteDatabase (Database):
         Database.__init__ (self, database)
 
     def connect (self):
-        import pysqlite2.dbapi2 as db
+        import sqlite3 as db
         connection = db.connect (self.database) 
         connection.text_factory = str
         return connection
@@ -367,7 +367,7 @@ class SqliteDatabase (Database):
         cursor.execute (view)
     
     def create_tables (self, cursor):
-        import pysqlite2.dbapi2
+        import sqlite3
 
         try:
             cursor.execute ("CREATE TABLE repositories (" +
@@ -434,16 +434,16 @@ class SqliteDatabase (Database):
                             ")")
             cursor.execute ("CREATE index files_file_name on files(file_name)")
             self._create_views (cursor)
-        except pysqlite2.dbapi2.OperationalError:
+        except sqlite3.OperationalError:
             raise TableAlreadyExists
         except:
             raise
 
 
     def to_binary (self, data):
-        import pysqlite2.dbapi2
+        import sqlite3
 
-        return pysqlite2.dbapi2.Binary (data)
+        return sqlite3.Binary (data)
         
 class MysqlDatabase (Database):
 

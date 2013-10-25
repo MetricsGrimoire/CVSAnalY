@@ -687,7 +687,7 @@ class Metrics (Extension):
         cursor = cnn.cursor ()
 
         if isinstance (self.db, SqliteDatabase):
-            import pysqlite2.dbapi2
+            import sqlite3
             
             try:
                 cursor.execute ("CREATE TABLE metrics (" +
@@ -711,7 +711,7 @@ class Metrics (Extension):
                                 "halstead_level double,"+
                                 "halstead_md integer" +
                                 ")")
-            except pysqlite2.dbapi2.OperationalError:
+            except sqlite3.OperationalError:
                 cursor.close ()
                 raise TableAlreadyExists
             except:
