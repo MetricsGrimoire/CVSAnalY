@@ -27,10 +27,11 @@ class RepoOrLogfileRequired (Exception):
 
 class LogReader:
 
-    def __init__ (self):
+    def __init__ (self, gitref=None):
         self.logfile = None
         self.repo = None
         self.uri = None
+        self.gitref= gitref
 
     def set_repo (self, repo, uri = None):
         self.repo = repo
@@ -59,7 +60,7 @@ class LogReader:
             queue.put (data)
 
         repo.add_watch (LOG, new_line)
-        repo.log (self.uri or repo.get_uri ())
+        repo.log (self.uri or repo.get_uri (), gitref=self.gitref)
         
     def _read_from_repository (self, new_line_cb, user_data):
         queue = AsyncQueue ()

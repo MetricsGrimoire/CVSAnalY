@@ -64,6 +64,7 @@ Options:
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
   -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
+      --git-ref                      Parse only commit tree starting with this reference. (Git only)
 
 Database:
 
@@ -92,7 +93,7 @@ def main (argv):
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
                  "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
                  "db-hostname=", "db-database=", "db-driver=", "extensions=",
-                 "metrics-all", "metrics-noerr", "list-extensions"]
+                 "metrics-all", "metrics-noerr", "list-extensions", "git-ref="]
 
     # Default options
     debug = None
@@ -110,6 +111,7 @@ def main (argv):
     extensions = None
     metrics_all = None
     metrics_noerr = None
+    gitref = None
 
     try:
         opts, args = getopt.getopt (argv, short_opts, long_opts)
@@ -159,6 +161,8 @@ def main (argv):
             metrics_all = True
         elif opt in ("--metrics-noerr", ):
             metrics_noerr = True
+        elif opt in ("--git-ref", ):
+            gitref = value
 
     if len (args) <= 0:
         uri = os.getcwd ()
@@ -203,6 +207,7 @@ def main (argv):
         config.metrics_all = metrics_all
     if metrics_noerr is not None:
         config.metrics_noerr = metrics_noerr
+    config.gitref = gitref
 
     if not config.extensions and config.no_parse:
         # Do nothing!!!
@@ -235,7 +240,7 @@ def main (argv):
 
     if not config.no_parse:
         # Create reader
-        reader = LogReader ()
+        reader = LogReader (config.gitref)
         reader.set_repo (repo, path or uri)
 
         # Create parser
