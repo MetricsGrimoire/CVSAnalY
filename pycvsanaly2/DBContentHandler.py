@@ -301,8 +301,9 @@ class DBContentHandler(ContentHandler):
         return tag_id
 
     def __move_path_to_deletes_cache(self, path):
-        self.deletes_cache[path] = self.file_cache[path]
-        del (self.file_cache[path])
+        if path in self.file_cache:
+            self.deletes_cache[path] = self.file_cache[path]
+            del (self.file_cache[path])
 
     def __get_file_from_moves_cache(self, path):
         # Path is not in the cache, but it should
@@ -325,7 +326,7 @@ class DBContentHandler(ContentHandler):
 
         return self.file_cache[current_path]
 
-    def __get_file_for_path(self, path, commit_id, old=False):
+    def __get_file_for_path(self, path, commit_id, old=True):
         """Get a pair of (node_id, parent_id) regarding a path.
            First, it looks at file_cache, the at the moves cache,
            then at the deleted cache and finally, when it is not
@@ -388,14 +389,12 @@ class DBContentHandler(ContentHandler):
         except FileNotInCache:
             pass
 
-        # If it's an old file (that is, the path has been
-        # taken from the "from" part of an action that
-        # has two paths) it might be deletes or replaced
-        if old:
-            try:
-                return self.deletes_cache[path]
-            except KeyError:
-                pass
+        # Due to branching, the file may be deleted in other branches,
+        # and thus in deletes_cache. Unless in A action when we are
+        # pretty sure that it is a new file, we should always look
+        # at the deletes_cache for file_id
+        if old and path in self.deletes_cache:
+            return self.deletes_cache[path]
 
         # It hasen't been moved (or any of its parents)
         # so it was copied at some point
@@ -409,7 +408,7 @@ class DBContentHandler(ContentHandler):
         if not parent_path or parent_path == prefix.strip('/'):
             parent_id = -1
         else:
-            parent_id = self.__get_file_for_path(parent_path, log.id)[0]
+            parent_id = self.__get_file_for_path(parent_path, log.id, False)[0]
 
         file_id = self.__add_new_file_and_link(file_name, parent_id, log.id, self.__remove_branch_from_file_path(path))
         self.file_cache[path] = (file_id, parent_id)
