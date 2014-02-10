@@ -28,7 +28,7 @@ import unittest
 import os
 import shutil
 import tempfile
-import pysqlite2.dbapi2 as db
+import sqlite3 as db
 import pycvsanaly2.main
 
 class FilePathTestCase(unittest.TestCase):
