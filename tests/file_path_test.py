@@ -65,5 +65,5 @@ class FilePathTestCase(unittest.TestCase):
         self.assertItemsEqual (actual, expected)
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(UnicodeTestCase)
+    suite = unittest.TestLoader().loadTestsFromTestCase(FilePathTestCase)
     unittest.TextTestRunner(verbosity=2).run(suite)
