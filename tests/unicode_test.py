@@ -23,8 +23,16 @@
 # To execute this test, run: "python -m unittest tests.unicode_test" in the root
 # of the project
 
-import unittest
+import sys
 from pycvsanaly2 import utils
+
+requiredVersion = (2,7)
+currentVersion = sys.version_info
+
+if currentVersion >= requiredVersion:
+    import unittest
+else:
+    import unittest2 as unittest
 
 class UnicodeTestCase(unittest.TestCase):
 
