@@ -84,7 +84,7 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
 
             return self.current
 
-    def get_path(self, repo=None):
+    def get_path(self, repo=None, repo_path=None):
         if not self.current:
             return None
 
@@ -103,7 +103,7 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
         else:
             try:
                 while file_link:
-                    if repo.is_ancestor(file_link[0], rev):
+                    if repo.is_ancestor(repo_path, file_link[0], rev):
                         relative_path = file_link[1]
                         break
                     else:

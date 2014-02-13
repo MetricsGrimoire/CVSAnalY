@@ -31,7 +31,7 @@ import tempfile
 import sqlite3 as db
 import pycvsanaly2.main
 from pycvsanaly2.extensions.FileRevs import FileRevs
-from repositoryhandler.backends import create_repository
+from repositoryhandler.backends import create_repository_from_path
 from pycvsanaly2.Database import create_database
 
 
@@ -82,14 +82,14 @@ class FilePathTestCase(unittest.TestCase):
         cursor.execute('SELECT id FROM repositories')
         database = create_database('sqlite', temp_file_name)
         fr = FileRevs(database, connection, cursor, cursor.fetchone()[0])
-        repo = create_repository('git', self.TEST_REPOSITORY_PATH)
+        repo = create_repository_from_path(self.TEST_REPOSITORY_PATH)
         for revision, commit_id, file_id, action_type, composed in fr:
             if revision == '51a3b654f252210572297f47597b31527c475fb8':
                 # Getting the latest file_links record
                 actual = fr.get_path()
                 self.assertEqual(u'aaa/otherthing.renamed', actual)
                 # Using git merge-base
-                actual = fr.get_path(repo)
+                actual = fr.get_path(repo, self.TEST_REPOSITORY_PATH)
                 self.assertEqual(u'aaa/otherthing', actual)
 
 
