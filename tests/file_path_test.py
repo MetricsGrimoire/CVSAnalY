@@ -82,12 +82,16 @@ class FilePathTestCase(unittest.TestCase):
         cursor.execute('SELECT id FROM repositories')
         database = create_database('sqlite', temp_file_name)
         fr = FileRevs(database, connection, cursor, cursor.fetchone()[0])
-        print('repo path: ' + self.TEST_REPOSITORY_PATH)
         repo = create_repository('git', self.TEST_REPOSITORY_PATH)
         for revision, commit_id, file_id, action_type, composed in fr:
             if revision == '51a3b654f252210572297f47597b31527c475fb8':
+                # Getting the latest file_links record
+                actual = fr.get_path()
+                self.assertEqual(u'aaa/otherthing.renamed', actual)
+                # Using git merge-base
                 actual = fr.get_path(repo)
                 self.assertEqual(u'aaa/otherthing', actual)
+
 
         cursor.close()
         connection.close()

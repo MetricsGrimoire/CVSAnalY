@@ -35,7 +35,7 @@ from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ?
     # This query selects the newest entry for those cases with two filepaths
     # for the same file. See https://github.com/MetricsGrimoire/CVSAnalY/issues/3 for more info.
     __path_query__ = '''SELECT rev, file_path FROM file_links fl JOIN scmlog s
-    ON fl.commit_id=s.id WHERE file_id = ? AND commit_id <= ? ORDER BY commit_id, fl.id DESC'''
+    ON fl.commit_id=s.id WHERE file_id = ? AND commit_id <= ? ORDER BY commit_id DESC, fl.id DESC'''
 
     def __init__ (self, db, cnn, cursor, repoid):
         self.db = db
