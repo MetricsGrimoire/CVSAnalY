@@ -259,7 +259,7 @@ class Blame (Extension):
             else:
                 rev = revision
 
-            relative_path = fr.get_path ()
+            relative_path = fr.get_path(repo, path or repo.get_uri())
             printdbg ("Path for %d at %s -> %s", (file_id, rev, relative_path))
 
             if repo.get_type () == 'svn' and relative_path == 'tags':
