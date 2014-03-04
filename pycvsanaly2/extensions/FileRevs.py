@@ -65,23 +65,8 @@ WHERE file_links.id = fp.id'''
         if not self.rs:
             raise StopIteration
 
-        while True:
-            self.current = self.__get_next ()
-            revision, commit_id, file_id, action_type, composed = self.current
-
-            if action_type in ('V', 'C'):
-                if self.prev_commit != commit_id:
-                    # Get the matrix for revision
-                    self.prev_commit = commit_id
-                    continue
-            elif action_type == 'D':
-                continue
-            elif action_type in  ('A', 'R'):
-                if self.prev_commit != commit_id:
-                    # Get the matrix for revision
-                    self.prev_commit = commit_id
-
-            return self.current
+        self.current = self.__get_next ()
+        return self.current
 
     def get_path(self):
         if not self.current:
