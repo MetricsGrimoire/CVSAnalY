@@ -31,6 +31,7 @@ import tempfile
 import sqlite3 as db
 import pycvsanaly2.main
 
+
 class FilePathTestCase(unittest.TestCase):
 
     TEST_REPOSITORY_PATH = "tests/input"
@@ -48,11 +49,16 @@ class FilePathTestCase(unittest.TestCase):
         # run CVSAnaly on test repository
         opened, temp_file_name = tempfile.mkstemp('.db', 'cvsanaly-test')
         os.close(opened)
-        command_line_options = ["--db-driver=sqlite", "-d", temp_file_name, self.TEST_REPOSITORY_PATH]
-        pycvsanaly2.main.main (command_line_options)
+        command_line_options = [
+            "--db-driver=sqlite",
+            "-d",
+            temp_file_name,
+            self.TEST_REPOSITORY_PATH
+        ]
+        pycvsanaly2.main.main(command_line_options)
 
         # fetch generated result
-        connection = db.connect (temp_file_name)
+        connection = db.connect(temp_file_name)
         cursor = connection.cursor()
         cursor.execute("SELECT file_path FROM file_links")
         actual = cursor.fetchall()
@@ -60,9 +66,24 @@ class FilePathTestCase(unittest.TestCase):
         connection.close()
         os.remove(temp_file_name)
 
-        expected = [(u'aaa',), (u'aaa/otherthing',), (u'aaa/something',), (u'bbb',), (u'bbb/bthing',), (u'bbb/something',), (u'bbb/ccc',), (u'bbb/ccc/yet_anotherthing',), (u'bbb/something.renamed',), (u'ddd',), (u'ddd/finalthing',), (u'eee',), (u'eee/fff',), (u'eee/fff/wildthing',)]
+        expected = [
+            (u'aaa',),
+            (u'aaa/otherthing',),
+            (u'aaa/something',),
+            (u'bbb',),
+            (u'bbb/bthing',),
+            (u'bbb/something',),
+            (u'bbb/ccc',),
+            (u'bbb/ccc/yet_anotherthing',),
+            (u'bbb/something.renamed',),
+            (u'ddd',),
+            (u'ddd/finalthing',),
+            (u'eee',),
+            (u'eee/fff',),
+            (u'eee/fff/wildthing',)
+        ]
 
-        self.assertItemsEqual (actual, expected)
+        self.assertItemsEqual(actual, expected)
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(FilePathTestCase)
