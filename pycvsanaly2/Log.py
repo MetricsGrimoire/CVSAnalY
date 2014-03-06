@@ -22,96 +22,98 @@ from repositoryhandler.backends.watchers import LOG
 from AsyncQueue import AsyncQueue, TimeOut
 from utils import printerr
 
-class RepoOrLogfileRequired (Exception):
+
+class RepoOrLogfileRequired(Exception):
     '''Repository or Logfile is required to read a log'''
 
-class LogReader:
 
-    def __init__ (self):
+class LogReader:
+    def __init__(self):
         self.logfile = None
         self.repo = None
         self.uri = None
 
-    def set_repo (self, repo, uri = None):
+    def set_repo(self, repo, uri=None):
         self.repo = repo
         if uri is not None:
             self.uri = uri
-        
-    def set_logfile (self, filename):
+
+    def set_logfile(self, filename):
         self.logfile = filename
 
-    def _read_from_logfile (self, new_line_cb, user_data):
+    def _read_from_logfile(self, new_line_cb, user_data):
         try:
-            f = open (self.logfile, 'r')
+            f = open(self.logfile, 'r')
         except IOError, e:
-            printerr (str (e))
+            printerr(str(e))
             return
-            
-        line = f.readline ()
+
+        line = f.readline()
         while line:
-            new_line_cb (line, user_data)
-            line = f.readline ()
+            new_line_cb(line, user_data)
+            line = f.readline()
 
-        f.close ()
+        f.close()
 
-    def _logreader (self, repo, queue):
-        def new_line (data, user_data = None):
-            queue.put (data)
+    def _logreader(self, repo, queue):
+        def new_line(data, user_data=None):
+            queue.put(data)
 
-        repo.add_watch (LOG, new_line)
-        repo.log (self.uri or repo.get_uri ())
-        
-    def _read_from_repository (self, new_line_cb, user_data):
-        queue = AsyncQueue ()
-        logreader_thread = threading.Thread (target=self._logreader,
-                                             args=(self.repo, queue))
-        logreader_thread.setDaemon (True)
-        logreader_thread.start ()
+        repo.add_watch(LOG, new_line)
+        repo.log(self.uri or repo.get_uri())
+
+    def _read_from_repository(self, new_line_cb, user_data):
+        queue = AsyncQueue()
+        logreader_thread = threading.Thread(target=self._logreader,
+                                            args=(self.repo, queue))
+        logreader_thread.setDaemon(True)
+        logreader_thread.start()
 
         # Use the queue with mutexes while the
         # thread is alive
-        while logreader_thread.isAlive ():
+        while logreader_thread.isAlive():
             try:
-                line = queue.get (1)
+                line = queue.get(1)
             except TimeOut:
                 continue
-            new_line_cb (line, user_data)
+            new_line_cb(line, user_data)
 
         # No threads now, we don't need locks
-        while not queue.empty_unlocked ():
-            line = queue.get_unlocked ()
-            new_line_cb (line, user_data)
-        
-    def start (self, new_line_cb, user_data = None):
+        while not queue.empty_unlocked():
+            line = queue.get_unlocked()
+            new_line_cb(line, user_data)
+
+    def start(self, new_line_cb, user_data=None):
         if self.logfile is not None:
             try:
-                self._read_from_logfile (new_line_cb, user_data)
+                self._read_from_logfile(new_line_cb, user_data)
             except IOError, e:
-                printerr (str (e))
+                printerr(str(e))
         elif self.repo is not None:
-            self._read_from_repository (new_line_cb, user_data)
+            self._read_from_repository(new_line_cb, user_data)
         else:
-            raise RepoOrLogfileRequired ("In order to start the log reader " + \
-                                         "a repository or a logfile has to be provided")
+            raise RepoOrLogfileRequired("In order to start the log reader " +
+                                        "a repository or a logfile has to be provided")
+
 
 class LogWriter:
-
     CHUNK_SIZE = 1024
-        
-    def __init__ (self, filename):
-        self.fd = open (filename, "w")
+
+    def __init__(self, filename):
+        self.fd = open(filename, "w")
         self.buffer = ""
 
-    def add_line (self, line):
+    def add_line(self, line):
         self.buffer += line
-        if len (self.buffer) >= self.CHUNK_SIZE:
-            self.fd.write (self.buffer)
+        if len(self.buffer) >= self.CHUNK_SIZE:
+            self.fd.write(self.buffer)
             self.buffer = ""
 
-    def close (self):
+    def close(self):
         if self.buffer:
-            self.fd.write (self.buffer)
-        self.fd.close ()
+            self.fd.write(self.buffer)
+        self.fd.close()
+
 
 if __name__ == '__main__':
     import sys
@@ -119,29 +121,28 @@ if __name__ == '__main__':
     from utils import uri_to_filename
     from repositoryhandler.backends import create_repository, create_repository_from_path
 
-    def new_line (line, user_data = None):
-        print line.strip ('\n')
+    def new_line(line, user_data=None):
+        print line.strip('\n')
         if user_data is not None:
-            user_data.add_line (line)
-    
-    path = uri_to_filename (sys.argv[1])
+            user_data.add_line(line)
+
+    path = uri_to_filename(sys.argv[1])
     if path is not None:
-        repo = create_repository_from_path (path)
+        repo = create_repository_from_path(path)
     else:
-        repo = create_repository ('svn', sys.argv[1])
+        repo = create_repository('svn', sys.argv[1])
         path = sys.argv[1]
 
-    reader = LogReader ()
-    reader.set_repo (repo, path)
+    reader = LogReader()
+    reader.set_repo(repo, path)
 
     writer = None
-    
-    if len (sys.argv) > 2:
-        if os.path.isfile (sys.argv[2]):
-            reader.set_logfile (sys.argv[2])
-        else:
-            writer = LogWriter (sys.argv[2])
 
-    reader.start (new_line, writer)
-    writer and writer.close ()
-    
+    if len(sys.argv) > 2:
+        if os.path.isfile(sys.argv[2]):
+            reader.set_logfile(sys.argv[2])
+        else:
+            writer = LogWriter(sys.argv[2])
+
+    reader.start(new_line, writer)
+    writer and writer.close()

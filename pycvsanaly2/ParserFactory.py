@@ -27,123 +27,125 @@ from BzrParser import BzrParser
 
 from utils import printerr
 
-def create_parser_from_logfile (uri):
-    def logfile_is_cvs (logfile):
+
+def create_parser_from_logfile(uri):
+    def logfile_is_cvs(logfile):
         retval = False
 
         try:
-            f = open (logfile, 'r')
+            f = open(logfile, 'r')
         except IOError, e:
-            printerr (str (e))
+            printerr(str(e))
             return False
-        
-        patt = re.compile ("^RCS file:(.*)$")
-        
-        line = f.readline ()
+
+        patt = re.compile("^RCS file:(.*)$")
+
+        line = f.readline()
         while line:
-            if patt.match (line) is not None:
+            if patt.match(line) is not None:
                 retval = True
                 break
-            line = f.readline ()
+            line = f.readline()
 
-        f.close ()
+        f.close()
 
         return retval
 
-    def logfile_is_svn (logfile):
+    def logfile_is_svn(logfile):
         retval = False
 
         try:
-            f = open (logfile, 'r')
+            f = open(logfile, 'r')
         except IOError, e:
-            printerr (str (e))
+            printerr(str(e))
             return False
 
-        patt = re.compile ("^r(.*) \| (.*) \| (.*) \| (.*)$")
+        patt = re.compile("^r(.*) \| (.*) \| (.*) \| (.*)$")
 
-        line = f.readline ()
+        line = f.readline()
         while line:
-            if patt.match (line) is not None:
+            if patt.match(line) is not None:
                 retval = True
                 break
-            line = f.readline ()
+            line = f.readline()
 
-        f.close ()
+        f.close()
 
         return retval
 
-    def log_file_is_git (logfile):
+    def log_file_is_git(logfile):
         retval = False
 
         try:
-            f = open (logfile, 'r')
+            f = open(logfile, 'r')
         except IOError, e:
-            printerr (str (e))
+            printerr(str(e))
             return False
 
-        patt = re.compile ("^commit (.*)$")
+        patt = re.compile("^commit (.*)$")
 
-        line = f.readline ()
+        line = f.readline()
         while line:
-            if patt.match (line) is not None:
+            if patt.match(line) is not None:
                 retval = True
                 break
-            line = f.readline ()
+            line = f.readline()
 
-        f.close ()
+        f.close()
 
         return retval
 
-    def log_file_is_bzr (logfile):
+    def log_file_is_bzr(logfile):
         retval = False
 
         try:
-            f = open (logfile, 'r')
+            f = open(logfile, 'r')
         except IOError, e:
-            printerr (str (e))
+            printerr(str(e))
             return False
 
-        patt = re.compile ("^revno:[ \t]+(.*)$")
+        patt = re.compile("^revno:[ \t]+(.*)$")
 
-        line = f.readline ()
+        line = f.readline()
         while line:
-            if patt.match (line) is not None:
+            if patt.match(line) is not None:
                 retval = True
                 break
-            line = f.readline ()
+            line = f.readline()
 
-        f.close ()
+        f.close()
 
-        return retval        
-    
-    if os.path.isfile (uri):
-        if logfile_is_svn (uri):
-            p = SVNParser ()
-        elif logfile_is_cvs (uri):
-            p = CVSParser ()
-        elif log_file_is_git (uri):
-            p = GitParser ()
-        elif log_file_is_bzr (uri):
-            p = BzrParser ()
+        return retval
+
+    if os.path.isfile(uri):
+        if logfile_is_svn(uri):
+            p = SVNParser()
+        elif logfile_is_cvs(uri):
+            p = CVSParser()
+        elif log_file_is_git(uri):
+            p = GitParser()
+        elif log_file_is_bzr(uri):
+            p = BzrParser()
 
         assert p is not None
-        
+
         return p
 
-    printerr ("Error: path %s doesn't look like a valid log file", (uri,))
+    printerr("Error: path %s doesn't look like a valid log file", (uri,))
     return None
 
-def create_parser_from_repository (repo):
-    if repo.get_type () == 'cvs':
-        p = CVSParser ()
-    elif repo.get_type () == 'svn':
-        p = SVNParser ()
-    elif repo.get_type () == 'git':
-        p = GitParser ()
-    elif repo.get_type () == 'bzr':
-        p = BzrParser ()
+
+def create_parser_from_repository(repo):
+    if repo.get_type() == 'cvs':
+        p = CVSParser()
+    elif repo.get_type() == 'svn':
+        p = SVNParser()
+    elif repo.get_type() == 'git':
+        p = GitParser()
+    elif repo.get_type() == 'bzr':
+        p = BzrParser()
     else:
-        printerr ("Error: Unsupported repository type: %s", (repo.get_type (),))
+        printerr("Error: Unsupported repository type: %s", (repo.get_type(),))
         return None
 
     return p

@@ -23,43 +23,45 @@ import errno
 
 from Config import Config
 
-config = Config ()
+config = Config()
 
-def to_utf8 (string):
-    if isinstance (string, unicode):
-        return string.encode ('utf-8')
-    elif isinstance (string, str):
+
+def to_utf8(string):
+    if isinstance(string, unicode):
+        return string.encode('utf-8')
+    elif isinstance(string, str):
         for encoding in ['ascii', 'utf-8', 'iso-8859-15']:
             try:
-                s = unicode (string, encoding)
+                s = unicode(string, encoding)
             except:
                 continue
             break
-        return s.encode ('utf-8')
+        return s.encode('utf-8')
     else:
         return string
 
-def to_unicode (string):
+
+def to_unicode(string):
     """Converts a string type to an object of unicode type.
 
     Gets an string object as argument, and tries several
     encoding to convert it to unicode. It basically tries
-    encodings in sequence, until one of them doesn't raise 
+    encodings in sequence, until one of them doesn't raise
     an exception, since conversion into unicode using a
     given encoding raises an exception of one unknown character
     (for that encoding) is found.
 
     The string should usually be of str type (8-bit encoding),
     and the returned object is of unicode type.
-    If the string is already of unicode type, just return it.""" 
+    If the string is already of unicode type, just return it."""
 
-    if isinstance (string, unicode):
+    if isinstance(string, unicode):
         return string
-    elif isinstance (string, str):
+    elif isinstance(string, str):
         encoded = False
         for encoding in ['ascii', 'utf-8', 'iso-8859-15']:
             try:
-                uni_string = unicode (string, encoding)
+                uni_string = unicode(string, encoding)
             except:
                 continue
             encoded = True
@@ -68,100 +70,108 @@ def to_unicode (string):
             return uni_string
         else:
             # All conversions failed, get unicode with unknown characters
-            return (unicode (string, errors='replace'))
+            return (unicode(string, errors='replace'))
     else:
-        raise TypeError ("string should be of str type")
+        raise TypeError("string should be of str type")
 
-def uri_is_remote (uri):
-    match = re.compile ("^.*://.*$").match (uri)
+
+def uri_is_remote(uri):
+    match = re.compile("^.*://.*$").match(uri)
     if match is None:
         return False
     else:
-        return not uri.startswith ("file://")
+        return not uri.startswith("file://")
 
-def uri_to_filename (uri):
-    if uri_is_remote (uri):
+
+def uri_to_filename(uri):
+    if uri_is_remote(uri):
         return None
 
-    if uri.startswith ("file://"):
-        return uri[uri.find ("file://") + len ("file://"):]
+    if uri.startswith("file://"):
+        return uri[uri.find("file://") + len("file://"):]
 
     return uri
 
-def printout (str = '\n', args = None):
+
+def printout(str='\n', args=None):
     if config.quiet:
         return
 
     if args is not None:
-        str = str % tuple (to_utf8 (arg) for arg in args)
-    
+        str = str % tuple(to_utf8(arg) for arg in args)
+
     if str != '\n':
         str += '\n'
-    sys.stdout.write (to_utf8 (str))
-    sys.stdout.flush ()
+    sys.stdout.write(to_utf8(str))
+    sys.stdout.flush()
 
-def printerr (str = '\n', args = None):
+
+def printerr(str='\n', args=None):
     if args is not None:
-        str = str % tuple (to_utf8 (arg) for arg in args)
-    
+        str = str % tuple(to_utf8(arg) for arg in args)
+
     if str != '\n':
         str += '\n'
-    sys.stderr.write (to_utf8 (str))
-    sys.stderr.flush ()
+    sys.stderr.write(to_utf8(str))
+    sys.stderr.flush()
 
-def printdbg (str = '\n', args = None):
+
+def printdbg(str='\n', args=None):
     if not config.debug:
         return
 
-    printout ("DBG: " + str, args)
+    printout("DBG: " + str, args)
 
-def remove_directory (path):
-    if not os.path.exists (path):
+
+def remove_directory(path):
+    if not os.path.exists(path):
         return
 
-    for root, dirs, files in os.walk (path, topdown = False):
+    for root, dirs, files in os.walk(path, topdown=False):
         for file in files:
-            os.remove (os.path.join (root, file))
+            os.remove(os.path.join(root, file))
         for dir in dirs:
-            os.rmdir (os.path.join (root, dir))
+            os.rmdir(os.path.join(root, dir))
 
-    os.rmdir (path)
+    os.rmdir(path)
+
 
 _dirs = {}
 
-def cvsanaly_dot_dir ():
 
+def cvsanaly_dot_dir():
     try:
         return _dirs['dot']
     except KeyError:
         pass
-    
-    dot_dir = os.path.join (os.environ.get ('HOME'), '.cvsanaly2')
+
+    dot_dir = os.path.join(os.environ.get('HOME'), '.cvsanaly2')
     try:
-        os.mkdir (dot_dir, 0700)
+        os.mkdir(dot_dir, 0700)
     except OSError, e:
         if e.errno == errno.EEXIST:
-            if not os.path.isdir (dot_dir):
+            if not os.path.isdir(dot_dir):
                 raise
         else:
             raise
 
     _dirs['dot'] = dot_dir
-    
+
     return dot_dir
 
-def cvsanaly_cache_dir ():
+
+def cvsanaly_cache_dir():
     try:
         return _dirs['cache']
     except KeyError:
         pass
-    
-    cache_dir = os.path.join (cvsanaly_dot_dir (), 'cache')
+
+    cache_dir = os.path.join(cvsanaly_dot_dir(), 'cache')
     try:
-        os.mkdir (cache_dir, 0700)
+        os.mkdir(cache_dir, 0700)
     except OSError, e:
         if e.errno == errno.EEXIST:
-            if not os.path.isdir (cache_dir):
+            if not os.path.isdir(cache_dir):
                 raise
         else:
             raise
@@ -169,8 +179,8 @@ def cvsanaly_cache_dir ():
     _dirs['cache'] = cache_dir
 
     return cache_dir
-    
+
+
 if __name__ == '__main__':
-    print cvsanaly_dot_dir ()
-    print cvsanaly_cache_dir ()
-    
+    print cvsanaly_dot_dir()
+    print cvsanaly_cache_dir()

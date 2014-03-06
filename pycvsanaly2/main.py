@@ -35,7 +35,7 @@ from repositoryhandler.backends import create_repository, create_repository_from
 from ParserFactory import create_parser_from_logfile, create_parser_from_repository
 from Database import (create_database, TableAlreadyExists, AccessDenied, DatabaseNotFound,
                       DatabaseDriverNotSupported, DBRepository, statement, initialize_ids,
-		      DatabaseException)
+                      DatabaseException)
 from DBProxyContentHandler import DBProxyContentHandler
 from Log import LogReader, LogWriter
 from ExtensionsManager import ExtensionsManager, InvalidExtension, InvalidDependency
@@ -43,13 +43,14 @@ from Config import Config, ErrorLoadingConfig
 from utils import printerr, printout, uri_to_filename
 from _config import *
 
-def usage ():
+
+def usage():
     print "%s %s - %s" % (PACKAGE, VERSION, DESCRIPTION)
     print COPYRIGHT
     print
     print "Usage: cvsanaly2 [options] [URI]"
     print """
-Analyze the given URI. An URI can be a checked out directory, 
+Analyze the given URI. An URI can be a checked out directory,
 or a remote URL pointing to a repository. If URI is omitted,
 the current working directory will be used as a checked out directory.
 
@@ -85,11 +86,12 @@ Extensions:
 
 """
 
-def main (argv):
+
+def main(argv):
     # Short (one letter) options. Those requiring argument followed by :
     short_opts = "hVgqnf:l:s:u:p:d:H:e"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
+    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=",
                  "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
                  "db-hostname=", "db-database=", "db-driver=", "extensions=",
                  "metrics-all", "metrics-noerr", "list-extensions"]
@@ -112,17 +114,17 @@ def main (argv):
     metrics_noerr = None
 
     try:
-        opts, args = getopt.getopt (argv, short_opts, long_opts)
+        opts, args = getopt.getopt(argv, short_opts, long_opts)
     except getopt.GetoptError, e:
-        printerr (str (e))
+        printerr(str(e))
         return 1
 
     for opt, value in opts:
         if opt in ("-h", "--help", "-help"):
-            usage ()
+            usage()
             return 0
         elif opt in ("-e", "--list-extensions"):
-            emg = ExtensionsManager ([])
+            emg = ExtensionsManager([])
             allExtensions = emg.load_all_extensions()
             print ", ".join(sorted(allExtensions))
             return 0
@@ -154,25 +156,25 @@ def main (argv):
         elif opt in ("-s", "--save-logfile"):
             save_logfile = value
         elif opt in ("--extensions", ):
-            extensions = value.split (',')
+            extensions = value.split(',')
         elif opt in ("--metrics-all", ):
             metrics_all = True
         elif opt in ("--metrics-noerr", ):
             metrics_noerr = True
 
-    if len (args) <= 0:
-        uri = os.getcwd ()
+    if len(args) <= 0:
+        uri = os.getcwd()
     else:
         uri = args[0]
 
-    config = Config ()
+    config = Config()
     try:
         if configfile is not None:
-            config.load_from_file (configfile)
+            config.load_from_file(configfile)
         else:
-            config.load ()
+            config.load()
     except ErrorLoadingConfig, e:
-        printerr (e.message)
+        printerr(e.message)
         return 1
 
     if debug is not None:
@@ -189,7 +191,7 @@ def main (argv):
         config.no_parse = no_parse
     if driver is not None:
         config.db_driver = driver
-    if user is not  None:
+    if user is not None:
         config.db_user = user
     if passwd is not None:
         config.db_password = passwd
@@ -198,7 +200,7 @@ def main (argv):
     if database is not None:
         config.db_database = database
     if extensions is not None:
-        config.extensions.extend ([item for item in extensions if item not in config.extensions])
+        config.extensions.extend([item for item in extensions if item not in config.extensions])
     if metrics_all is not None:
         config.metrics_all = metrics_all
     if metrics_noerr is not None:
@@ -210,136 +212,136 @@ def main (argv):
 
     if config.debug:
         import repositoryhandler.backends
+
         repositoryhandler.backends.DEBUG = True
 
     # Create repository
-    path = uri_to_filename (uri)
+    path = uri_to_filename(uri)
     if path is not None:
         try:
-            repo = create_repository_from_path (path)
+            repo = create_repository_from_path(path)
         except RepositoryUnknownError:
-            printerr ("Path %s doesn't seem to point to a repository supported by cvsanaly", (path,))
+            printerr("Path %s doesn't seem to point to a repository supported by cvsanaly", (path,))
             return 1
         except Exception, e:
-            printerr ("Unknown error creating repository for path %s (%s)", (path, str (e)))
+            printerr("Unknown error creating repository for path %s (%s)", (path, str(e)))
             return 1
-        uri = repo.get_uri_for_path (path)
+        uri = repo.get_uri_for_path(path)
     else:
-        uri = uri.strip ('/')
+        uri = uri.strip('/')
         # Get an object of the backends class for managing the repository
-        repo = create_repository ('svn', uri)
+        repo = create_repository('svn', uri)
         # Check uri actually points to a valid svn repo
-        if repo.get_last_revision (uri) is None:
-            printerr ("URI %s doesn't seem to point to a valid svn repository", (uri,))
+        if repo.get_last_revision(uri) is None:
+            printerr("URI %s doesn't seem to point to a valid svn repository", (uri,))
             return 1
 
     if not config.no_parse:
         # Create reader
-        reader = LogReader ()
-        reader.set_repo (repo, path or uri)
+        reader = LogReader()
+        reader.set_repo(repo, path or uri)
 
         # Create parser
         if config.repo_logfile is not None:
-            parser = create_parser_from_logfile (config.repo_logfile)
-            reader.set_logfile (config.repo_logfile)
+            parser = create_parser_from_logfile(config.repo_logfile)
+            reader.set_logfile(config.repo_logfile)
         else:
-            parser = create_parser_from_repository (repo)
+            parser = create_parser_from_repository(repo)
 
-        parser.set_repository (repo, uri)
+        parser.set_repository(repo, uri)
 
         if parser is None:
-            printerr ("Failed to create parser")
+            printerr("Failed to create parser")
             return 1
 
-        # TODO: check parser type == logfile type
+            # TODO: check parser type == logfile type
 
     try:
-        emg = ExtensionsManager (config.extensions)
+        emg = ExtensionsManager(config.extensions)
     except InvalidExtension, e:
-        printerr ("Invalid extension %s (%s)", (e.name, e.message,))
+        printerr("Invalid extension %s (%s)", (e.name, e.message,))
         return 1
     except InvalidDependency, e:
-        printerr ("Extension %s depends on extension %s which is not a valid extension", (e.name1, e.name2))
+        printerr("Extension %s depends on extension %s which is not a valid extension", (e.name1, e.name2))
         return 1
     except Exception, e:
-        printerr ("Unknown extensions error: %s", (str (e),))
+        printerr("Unknown extensions error: %s", (str(e),))
         return 1
-    
+
     db_exists = False
 
     try:
-        db = create_database (config.db_driver,
-                              config.db_database,
-                              config.db_user,
-                              config.db_password,
-                              config.db_hostname)
+        db = create_database(config.db_driver,
+                             config.db_database,
+                             config.db_user,
+                             config.db_password,
+                             config.db_hostname)
     except AccessDenied, e:
-        printerr ("Error creating database: %s", (e.message,))
+        printerr("Error creating database: %s", (e.message,))
         return 1
     except DatabaseNotFound:
-        printerr ("Database %s doesn't exist. It must be created before running cvsanaly", (config.db_database,))
+        printerr("Database %s doesn't exist. It must be created before running cvsanaly", (config.db_database,))
         return 1
     except DatabaseDriverNotSupported:
-        printerr ("Database driver %s is not supported by cvsanaly", (config.db_driver,))
+        printerr("Database driver %s is not supported by cvsanaly", (config.db_driver,))
         return 1
-    
-    cnn = db.connect ()
-    cursor = cnn.cursor ()
+
+    cnn = db.connect()
+    cursor = cnn.cursor()
     try:
-        db.create_tables (cursor)
-        cnn.commit ()
+        db.create_tables(cursor)
+        cnn.commit()
     except TableAlreadyExists:
         db_exists = True
     except DatabaseException, e:
-        printerr ("Database error: %s", (e.message,))
+        printerr("Database error: %s", (e.message,))
         return 1
 
     if config.no_parse and not db_exists:
-        printerr ("The option --no-parse must be used with an already filled database")
+        printerr("The option --no-parse must be used with an already filled database")
         return 1
 
     # Add repository to Database
     if db_exists:
-        cursor.execute (statement ("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
-        rep = cursor.fetchone ()
-        initialize_ids (db, cursor)
-        cursor.close ()
+        cursor.execute(statement("SELECT id from repositories where uri = ?", db.place_holder), (uri,))
+        rep = cursor.fetchone()
+        initialize_ids(db, cursor)
+        cursor.close()
 
     if config.no_parse and rep is None:
-        printerr ("The option --no-parse must be used with an already filled database")
+        printerr("The option --no-parse must be used with an already filled database")
         return 1
-        
+
     if not db_exists or rep is None:
         # We consider the name of the repo as the last item of the root path
-        name = uri.rstrip ("/").split ("/")[-1].strip ()
-        cursor = cnn.cursor ()
-        rep = DBRepository (None, uri, name, repo.get_type ())
-        cursor.execute (statement (DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
-        cursor.close ()
-        cnn.commit ()
+        name = uri.rstrip("/").split("/")[-1].strip()
+        cursor = cnn.cursor()
+        rep = DBRepository(None, uri, name, repo.get_type())
+        cursor.execute(statement(DBRepository.__insert__, db.place_holder), (rep.id, rep.uri, rep.name, rep.type))
+        cursor.close()
+        cnn.commit()
 
-    cnn.close ()
+    cnn.close()
 
     if not config.no_parse:
         # Start the parsing process
-        printout ("Parsing log for %s (%s)", (path or uri, repo.get_type ()))
-        
-        def new_line (line, user_data):
+        printout("Parsing log for %s (%s)", (path or uri, repo.get_type()))
+
+        def new_line(line, user_data):
             parser, writer = user_data
-        
-            parser.feed (line)
-            writer and writer.add_line (line)
-        
+
+            parser.feed(line)
+            writer and writer.add_line(line)
+
         writer = None
         if config.save_logfile is not None:
-            writer = LogWriter (config.save_logfile)
-        
-        parser.set_content_handler (DBProxyContentHandler (db))
-        reader.start (new_line, (parser, writer))
-        parser.end ()
-        writer and writer.close ()
+            writer = LogWriter(config.save_logfile)
+
+        parser.set_content_handler(DBProxyContentHandler(db))
+        reader.start(new_line, (parser, writer))
+        parser.end()
+        writer and writer.close()
 
     # Run extensions
-    printout ("Executing extensions")
-    emg.run_extensions (repo, path or uri, db)
-
+    printout("Executing extensions")
+    emg.run_extensions(repo, path or uri, db)
