@@ -33,7 +33,8 @@ can be easily done using this auxiliary table.
 from pycvsanaly2.extensions import Extension, register_extension
 from pycvsanaly2.extensions.DBTable import DBTable
 
-class MonthsTable (DBTable):
+
+class MonthsTable(DBTable):
     """Class for managing the months table
 
     Each record in the table has two fields:
@@ -46,27 +47,27 @@ class MonthsTable (DBTable):
 
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE months (" + \
-        "id integer primary key," + \
-        "year integer," + \
-        "month integer," + \
-        "date datetime" + \
-        ")"
+                               "id integer primary key," + \
+                               "year integer," + \
+                               "month integer," + \
+                               "date datetime" + \
+                               ")"
 
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE months (" + \
-        "id INTEGER PRIMARY KEY," + \
-        "year INTEGER," + \
-        "month INTEGER," + \
-        "date DATETIME" + \
-        ") ENGINE=MyISAM" + \
-        " CHARACTER SET=utf8"
+                              "id INTEGER PRIMARY KEY," + \
+                              "year INTEGER," + \
+                              "month INTEGER," + \
+                              "date DATETIME" + \
+                              ") ENGINE=MyISAM" + \
+                              " CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM months"
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO months " + \
-        "(id, year, month, date) VALUES (%s, %s, %s, %s)"
+                      "(id, year, month, date) VALUES (%s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
@@ -75,7 +76,7 @@ class MonthsTable (DBTable):
     _sql_select_rows = "SELECT id FROM months # %s"
 
 
-class Months (Extension):
+class Months(Extension):
     """Extension to produce a table the list of months.
 
     Includes a list with the list of months for the life of the repository,
@@ -83,37 +84,37 @@ class Months (Extension):
     to last date in repository.
     """
 
-    def run (self, repo, uri, db):
+    def run(self, repo, uri, db):
         """Extract first and laste commits from scmlog and create the months table.
         """
 
-        cnn = db.connect ()
+        cnn = db.connect()
         # Cursor for reading from the database
-        cursor = cnn.cursor ()
+        cursor = cnn.cursor()
         # Cursor for writing to the database
-        write_cursor = cnn.cursor ()
+        write_cursor = cnn.cursor()
 
-        cursor.execute ("SELECT MIN(date) FROM scmlog")
-        minDate = cursor.fetchone ()[0]
-        cursor.execute ("SELECT MAX(date) FROM scmlog")
-        maxDate = cursor.fetchone ()[0]
-        cursor.execute ("DROP TABLE IF EXISTS months")
+        cursor.execute("SELECT MIN(date) FROM scmlog")
+        minDate = cursor.fetchone()[0]
+        cursor.execute("SELECT MAX(date) FROM scmlog")
+        maxDate = cursor.fetchone()[0]
+        cursor.execute("DROP TABLE IF EXISTS months")
 
         theMonthsTable = MonthsTable(db, cnn, repo)
 
         firstMonth = minDate.year * 12 + minDate.month
         lastMonth = maxDate.year * 12 + maxDate.month
 
-        for period in range (firstMonth, lastMonth+1):
-            month = (period -1 ) % 12 + 1 
-            year = (period - 1)// 12
+        for period in range(firstMonth, lastMonth + 1):
+            month = (period - 1) % 12 + 1
+            year = (period - 1) // 12
             date = str(year) + "-" + str(month) + "-01"
-            theMonthsTable.add_pending_row ((period, year, month, date))
-        theMonthsTable.insert_rows (write_cursor)
-        cnn.commit ()
-        write_cursor.close ()
-        cursor.close ()
-        cnn.close ()
+            theMonthsTable.add_pending_row((period, year, month, date))
+        theMonthsTable.insert_rows(write_cursor)
+        cnn.commit()
+        write_cursor.close()
+        cursor.close()
+        cnn.close()
 
 # Register in the CVSAnalY extension system
-register_extension ("Months", Months)
+register_extension("Months", Months)

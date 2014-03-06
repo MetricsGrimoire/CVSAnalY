@@ -27,31 +27,31 @@ from pycvsanaly2.utils import uri_to_filename
 from pycvsanaly2.extensions.DBTable import DBTable
 
 
-class TableWords (DBTable):
+class TableWords(DBTable):
     """Class for managing the words_freq table"""
 
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE words_freq (" + \
-        "id integer primary key," + \
-        "date datetime," + \
-        "word varchar," + \
-        "times integer" + \
-        ")"
+                               "id integer primary key," + \
+                               "date datetime," + \
+                               "word varchar," + \
+                               "times integer" + \
+                               ")"
 
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE words_freq (" + \
-        "id INTEGER PRIMARY KEY," + \
-        "date DATETIME," + \
-        "word VARCHAR(150)," + \
-        "times INTEGER" + \
-        ") CHARACTER SET=utf8"
+                              "id INTEGER PRIMARY KEY," + \
+                              "date DATETIME," + \
+                              "word VARCHAR(150)," + \
+                              "times INTEGER" + \
+                              ") CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM words_freq"
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO words_freq " + \
-        "(id, date, word, times) VALUES (%s, %s, %s, %s)"
+                      "(id, date, word, times) VALUES (%s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
@@ -59,59 +59,59 @@ class TableWords (DBTable):
     # In this case, this is the commit id (for commits in repository_id)
     _sql_select_rows = "SELECT id FROM words_freq # %s"
 
-class MessageWords (Extension):
+
+class MessageWords(Extension):
     """Extension to do some analysis on commit messages.
 
     It works on the messages field of the scmlog table.
     """
 
-    def _get_repo_id (self, repo, uri, cursor):
+    def _get_repo_id(self, repo, uri, cursor):
         """Get repository id from repositories table"""
-    
-        path = uri_to_filename (uri)
+
+        path = uri_to_filename(uri)
         if path is not None:
-            repo_uri = repo.get_uri_for_path (path)
+            repo_uri = repo.get_uri_for_path(path)
         else:
             repo_uri = uri
-        cursor.execute ("SELECT id FROM repositories WHERE uri = '%s'" % 
-                        repo_uri)
-        return (cursor.fetchone ()[0])
+        cursor.execute("SELECT id FROM repositories WHERE uri = '%s'" %
+                       repo_uri)
+        return (cursor.fetchone()[0])
 
-    def run (self, repo, uri, db):
+    def run(self, repo, uri, db):
         """Extract commit message from scmlog table and do some analysis.
         """
 
-        cnn = db.connect ()
+        cnn = db.connect()
         # Cursor for reading from the database
-        cursor = cnn.cursor ()
+        cursor = cnn.cursor()
         # Cursor for writing to the database
-        write_cursor = cnn.cursor ()
-        repo_id = self._get_repo_id (repo, uri, cursor)
+        write_cursor = cnn.cursor()
+        repo_id = self._get_repo_id(repo, uri, cursor)
 
-        cursor.execute ("SELECT MIN(date) FROM scmlog")
-        minDate = cursor.fetchone ()[0]
-        cursor.execute ("SELECT MAX(date) FROM scmlog")
-        maxDate = cursor.fetchone ()[0]
+        cursor.execute("SELECT MIN(date) FROM scmlog")
+        minDate = cursor.fetchone()[0]
+        cursor.execute("SELECT MAX(date) FROM scmlog")
+        maxDate = cursor.fetchone()[0]
 
         theTableWords = TableWords(db, cnn, repo_id)
 
         # First month is 0, last month is lastMonth
-        lastMonth = (maxDate.year - minDate.year) * 12 + \
-            maxDate.month - minDate.month
-        for period in range (0, lastMonth):
+        lastMonth = (maxDate.year - minDate.year) * 12 + maxDate.month - minDate.month
+        for period in range(0, lastMonth):
             wordsFreq = {}
             month = (minDate.month + period) % 12 + 1
             year = minDate.year + (period + minDate.month) // 12
             date = str(year) + "-" + str(month) + "-01"
             query = "SELECT log.message " + \
-                "FROM scmlog log " + \
-                "WHERE year(log.date) = %s " + \
-                "AND month(log.date) = %s "
-            cursor.execute (query % (year, month))
+                    "FROM scmlog log " + \
+                    "WHERE year(log.date) = %s " + \
+                    "AND month(log.date) = %s "
+            cursor.execute(query % (year, month))
             rows = cursor.fetchall()
             for message in rows:
                 words = [word.strip(":()[],.#<>*'`~")
-                         for word in message[0].lower().split ()]
+                         for word in message[0].lower().split()]
                 for word in words:
                     if len(word) > 2:
                         if word in wordsFreq:
@@ -119,13 +119,13 @@ class MessageWords (Extension):
                         else:
                             wordsFreq[word] = 1
             for word in wordsFreq:
-                theTableWords.add_pending_row ((None, date,
-                                                word, wordsFreq[word]))
-            theTableWords.insert_rows (write_cursor)
-        cnn.commit ()
-        write_cursor.close ()
-        cursor.close ()
-        cnn.close ()
+                theTableWords.add_pending_row((None, date,
+                                               word, wordsFreq[word]))
+            theTableWords.insert_rows(write_cursor)
+        cnn.commit()
+        write_cursor.close()
+        cursor.close()
+        cnn.close()
 
-register_extension ("MessageWords", MessageWords)
 
+register_extension("MessageWords", MessageWords)

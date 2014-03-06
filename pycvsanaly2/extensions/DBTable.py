@@ -23,6 +23,7 @@ import sqlite3
 import _mysql_exceptions
 from pycvsanaly2.Database import (SqliteDatabase, MysqlDatabase, TableAlreadyExists)
 
+
 class DBTable:
     """Table class, for managing tables with certain common characteristics.
 
@@ -30,7 +31,7 @@ class DBTable:
     in the database. This class provides the commno behavior.
     """
 
-    def __init__ (self, db, cnn, repo):
+    def __init__(self, db, cnn, repo):
         """Initialize the table.
 
         Initialization can be either by creating it or by getting rows
@@ -57,17 +58,17 @@ class DBTable:
         self.cnn = cnn
         self.repo = repo
 
-        cursor = cnn.cursor ()
+        cursor = cnn.cursor()
         try:
             # Try to create the table (self.table will be empty)
-            self._create_table (cursor)
+            self._create_table(cursor)
         except TableAlreadyExists:
             # If the table already exisits, fill in self.table with its data
-            self._init_from_table (cursor)
+            self._init_from_table(cursor)
         except Exception, e:
-            raise ExtensionRunError (str (e))
+            raise ExtensionRunError(str(e))
         finally:
-            cursor.close ()
+            cursor.close()
 
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = ""
@@ -87,59 +88,59 @@ class DBTable:
     # Should return a unique identifier which will be key in self.table
     _sql_select_rows = ""
 
-    def _create_table_sqlite (self, cursor):
+    def _create_table_sqlite(self, cursor):
         """Create the table for SQLite.
-        
+
         Raises exception if the table already exists
         """
 
         try:
-            cursor.execute (self._sql_create_table_sqlite)
-            self.cnn.commit ()
+            cursor.execute(self._sql_create_table_sqlite)
+            self.cnn.commit()
         except sqlite3.OperationalError:
             raise TableAlreadyExists
 
-    def _create_table_mysql (self, cursor):
+    def _create_table_mysql(self, cursor):
         """Create the table for MySQL.
 
         Raises exception if the table already exists
         """
 
         try:
-            cursor.execute (self._sql_create_table_mysql)
-            self.cnn.commit ()
+            cursor.execute(self._sql_create_table_mysql)
+            self.cnn.commit()
         except _mysql_exceptions.OperationalError, e:
             if e.args[0] == 1050:
                 raise TableAlreadyExists
             else:
                 raise
 
-    def _create_table (self, cursor):
+    def _create_table(self, cursor):
         """Create the table, and raise exception if it already exists.
 
         TableAlreadyExists is the exception that may be raised."""
 
-        if isinstance (self.db, SqliteDatabase):
+        if isinstance(self.db, SqliteDatabase):
             self._create_table_sqlite(cursor)
-        elif isinstance (self.db, MysqlDatabase):
+        elif isinstance(self.db, MysqlDatabase):
             self._create_table_mysql(cursor)
         else:
-            raise ExtensionRunError ("Database type is not supported " + 
-                                     "by CommitsLOCDet extension")
+            raise ExtensionRunError("Database type is not supported " +
+                                    "by CommitsLOCDet extension")
 
-    def _init_from_table (self, cursor):
+    def _init_from_table(self, cursor):
         """Initialize self.table with all rows in commits_lines table."""
 
         # Find max id in commits_lines, and update counter
-        cursor.execute (self._sql_max_id)
-        id = cursor.fetchone ()[0]
+        cursor.execute(self._sql_max_id)
+        id = cursor.fetchone()[0]
         if id is not None:
             self.counter = id + 1
         # Find all rows and init self.table with them
-        cursor.execute (self._sql_select_rows % self.repo)
+        cursor.execute(self._sql_select_rows % self.repo)
         self.table = cursor.fetchall()
 
-    def in_table (self, element):
+    def in_table(self, element):
         """Is this element in self.table?"""
 
         if element in self.table:
@@ -147,7 +148,7 @@ class DBTable:
         else:
             return False
 
-    def add_pending_row (self, row):
+    def add_pending_row(self, row):
         """Add row to list of rows pending to be inserted in the table.
 
         First element in row should be id. If it is None, it is set using
@@ -157,13 +158,13 @@ class DBTable:
         if id is None:
             id = self.counter
             self.counter += 1
-        self.pending.append ((id,) + row[1:])
+        self.pending.append((id,) + row[1:])
 
-    def insert_rows (self, cursor):
+    def insert_rows(self, cursor):
         """Inserts a list of pending rows into table.
 
         It also empties the list of pending rows, after insertion."""
 
         if self.pending:
-            cursor.executemany (self._sql_row_insert, self.pending)
+            cursor.executemany(self._sql_row_insert, self.pending)
             self.pending = []
