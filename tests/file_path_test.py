@@ -24,12 +24,20 @@
 # To execute this test, run: "python -m unittest tests.file_path_test" in the
 # root of the project
 
-import unittest
+import sys
 import os
 import shutil
 import tempfile
 import sqlite3 as db
 import pycvsanaly2.main
+
+requiredVersion = (2,7)
+currentVersion = sys.version_info
+
+if currentVersion >= requiredVersion:
+    import unittest
+else:
+    import unittest2 as unittest
 
 
 class FilePathTestCase(unittest.TestCase):
