@@ -21,17 +21,17 @@ import os
 from stat import *
 
 
-def find_program (program):
+def find_program(program):
     '''Looks for given program in current path.
     Returns an absolute path if program was found or None'''
 
-    def __path_is_executable (path):
-        return os.stat (path)[ST_MODE] & S_IEXEC
+    def __path_is_executable(path):
+        return os.stat(path)[ST_MODE] & S_IEXEC
 
-    # Do not look in PATH if it's already an absolute path 
+    # Do not look in PATH if it's already an absolute path
     # or a relative path containing directories
-    if os.path.isabs (program) or program.find (os.path.sep) > 0:
-        if __path_is_executable (program) and not os.path.isdir (program):
+    if os.path.isabs(program) or program.find(os.path.sep) > 0:
+        if __path_is_executable(program) and not os.path.isdir(program):
             return program
         else:
             return None
@@ -44,39 +44,38 @@ def find_program (program):
         # FIXME: it only works on UNIX
         path = "/bin:/usr/bin:."
 
-    for p in path.split (os.pathsep):
-        absolute = os.path.join (p, program)
-        if os.path.exists (absolute) and \
-           __path_is_executable (absolute) and \
-           not os.path.isdir (absolute):
+    for p in path.split(os.pathsep):
+        absolute = os.path.join(p, program)
+        if os.path.exists(absolute) and \
+                __path_is_executable(absolute) and \
+                not os.path.isdir(absolute):
             return absolute
 
     return None
+
 
 if __name__ == '__main__':
     import sys
 
     ## Absolute path
     # Dir
-    if find_program (os.environ['HOME']) is not None:
+    if find_program(os.environ['HOME']) is not None:
         print "FAILED"
-        sys.exit (1)
+        sys.exit(1)
 
     # File not exec
-    if find_program ('./FindProgram.py') is not None:
+    if find_program('./FindProgram.py') is not None:
         print "FAILED"
-        sys.exit (2)
+        sys.exit(2)
 
     # File exec
-    if find_program ('/bin/ls') != '/bin/ls':
+    if find_program('/bin/ls') != '/bin/ls':
         print "FAILED"
-        sys.exit (3)
+        sys.exit(3)
 
     ## Relative path
-    if find_program ('cat') != '/bin/cat':
+    if find_program('cat') != '/bin/cat':
         print "FAILED"
-        sys.exit (4)
+        sys.exit(4)
 
     print "SUCCESS"
-
-
