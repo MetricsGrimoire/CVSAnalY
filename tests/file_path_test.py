@@ -24,7 +24,7 @@
 # To execute this test, run: "python -m unittest tests.file_path_test" in the
 # root of the project
 
-import unittest
+import sys
 import os
 import shutil
 import tempfile
@@ -33,6 +33,14 @@ import pycvsanaly2.main
 from pycvsanaly2.extensions.FileRevs import FileRevs
 from repositoryhandler.backends import create_repository_from_path
 from pycvsanaly2.Database import create_database
+
+requiredVersion = (2,7)
+currentVersion = sys.version_info
+
+if currentVersion >= requiredVersion:
+    import unittest
+else:
+    import unittest2 as unittest
 
 
 class FilePathTestCase(unittest.TestCase):
@@ -52,11 +60,16 @@ class FilePathTestCase(unittest.TestCase):
         # run CVSAnaly on test repository
         opened, temp_file_name = tempfile.mkstemp('.db', 'cvsanaly-test')
         os.close(opened)
-        command_line_options = ["--db-driver=sqlite", "-d", temp_file_name, self.TEST_REPOSITORY_PATH]
-        pycvsanaly2.main.main (command_line_options)
+        command_line_options = [
+            "--db-driver=sqlite",
+            "-d",
+            temp_file_name,
+            self.TEST_REPOSITORY_PATH
+        ]
+        pycvsanaly2.main.main(command_line_options)
 
         # fetch generated result
-        connection = db.connect (temp_file_name)
+        connection = db.connect(temp_file_name)
         cursor = connection.cursor()
         cursor.execute("SELECT file_path FROM file_links")
         actual = cursor.fetchall()
@@ -64,9 +77,25 @@ class FilePathTestCase(unittest.TestCase):
         connection.close()
         os.remove(temp_file_name)
 
-        expected = [(u'aaa',), (u'aaa/otherthing',), (u'aaa/something',), (u'bbb',), (u'bbb/bthing',), (u'bbb/something',), (u'bbb/ccc',), (u'bbb/ccc/yet_anotherthing',), (u'bbb/something.renamed',), (u'ddd',), (u'ddd/finalthing',), (u'eee',), (u'eee/fff',), (u'eee/fff/wildthing',), (u'aaa/otherthing.renamed',)]
+        expected = [
+            (u'aaa',),
+            (u'aaa/otherthing',),
+            (u'aaa/something',),
+            (u'bbb',),
+            (u'bbb/bthing',),
+            (u'bbb/something',),
+            (u'bbb/ccc',),
+            (u'bbb/ccc/yet_anotherthing',),
+            (u'bbb/something.renamed',),
+            (u'ddd',),
+            (u'ddd/finalthing',),
+            (u'eee',),
+            (u'eee/fff',),
+            (u'eee/fff/wildthing',),
+			(u'aaa/otherthing.renamed',)
+        ]
 
-        self.assertItemsEqual (actual, expected)
+        self.assertItemsEqual(actual, expected)
 
     def test_branching_file_paths(self):
         # This part should be moved to set up, but in case no one from MetricsGrimoire
@@ -96,7 +125,6 @@ class FilePathTestCase(unittest.TestCase):
         cursor.close()
         connection.close()
         os.remove(temp_file_name)
-
 
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(FilePathTestCase)

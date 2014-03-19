@@ -1,0 +1,26 @@
+language: python
+
+python:
+  - "2.6"
+  - "2.7"
+  - "pypy"
+
+install:
+  # Install "discover" to support discover command in unittest
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install discover; fi
+  # Install RepositoryHandler
+  - git clone https://github.com/MetricsGrimoire/RepositoryHandler.git
+  - cd RepositoryHandler
+  - python setup.py install
+  # Install CVSAnaly
+  - cd ..
+  - python setup.py install
+
+# Run tests
+script:
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then unit2 discover . '*_test.py'; fi
+  - if [[ $TRAVIS_PYTHON_VERSION > '2.6' ]]; then python -m unittest discover . '*_test.py'; fi
+
+notifications:
+  irc: "chat.freenode.net#metrics-grimoire"

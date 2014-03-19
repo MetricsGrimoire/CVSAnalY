@@ -20,28 +20,37 @@
 # Authors :
 #       Eduardo Menezes de Morais <companheiro.vermelho@gmail.com>
 #
-# To execute this test, run: "python -m unittest tests.unicode_test" in the root
+# To execute this test run: "python -m unittest tests.unicode_test" in the root
 # of the project
 
-import unittest
+import sys
 from pycvsanaly2 import utils
+
+requiredVersion = (2,7)
+currentVersion = sys.version_info
+
+if currentVersion >= requiredVersion:
+    import unittest
+else:
+    import unittest2 as unittest
+
 
 class UnicodeTestCase(unittest.TestCase):
 
     def testUnicode(self):
-        self.assertEqual (u"Hello World", utils.to_unicode(u"Hello World"))
-        
+        self.assertEqual(u"Hello World", utils.to_unicode(u"Hello World"))
+
     def testUtf8String(self):
         utf8String = "\xC3\x96\xE1\x9B\x96\x61"
-        self.assertEqual (u"\u00d6\u16d6a", utils.to_unicode(utf8String))
-        
+        self.assertEqual(u"\u00d6\u16d6a", utils.to_unicode(utf8String))
+
     def testAsciiString(self):
         asciiString = "HelloWorld"
-        self.assertEqual (u"HelloWorld", utils.to_unicode(asciiString))
-        
+        self.assertEqual(u"HelloWorld", utils.to_unicode(asciiString))
+
     def testLatin1String(self):
         latin1String = "Hell\xf3 W\xe4rld"
-        self.assertEqual (u"Helló Wärld", utils.to_unicode(latin1String))
+        self.assertEqual(u"Helló Wärld", utils.to_unicode(latin1String))
 
     def testNoString(self):
         """If it is not str or unicode, an error should be raised"""

@@ -15,18 +15,19 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
 
+
 class Commit:
-    def __init__ (self):
-        self.__dict__ = { 'revision'     : None,
-                          'committer'    : None,
-                          'date'         : None,
-                          'author'       : None,
-                          'author_date'  : None,
-                          'actions'      : [],
-                          'branch'       : None,
-                          'tags'         : None,
-                          'message'      : "",
-                          'composed_rev' : False }
+    def __init__(self):
+        self.__dict__ = {'revision': None,
+                         'committer': None,
+                         'date': None,
+                         'author': None,
+                         'author_date': None,
+                         'actions': [],
+                         'branch': None,
+                         'tags': None,
+                         'message': "",
+                         'composed_rev': False}
 
     def __getinitargs__(self):
         return ()
@@ -34,20 +35,21 @@ class Commit:
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__ (self, dict):
-        self.__dict__.update (dict)
-    
-    def __getattr__ (self, name):
+    def __setstate__(self, dict):
+        self.__dict__.update(dict)
+
+    def __getattr__(self, name):
         return self.__dict__[name]
-        
-    def __setattr__ (self, name, value):
+
+    def __setattr__(self, name, value):
         self.__dict__[name] = value
 
-    def __eq__ (self, other):
-        return isinstance (other, Commit) and self.revision == other.revision
+    def __eq__(self, other):
+        return isinstance(other, Commit) and self.revision == other.revision
 
-    def __ne__ (self, other):
-        return not isinstance (other, Commit) or self.revision != other.revision
+    def __ne__(self, other):
+        return not isinstance(other, Commit) or self.revision != other.revision
+
 
 # Action types
 # A Add
@@ -58,13 +60,13 @@ class Commit:
 # R Replaced
 
 class Action:
-    def __init__ (self):
-        self.__dict__ = { 'type'      : None,
-                          'branch_f1' : None,
-                          'branch_f2' : None,
-                          'f1'        : None,
-                          'f2'        : None,
-                          'rev'       : None}
+    def __init__(self):
+        self.__dict__ = {'type': None,
+                         'branch_f1': None,
+                         'branch_f2': None,
+                         'f1': None,
+                         'f2': None,
+                         'rev': None}
 
     def __getinitargs__(self):
         return ()
@@ -72,38 +74,38 @@ class Action:
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__ (self, dict):
-        self.__dict__.update (dict)
-        
-    def __getattr__ (self, name):
+    def __setstate__(self, dict):
+        self.__dict__.update(dict)
+
+    def __getattr__(self, name):
         return self.__dict__[name]
 
-    def __setattr__ (self, name, value):
+    def __setattr__(self, name, value):
         self.__dict__[name] = value
 
-    def __eq__ (self, other):
-        return isinstance (other, Action) and \
+    def __eq__(self, other):
+        return isinstance(other, Action) and \
             self.type == other.type and \
             self.f1 == other.f1 and \
             self.f2 == other.f2 and \
             self.branch_f1 == other.branch_f1 and \
             self.branch_f2 == other.branch_f2 and \
             self.rev == other.rev
-    
-    def __ne__ (self, other):
-        return not isinstance (other, Action) or \
+
+    def __ne__(self, other):
+        return not isinstance(other, Action) or \
             self.type != other.type or \
             self.f1 != other.f1 or \
             self.f2 != other.f2 or \
             self.branch_f1 != other.branch_f1 or \
             self.branch_f2 != other.branch_f2 or \
             self.rev != other.rev
-    
+
 
 class Person:
-    def __init__ (self):
-        self.__dict__ = { 'name'  : None,
-                          'email' : None }
+    def __init__(self):
+        self.__dict__ = {'name': None,
+                         'email': None}
 
     def __getinitargs__(self):
         return ()
@@ -111,47 +113,48 @@ class Person:
     def __getstate__(self):
         return self.__dict__
 
-    def __setstate__ (self, dict):
-        self.__dict__.update (dict)
-        
-    def __getattr__ (self, name):
+    def __setstate__(self, dict):
+        self.__dict__.update(dict)
+
+    def __getattr__(self, name):
         return self.__dict__[name]
 
-    def __setattr__ (self, name, value):
+    def __setattr__(self, name, value):
         self.__dict__[name] = value
 
-    def __eq__ (self, other):
-        return isinstance (other, Person) and self.name == other.name
-    
-    def __ne__ (self, other):
-        return not isinstance (other, Person) or self.name != other.name
+    def __eq__(self, other):
+        return isinstance(other, Person) and self.name == other.name
+
+    def __ne__(self, other):
+        return not isinstance(other, Person) or self.name != other.name
+
 
 if __name__ == '__main__':
     from cPickle import dump, load
     import datetime
 
-    c = Commit ()
+    c = Commit()
     c.revision = '25'
     c.committer = 'carlosgc'
-    c.date = datetime.datetime.now ()
+    c.date = datetime.datetime.now()
     c.message = "Modified foo files"
 
-    for i in range (5):
-        a = Action ()
+    for i in range(5):
+        a = Action()
         a.type = 'M'
         a.branch = 'trunk'
         a.f1 = '/trunk/foo-%d' % (i + 1)
         a.rev = '25'
 
-        c.actions.append (a)
+        c.actions.append(a)
 
-    f = open ("/tmp/commits", "wb")
-    dump (c, f, -1)
-    f.close ()
+    f = open("/tmp/commits", "wb")
+    dump(c, f, -1)
+    f.close()
 
-    f = open ("/tmp/commits", "rb")
-    commit = load (f)
-    f.close ()
+    f = open("/tmp/commits", "rb")
+    commit = load(f)
+    f.close()
 
     print "Commit"
     print "rev: %s, committer: %s, date: %s" % (commit.revision, commit.committer, commit.date)

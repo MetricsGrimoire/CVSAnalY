@@ -34,23 +34,26 @@ import sys
 
 from setuptools import setup
 
-def generate_changelog ():
+
+def generate_changelog():
     from subprocess import Popen, PIPE
     from tempfile import mkstemp
 
-    fd, filename = mkstemp (dir=os.getcwd ())
+    fd, filename = mkstemp(dir=os.getcwd())
 
     print "Creating ChangeLog"
-    cmd = ["git", "log", "-M", "-C", "--name-status", "--date=short", "--no-color"]
-    pipe = Popen (cmd, stdout=PIPE).stdout
+    cmd = [
+        "git", "log", "-M", "-C", "--name-status", "--date=short", "--no-color"
+    ]
+    pipe = Popen(cmd, stdout=PIPE).stdout
 
-    buff = pipe.read (1024)
+    buff = pipe.read(1024)
     while buff:
-        os.write (fd, buff)
-        buff = pipe.read (1024)
-    os.close (fd)
+        os.write(fd, buff)
+        buff = pipe.read(1024)
+    os.close(fd)
 
-    os.rename (filename, "ChangeLog")
+    os.rename(filename, "ChangeLog")
 
 # Check dependencies
 deps = ['repositoryhandler >= 0.3']
@@ -58,17 +61,17 @@ deps = ['repositoryhandler >= 0.3']
 #pkg_check_modules (deps)
 
 if sys.argv[1] == 'sdist':
-    generate_changelog ()
+    generate_changelog()
 
 from pycvsanaly2._config import *
 
-setup(name = PACKAGE,
-      version = VERSION,
-      author =  AUTHOR,
-      author_email = AUTHOR_EMAIL,
-      description = DESCRIPTION,
-      install_requires = deps,
-      url = "http://projects.libresoft.es/projects/cvsanaly/wiki/",
-      packages = ['pycvsanaly2', 'pycvsanaly2.extensions'],
-      data_files = [('share/man/man1',['help/cvsanaly2.1'])],
-      scripts = ["cvsanaly2"])
+setup(name=PACKAGE,
+      version=VERSION,
+      author=AUTHOR,
+      author_email=AUTHOR_EMAIL,
+      description=DESCRIPTION,
+      install_requires=deps,
+      url="http://projects.libresoft.es/projects/cvsanaly/wiki/",
+      packages=['pycvsanaly2', 'pycvsanaly2.extensions'],
+      data_files=[('share/man/man1', ['help/cvsanaly2.1'])],
+      scripts=["cvsanaly2"])

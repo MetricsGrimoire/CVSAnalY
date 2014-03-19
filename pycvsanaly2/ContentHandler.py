@@ -17,33 +17,33 @@
 # Authors :
 #       Carlos Garcia Campos <carlosgc@gsyc.escet.urjc.es>
 
-class ContentHandler:
 
+class ContentHandler:
     (
         ORDER_REVISION,
         ORDER_FILE
-    ) = range (2)
+    ) = range(2)
 
-    def __init__ (self):
-        pass
-
-    def begin (self, order=None):
-        pass
-    
-    def repository (self, uri):
-        pass
-    
-    def commit (self, commit):
+    def __init__(self):
         pass
 
-    def committer (self, committer):
+    def begin(self, order=None):
         pass
 
-    def author (self, author):
+    def repository(self, uri):
         pass
 
-    def file (self, file):
+    def commit(self, commit):
         pass
 
-    def end (self):
+    def committer(self, committer):
+        pass
+
+    def author(self, author):
+        pass
+
+    def file(self, file):
+        pass
+
+    def end(self):
         pass

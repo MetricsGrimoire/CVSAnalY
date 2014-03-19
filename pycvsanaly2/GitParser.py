@@ -25,56 +25,56 @@ from Parser import Parser
 from Repository import Commit, Action, Person
 from utils import printout, printdbg
 
-class GitParser (Parser):
 
+class GitParser(Parser):
     class GitCommit:
 
-        def __init__ (self, commit, parents):
+        def __init__(self, commit, parents):
             self.commit = commit
             self.parents = parents
             self.svn_tag = None
 
-        def is_my_child (self, git_commit):
+        def is_my_child(self, git_commit):
             return git_commit.parents and self.commit.revision in git_commit.parents
 
     class GitBranch:
 
-        ( REMOTE,
-          LOCAL,
-          STASH ) = range (3)
+        (REMOTE, LOCAL, STASH) = range(3)
 
-        def __init__ (self, type, name, tail):
+        def __init__(self, type, name, tail):
             self.type = type
             self.name = name
-            self.set_tail (tail)
+            self.set_tail(tail)
 
-        def is_my_parent (self, git_commit):
-            return git_commit.is_my_child (self.tail)
+        def is_my_parent(self, git_commit):
+            return git_commit.is_my_child(self.tail)
 
-        def is_stash (self):
+        def is_stash(self):
             return self.type == self.STASH
 
-        def set_tail (self, tail):
+        def set_tail(self, tail):
             self.tail = tail
             self.tail.commit.branch = self.name
 
     patterns = {}
-    patterns['commit'] = re.compile ("^commit[ \t]+([^ ]+)( ([^\(]+))?( \((.*)\))?$")
-    patterns['author'] = re.compile ("^Author:[ \t]+(.*)[ \t]+<(.*)>$")
-    patterns['author_date'] = re.compile ("^AuthorDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
-    patterns['committer'] = re.compile ("^Commit:[ \t]+(.*)[ \t]+<(.*)>$")
-    patterns['date'] = re.compile ("^CommitDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
-    patterns['file'] = re.compile ("^([MAD])[ \t]+(.*)$")
-    patterns['file-moved'] = re.compile ("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
-    patterns['branch'] = re.compile ("refs/remotes/origin/([^,]*)")
-    patterns['local-branch'] = re.compile ("refs/heads/([^,]*)")
-    patterns['tag'] = re.compile ("tag: refs/tags/([^,]*)")
-    patterns['stash'] = re.compile ("refs/stash")
-    patterns['ignore'] = [re.compile ("^Merge: .*$")]
-    patterns['svn-tag'] = re.compile ("^svn path=/tags/(.*)/?; revision=([0-9]+)$")
+    patterns['commit'] = re.compile("^commit[ \t]+([^ ]+)( ([^\(]+))?( \((.*)\))?$")
+    patterns['author'] = re.compile("^Author:[ \t]+(.*)[ \t]+<(.*)>$")
+    patterns['author_date'] = re.compile(
+        "^AuthorDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
+    patterns['committer'] = re.compile("^Commit:[ \t]+(.*)[ \t]+<(.*)>$")
+    patterns['date'] = re.compile(
+        "^CommitDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
+    patterns['file'] = re.compile("^([MAD])[ \t]+(.*)$")
+    patterns['file-moved'] = re.compile("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
+    patterns['branch'] = re.compile("refs/remotes/origin/([^,]*)")
+    patterns['local-branch'] = re.compile("refs/heads/([^,]*)")
+    patterns['tag'] = re.compile("tag: refs/tags/([^,]*)")
+    patterns['stash'] = re.compile("refs/stash")
+    patterns['ignore'] = [re.compile("^Merge: .*$")]
+    patterns['svn-tag'] = re.compile("^svn path=/tags/(.*)/?; revision=([0-9]+)$")
 
-    def __init__ (self):
-        Parser.__init__ (self)
+    def __init__(self):
+        Parser.__init__(self)
 
         self.is_gnome = None
 
@@ -83,102 +83,103 @@ class GitParser (Parser):
         self.branch = None
         self.branches = []
 
-    def set_repository (self, repo, uri):
-        Parser.set_repository (self, repo, uri)
-        self.is_gnome = re.search ("^[a-z]+://(.*@)?git\.gnome\.org/.*$", repo.get_uri ()) is not None
+    def set_repository(self, repo, uri):
+        Parser.set_repository(self, repo, uri)
+        self.is_gnome = re.search("^[a-z]+://(.*@)?git\.gnome\.org/.*$", repo.get_uri()) is not None
 
-    def flush (self):
+    def flush(self):
         if self.branches:
-            self.handler.commit (self.branch.tail.commit)
+            self.handler.commit(self.branch.tail.commit)
             self.branch = None
             self.branches = None
 
-    def _parse_line (self, line):
+    def _parse_line(self, line):
         if line is None or line == '':
             return
 
         # Ignore
         for patt in self.patterns['ignore']:
-            if patt.match (line):
+            if patt.match(line):
                 return
 
         # Commit
-        match = self.patterns['commit'].match (line)
+        match = self.patterns['commit'].match(line)
         if match:
             if self.commit is not None and self.branch is not None:
-                if self.branch.tail.svn_tag is None: # Skip commits on svn tags
-                    self.handler.commit (self.branch.tail.commit)
+                if self.branch.tail.svn_tag is None:  # Skip commits on svn tags
+                    self.handler.commit(self.branch.tail.commit)
 
-            self.commit = Commit ()
-            self.commit.revision = match.group (1)
+            self.commit = Commit()
+            self.commit.revision = match.group(1)
 
-            parents = match.group (3)
+            parents = match.group(3)
             if parents:
-                parents = parents.split ()
-            git_commit = self.GitCommit (self.commit, parents)
+                parents = parents.split()
+            git_commit = self.GitCommit(self.commit, parents)
 
-            decorate = match.group (5)
+            decorate = match.group(5)
             branch = None
             if decorate:
                 # Remote branch
-                m = re.search (self.patterns['branch'], decorate)
+                m = re.search(self.patterns['branch'], decorate)
                 if m:
-                    branch = self.GitBranch (self.GitBranch.REMOTE, m.group (1), git_commit)
-                    printdbg ("Branch '%s' head at acommit %s", (branch.name, self.commit.revision))
+                    branch = self.GitBranch(self.GitBranch.REMOTE, m.group(1), git_commit)
+                    printdbg("Branch '%s' head at acommit %s", (branch.name, self.commit.revision))
                 else:
                     # Local Branch
-                    m = re.search (self.patterns['local-branch'], decorate)
+                    m = re.search(self.patterns['local-branch'], decorate)
                     if m:
-                        branch = self.GitBranch (self.GitBranch.LOCAL, m.group (1), git_commit)
-                        printdbg ("Commit %s on local branch '%s'", (self.commit.revision, branch.name))
+                        branch = self.GitBranch(self.GitBranch.LOCAL, m.group(1), git_commit)
+                        printdbg("Commit %s on local branch '%s'", (self.commit.revision, branch.name))
                         # If local branch was merged we just ignore this decoration
-                        if self.branch and self.branch.is_my_parent (git_commit):
-                            printdbg ("Local branch '%s' was merged", (branch.name,))
+                        if self.branch and self.branch.is_my_parent(git_commit):
+                            printdbg("Local branch '%s' was merged", (branch.name,))
                             branch = None
                     else:
                         # Stash
-                        m = re.search (self.patterns['stash'], decorate)
+                        m = re.search(self.patterns['stash'], decorate)
                         if m:
-                            branch = self.GitBranch (self.GitBranch.STASH, "stash", git_commit)
-                            printdbg ("Commit %s on stash", (self.commit.revision,))
+                            branch = self.GitBranch(self.GitBranch.STASH, "stash", git_commit)
+                            printdbg("Commit %s on stash", (self.commit.revision,))
                 # Tag
-                m = re.search (self.patterns['tag'], decorate)
+                m = re.search(self.patterns['tag'], decorate)
                 if m:
-                    self.commit.tags = [m.group (1)]
-                    printdbg ("Commit %s tagged as '%s'", (self.commit.revision, self.commit.tags[0]))
+                    self.commit.tags = [m.group(1)]
+                    printdbg("Commit %s tagged as '%s'", (self.commit.revision, self.commit.tags[0]))
 
             if branch is not None and self.branch is not None:
                 # Detect empty branches. Ideally, the head of a branch
                 # can't have children. When this happens is because the
                 # branch is empty, so we just ignore such branch
-                if self.branch.is_my_parent (git_commit):
-                    printout ("Warning: Detected empty branch '%s', it'll be ignored", (branch.name,))
+                if self.branch.is_my_parent(git_commit):
+                    printout("Warning: Detected empty branch '%s', it'll be ignored", (branch.name,))
                     branch = None
 
-            if len (self.branches) >= 2:
+            if len(self.branches) >= 2:
                 # If current commit is the start point of a new branch
                 # we have to look at all the current branches since
                 # we haven't inserted the new branch yet.
                 # If not, look at all other branches excluding the current one
-                for i, b in enumerate (self.branches):
+                for i, b in enumerate(self.branches):
                     if i == 0 and branch is None:
                         continue
 
-                    if b.is_my_parent (git_commit):
+                    if b.is_my_parent(git_commit):
                         # We assume current branch is always the last one
                         # AFAIK there's no way to make sure this is right
-                        printdbg ("Start point of branch '%s' at commit %s", (self.branches[0].name, self.commit.revision))
-                        self.branches.pop (0)
+                        printdbg("Start point of branch '%s' at commit %s",
+                                 (self.branches[0].name, self.commit.revision))
+                        self.branches.pop(0)
                         self.branch = b
 
-            if self.branch and self.branch.tail.svn_tag is not None and self.branch.is_my_parent (git_commit):
+            if self.branch and self.branch.tail.svn_tag is not None and self.branch.is_my_parent(git_commit):
                 # There's a pending tag in previous commit
                 pending_tag = self.branch.tail.svn_tag
-                printdbg ("Move pending tag '%s' from previous commit %s to current %s", (pending_tag,
-                                                                                          self.branch.tail.commit.revision,
-                                                                                          self.commit.revision))
+                printdbg("Move pending tag '%s' from previous commit %s to current %s", (pending_tag,
+                                                                                         self.branch.tail.commit.revision,
+                                                                                         self.commit.revision))
                 if self.commit.tags and pending_tag not in self.commit.tags:
-                    self.commit.tags.append (pending_tag)
+                    self.commit.tags.append(pending_tag)
                 else:
                     self.commit.tags = [pending_tag]
                 self.branch.tail.svn_tag = None
@@ -188,74 +189,76 @@ class GitParser (Parser):
 
                 # Insert master always at the end
                 if branch.name == 'master':
-                    self.branches.append (self.branch)
+                    self.branches.append(self.branch)
                 else:
-                    self.branches.insert (0, self.branch)
+                    self.branches.insert(0, self.branch)
             else:
                 if self.branch is not None:
-                    self.branch.set_tail (git_commit)
+                    self.branch.set_tail(git_commit)
             return
 
         # Committer
-        match = self.patterns['committer'].match (line)
+        match = self.patterns['committer'].match(line)
         if match:
-            self.commit.committer = Person ()
-            self.commit.committer.name = match.group (1)
-            self.commit.committer.email = match.group (2)
-            self.handler.committer (self.commit.committer)
+            self.commit.committer = Person()
+            self.commit.committer.name = match.group(1)
+            self.commit.committer.email = match.group(2)
+            self.handler.committer(self.commit.committer)
             return
 
         # Author
-        match = self.patterns['author'].match (line)
+        match = self.patterns['author'].match(line)
         if match:
-            self.commit.author = Person ()
-            self.commit.author.name = match.group (1)
-            self.commit.author.email = match.group (2)
-            self.handler.author (self.commit.author)
+            self.commit.author = Person()
+            self.commit.author.name = match.group(1)
+            self.commit.author.email = match.group(2)
+            self.handler.author(self.commit.author)
             return
 
         # Commit date
-        match = self.patterns['date'].match (line)
+        match = self.patterns['date'].match(line)
         if match:
-            self.commit.date = datetime.datetime (* (time.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")[0:6]))
+            self.commit.date = datetime.datetime(
+                *(time.strptime(match.group(1).strip(" "), "%a %b %d %H:%M:%S %Y")[0:6]))
             # datetime.datetime.strptime not supported by Python2.4
             #self.commit.date = datetime.datetime.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")
             return
 
         # Author date
-        match = self.patterns['author_date'].match (line)
+        match = self.patterns['author_date'].match(line)
         if match:
-            self.commit.author_date = datetime.datetime (* (time.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")[0:6]))
+            self.commit.author_date = datetime.datetime(
+                *(time.strptime(match.group(1).strip(" "), "%a %b %d %H:%M:%S %Y")[0:6]))
             # datetime.datetime.strptime not supported by Python2.4
             #self.commit.author_date = datetime.datetime.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")
             return
 
         # File
-        match = self.patterns['file'].match (line)
+        match = self.patterns['file'].match(line)
         if match:
-            action = Action ()
-            action.type = match.group (1)
-            action.f1 = match.group (2)
+            action = Action()
+            action.type = match.group(1)
+            action.f1 = match.group(2)
 
-            self.commit.actions.append (action)
-            self.handler.file (action.f1)
+            self.commit.actions.append(action)
+            self.handler.file(action.f1)
             return
 
         # File moved/copied
-        match = self.patterns['file-moved'].match (line)
+        match = self.patterns['file-moved'].match(line)
         if match:
-            action = Action ()
-            type = match.group (1)
+            action = Action()
+            type = match.group(1)
             if type == 'R':
                 action.type = 'V'
             else:
                 action.type = type
-            action.f1 = match.group (3)
-            action.f2 = match.group (2)
+            action.f1 = match.group(3)
+            action.f2 = match.group(2)
             action.rev = self.commit.revision
 
-            self.commit.actions.append (action)
-            self.handler.file (action.f1)
+            self.commit.actions.append(action)
+            self.handler.file(action.f1)
 
             return
 
@@ -264,10 +267,10 @@ class GitParser (Parser):
         # http://git.gnome.org/cgit/evolution/commit/?id=b8e52acac2b9fc5414a7795a73c74f7ee4eeb71f
         # We want to ignore commits on tags since it doesn't make any sense in Git
         if self.is_gnome:
-            match = self.patterns['svn-tag'].match (line.strip ())
+            match = self.patterns['svn-tag'].match(line.strip())
             if match:
-                printout ("Warning: detected a commit on a svn tag: %s", (match.group (0),))
-                tag = match.group (1)
+                printout("Warning: detected a commit on a svn tag: %s", (match.group(0),))
+                tag = match.group(1)
                 if self.commit.tags and tag in self.commit.tags:
                     # The commit will be ignored, so move the tag
                     # to the next (previous in history) commit

@@ -21,16 +21,18 @@ import threading
 from Timer import Timer
 from Config import Config
 
-config = Config ()
+config = Config()
 
-def plog (data):
+
+def plog(data):
     if not config.profile:
         return
-    
-    str = "MARK: %s: %s" % ('foo', data)
-    os.access (str, os.F_OK)
 
-def profiler_start (msg, args = None):
+    str = "MARK: %s: %s" % ('foo', data)
+    os.access(str, os.F_OK)
+
+
+def profiler_start(msg, args=None):
     if not config.profile:
         return
 
@@ -45,11 +47,12 @@ def profiler_start (msg, args = None):
         _timers = ct._timers
 
     if msg in _timers:
-        _timers[msg].start ()
+        _timers[msg].start()
     else:
-        _timers[msg] = Timer ()
+        _timers[msg] = Timer()
 
-def profiler_stop (msg, args = None, delete = False):
+
+def profiler_stop(msg, args=None, delete=False):
     if not config.profile:
         return
 
@@ -59,28 +62,29 @@ def profiler_stop (msg, args = None, delete = False):
     ct = threading.currentThread()
     _timers = ct._timers
     t = _timers[msg]
-    t.stop ()
+    t.stop()
 
-    str = "[ %s ] %f s elapsed\n" % (msg, t.elapsed ())
-    sys.stdout.write (str)
-    sys.stdout.flush ()
+    str = "[ %s ] %f s elapsed\n" % (msg, t.elapsed())
+    sys.stdout.write(str)
+    sys.stdout.flush()
 
     if delete:
         del _timers[msg]
+
 
 if __name__ == '__main__':
     import time
 
     Config().profile = True
 
-    def _thread (n):
-        profiler_start ("Running thread %d sleeping %d seconds", (n, n + 1))
-        time.sleep (n + 1)
-        profiler_stop ("Running thread %d sleeping %d seconds", (n, n + 1), True)
+    def _thread(n):
+        profiler_start("Running thread %d sleeping %d seconds", (n, n + 1))
+        time.sleep(n + 1)
+        profiler_stop("Running thread %d sleeping %d seconds", (n, n + 1), True)
 
-    for i in range (6):
-        thread = threading.Thread (target=_thread, args=(i,))
-        thread.setDaemon (True)
-        thread.start ()
+    for i in range(6):
+        thread = threading.Thread(target=_thread, args=(i,))
+        thread.setDaemon(True)
+        thread.start()
 
-    thread.join ()
+    thread.join()

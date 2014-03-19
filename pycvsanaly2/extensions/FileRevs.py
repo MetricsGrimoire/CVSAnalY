@@ -20,69 +20,53 @@
 #       Santiago Dueñas <sduenas@libresoft.es>
 
 from pycvsanaly2.Database import statement, ICursor
-from pycvsanaly2.utils import printerr
-from repositoryhandler.Command import CommandError
 
 if __name__ == '__main__':
     import sys
-    sys.path.insert (0, "../../")
+
+    sys.path.insert(0, "../../")
+
 
 class FileRevs:
-
     INTERVAL_SIZE = 1000
-    __query__ = '''select s.rev rev, s.id commit_id, af.file_id, af.action_type, s.composed_rev 
+    __query__ = '''select s.rev rev, s.id commit_id, af.file_id, af.action_type, s.composed_rev
 from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ? order by s.id'''
     # This query selects the newest entry for those cases with two filepaths
     # for the same file. See https://github.com/MetricsGrimoire/CVSAnalY/issues/3 for more info.
     __path_query__ = '''SELECT rev, file_path FROM file_links fl JOIN scmlog s
     ON fl.commit_id=s.id WHERE file_id = ? AND commit_id <= ? ORDER BY commit_id DESC, fl.id DESC'''
 
-    def __init__ (self, db, cnn, cursor, repoid):
+    def __init__(self, db, cnn, cursor, repoid):
         self.db = db
         self.cnn = cnn
         self.repoid = repoid
 
-        self.icursor = ICursor (cursor, self.INTERVAL_SIZE)
-        self.icursor.execute (statement (self.__query__, db.place_holder), (repoid,))
-        self.rs = iter (self.icursor.fetchmany ())
+        self.icursor = ICursor(cursor, self.INTERVAL_SIZE)
+        self.icursor.execute(statement(self.__query__, db.place_holder), (repoid,))
+        self.rs = iter(self.icursor.fetchmany())
         self.prev_commit = -1
         self.current = None
 
-    def __iter__ (self):
+    def __iter__(self):
         return self
 
-    def __get_next (self):
+    def __get_next(self):
         try:
-            t = self.rs.next ()
+            t = self.rs.next()
         except StopIteration:
-            self.rs = iter (self.icursor.fetchmany ())
+            self.rs = iter(self.icursor.fetchmany())
             if not self.rs:
                 raise StopIteration
-            t = self.rs.next ()
+            t = self.rs.next()
 
         return t
 
-    def next (self):
+    def next(self):
         if not self.rs:
             raise StopIteration
 
-        while True:
-            self.current = self.__get_next ()
-            revision, commit_id, file_id, action_type, composed = self.current
-
-            if action_type in ('V', 'C'):
-                if self.prev_commit != commit_id:
-                    # Get the matrix for revision
-                    self.prev_commit = commit_id
-                    continue
-            elif action_type == 'D':
-                continue
-            elif action_type in  ('A', 'R'):
-                if self.prev_commit != commit_id:
-                    # Get the matrix for revision
-                    self.prev_commit = commit_id
-
-            return self.current
+        self.current = self.__get_next()
+        return self.current
 
     def get_path(self, repo=None, repo_path=None):
         if not self.current:
@@ -122,15 +106,15 @@ if __name__ == '__main__':
     from pycvsanaly2.Database import create_database
     from pycvsanaly2.Config import Config
 
-    config = Config ()
-    config.load ()
-    db = create_database (config.db_driver, sys.argv[1], config.db_user, config.db_password, config.db_hostname)
-    cnn = db.connect ()
-    cursor = cnn.cursor ()
+    config = Config()
+    config.load()
+    db = create_database(config.db_driver, sys.argv[1], config.db_user, config.db_password, config.db_hostname)
+    cnn = db.connect()
+    cursor = cnn.cursor()
 
-    fr = FileRevs (db, cnn, cursor, 1)
+    fr = FileRevs(db, cnn, cursor, 1)
     for revision, commit_id, file_id, action_type, composed in fr:
-        print revision, commit_id, action_type, fr.get_path ()
+        print revision, commit_id, action_type, fr.get_path()
 
-    cursor.close ()
-    cnn.close ()
+    cursor.close()
+    cnn.close()

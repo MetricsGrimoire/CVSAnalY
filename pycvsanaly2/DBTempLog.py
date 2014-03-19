@@ -26,131 +26,134 @@ import threading
 from cStringIO import StringIO
 from cPickle import dump, load
 
-class DBTempLog:
 
+class DBTempLog:
     INTERVAL_SIZE = 100
-    
-    def __init__ (self, db):
+
+    def __init__(self, db):
         self.db = db
 
         self._need_clear = False
 
         try:
-            self.__create_table ()
+            self.__create_table()
         except TableAlreadyExists:
             # FIXME: we can use this to recover from a crash
             self._need_clear = True
-            self.__drop_table ()
-            self.__create_table ()
-        
-        self.queue = AsyncQueue (50)
-        self.writer_thread = threading.Thread (target=self.__writer,
-                                               args=(self.queue,))
-        self.writer_thread.setDaemon (True)
-        self.writer_thread.start ()
+            self.__drop_table()
+            self.__create_table()
 
-    def __create_table (self):
-        cnn = self.db.connect ()
-        cursor = cnn.cursor ()
+        self.queue = AsyncQueue(50)
+        self.writer_thread = threading.Thread(target=self.__writer,
+                                              args=(self.queue,))
+        self.writer_thread.setDaemon(True)
+        self.writer_thread.start()
 
-        if isinstance (self.db, SqliteDatabase):
+    def __create_table(self):
+        cnn = self.db.connect()
+        cursor = cnn.cursor()
+
+        if isinstance(self.db, SqliteDatabase):
             import sqlite3
-            
+
             try:
-                cursor.execute ("CREATE TABLE _temp_log (" +
-                                "id integer primary key autoincrement," +
-                                "rev varchar," +
-                                "date datetime," +
-                                "object blob" +
-                                ")")
+                cursor.execute("CREATE TABLE _temp_log (" +
+                               "id integer primary key autoincrement," +
+                               "rev varchar," +
+                               "date datetime," +
+                               "object blob" +
+                               ")")
             except sqlite3.OperationalError:
-                cursor.close ()
+                cursor.close()
                 raise TableAlreadyExists
             except:
                 raise
-        elif isinstance (self.db, MysqlDatabase):
+        elif isinstance(self.db, MysqlDatabase):
             import _mysql_exceptions
 
             try:
-                cursor.execute ("CREATE TABLE _temp_log (" +
-                                "id INT AUTO_INCREMENT PRIMARY KEY," + 
-                                "rev mediumtext," +
-                                "date datetime," +
-                                "object LONGBLOB" +
-                                ") CHARACTER SET=utf8")
+                cursor.execute("CREATE TABLE _temp_log (" +
+                               "id INT AUTO_INCREMENT PRIMARY KEY," +
+                               "rev mediumtext," +
+                               "date datetime," +
+                               "object LONGBLOB" +
+                               ") CHARACTER SET=utf8")
             except _mysql_exceptions.OperationalError, e:
                 if e.args[0] == 1050:
-                    cursor.close ()
+                    cursor.close()
                     raise TableAlreadyExists
                 raise
             except:
                 raise
-            
-        cnn.commit ()
-        cursor.close ()
-        cnn.close ()
+
+        cnn.commit()
+        cursor.close()
+        cnn.close()
 
         self._need_clear = True
 
-    def __drop_table (self):
+    def __drop_table(self):
         if not self._need_clear:
             return
-        
-        cnn = self.db.connect ()
-        cursor = cnn.cursor ()
-        cursor.execute ("DROP TABLE _temp_log")
-        cnn.commit ()
-        cursor.close ()
-        cnn.close ()
+
+        cnn = self.db.connect()
+        cursor = cnn.cursor()
+        cursor.execute("DROP TABLE _temp_log")
+        cnn.commit()
+        cursor.close()
+        cnn.close()
 
         self._need_clear = False
 
-    def __writer (self, queue):
-        cnn = self.db.connect ()
-        cursor = cnn.cursor ()
+    def __writer(self, queue):
+        cnn = self.db.connect()
+        cursor = cnn.cursor()
 
         commits = []
         n_commits = 0
         while True:
-            commit = queue.get ()
+            commit = queue.get()
 
-            if not isinstance (commit, Commit):
-                queue.done ()
+            if not isinstance(commit, Commit):
+                queue.done()
                 break
 
-            io = StringIO ()
-            dump (commit, io, -1)
-            obj = io.getvalue ()
-            io.close ()
+            io = StringIO()
+            dump(commit, io, -1)
+            obj = io.getvalue()
+            io.close()
 
-            commits.append ((commit.revision, commit.date, self.db.to_binary (obj)))
+            commits.append((commit.revision, commit.date, self.db.to_binary(obj)))
             n_commits += 1
             del commit
 
             if n_commits == 50:
-                cursor.executemany (statement ("INSERT into _temp_log (rev, date, object) values (?, ?, ?)", self.db.place_holder), commits)
-                cnn.commit ()
+                cursor.executemany(
+                    statement("INSERT into _temp_log (rev, date, object) values (?, ?, ?)", self.db.place_holder),
+                    commits)
+                cnn.commit()
                 del commits
                 commits = []
                 n_commits = 0
 
-            queue.done ()
+            queue.done()
 
         if commits:
-            cursor.executemany (statement ("INSERT into _temp_log (rev, date, object) values (?, ?, ?)", self.db.place_holder), commits)
-            cnn.commit ()
+            cursor.executemany(
+                statement("INSERT into _temp_log (rev, date, object) values (?, ?, ?)", self.db.place_holder), commits)
+            cnn.commit()
             del commits
-            
-        cursor.close ()
-        cnn.close ()
 
-    def insert (self, commit):
-        self.queue.put (commit)
+        cursor.close()
+        cnn.close()
 
-    def foreach (self, cb, order=None):
-        self.flush ()
-        
-        cnn = self.db.connect ()
+    def insert(self, commit):
+        self.queue.put(commit)
+
+    def foreach(self, cb, order=None):
+        self.flush()
+
+        cnn = self.db.connect()
 
         if order is None or order == ContentHandler.ORDER_REVISION:
             query = "SELECT object from _temp_log order by id desc"
@@ -158,35 +161,33 @@ class DBTempLog:
             query = "SELECT object from _temp_log order by date asc"
 
         # We need to split the query to save memory
-        icursor = ICursor (cnn.cursor (), self.INTERVAL_SIZE)
-        icursor.execute (statement (query, self.db.place_holder))
-        rs = icursor.fetchmany ()
+        icursor = ICursor(cnn.cursor(), self.INTERVAL_SIZE)
+        icursor.execute(statement(query, self.db.place_holder))
+        rs = icursor.fetchmany()
         while rs:
             for t in rs:
                 obj = t[0]
-                io = StringIO (obj)
-                commit = load (io)
-                io.close ()
-                cb (commit)
+                io = StringIO(obj)
+                commit = load(io)
+                io.close()
+                cb(commit)
 
-            rs = icursor.fetchmany ()
+            rs = icursor.fetchmany()
 
-        icursor.close ()
-        cnn.close ()
+        icursor.close()
+        cnn.close()
 
-    def flush (self):
-        self.queue.join ()
-        if self.writer_thread.isAlive ():
+    def flush(self):
+        self.queue.join()
+        if self.writer_thread.isAlive():
             # Tell the thread to exit
             # The value doesn't really matter
-            self.queue.put ("END")
-            self.writer_thread.join ()
+            self.queue.put("END")
+            self.writer_thread.join()
 
-    def clear (self):
-        self.__drop_table ()
-            
-    def __del__ (self):
-        self.flush ()
-        self.clear ()
+    def clear(self):
+        self.__drop_table()
 
-        
+    def __del__(self):
+        self.flush()
+        self.clear()

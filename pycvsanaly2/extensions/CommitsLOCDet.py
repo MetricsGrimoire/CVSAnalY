@@ -42,6 +42,7 @@ from pycvsanaly2.utils import printerr, uri_to_filename
 from pycvsanaly2.FindProgram import find_program
 from pycvsanaly2.Command import Command, CommandError
 
+
 class DBTable:
     """Table class, for managing tables with certain common characteristics.
 
@@ -49,7 +50,7 @@ class DBTable:
     in the database. This class provides the commno behavior.
     """
 
-    def __init__ (self, db, cnn, repo):
+    def __init__(self, db, cnn, repo):
         """Initialize the table.
 
         Initialization can be either by creating it or by getting rows
@@ -76,17 +77,17 @@ class DBTable:
         self.cnn = cnn
         self.repo = repo
 
-        cursor = cnn.cursor ()
+        cursor = cnn.cursor()
         try:
             # Try to create the table (self.table will be empty)
-            self._create_table (cursor)
+            self._create_table(cursor)
         except TableAlreadyExists:
             # If the table already exisits, fill in self.table with its data
-            self._init_from_table (cursor)
+            self._init_from_table(cursor)
         except Exception, e:
-            raise ExtensionRunError (str (e))
+            raise ExtensionRunError(str(e))
         finally:
-            cursor.close ()
+            cursor.close()
 
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = ""
@@ -106,59 +107,59 @@ class DBTable:
     # Should return a unique identifier which will be key in self.table
     _sql_select_rows = ""
 
-    def _create_table_sqlite (self, cursor):
+    def _create_table_sqlite(self, cursor):
         """Create the table for SQLite.
-        
+
         Raises exception if the table already exists
         """
 
         try:
-            cursor.execute (self._sql_create_table_sqlite)
-            self.cnn.commit ()
+            cursor.execute(self._sql_create_table_sqlite)
+            self.cnn.commit()
         except sqlite3.OperationalError:
             raise TableAlreadyExists
 
-    def _create_table_mysql (self, cursor):
+    def _create_table_mysql(self, cursor):
         """Create the table for MySQL.
 
         Raises exception if the table already exists
         """
 
         try:
-            cursor.execute (self._sql_create_table_mysql)
-            self.cnn.commit ()
+            cursor.execute(self._sql_create_table_mysql)
+            self.cnn.commit()
         except _mysql_exceptions.OperationalError, e:
             if e.args[0] == 1050:
                 raise TableAlreadyExists
             else:
                 raise
 
-    def _create_table (self, cursor):
+    def _create_table(self, cursor):
         """Create the table, and raise exception if it already exists.
 
         TableAlreadyExists is the exception that may be raised."""
 
-        if isinstance (self.db, SqliteDatabase):
+        if isinstance(self.db, SqliteDatabase):
             self._create_table_sqlite(cursor)
-        elif isinstance (self.db, MysqlDatabase):
+        elif isinstance(self.db, MysqlDatabase):
             self._create_table_mysql(cursor)
         else:
-            raise ExtensionRunError ("Database type is not supported " + 
-                                     "by CommitsLOCDet extension")
+            raise ExtensionRunError("Database type is not supported " +
+                                    "by CommitsLOCDet extension")
 
-    def _init_from_table (self, cursor):
+    def _init_from_table(self, cursor):
         """Initialize self.table with all rows in commits_lines table."""
 
         # Find max id in commits_lines, and update counter
-        cursor.execute (self._sql_max_id)
-        id = cursor.fetchone ()[0]
+        cursor.execute(self._sql_max_id)
+        id = cursor.fetchone()[0]
         if id is not None:
             self.counter = id + 1
         # Find all rows and init self.table with them
-        cursor.execute (self._sql_select_rows % self.repo)
+        cursor.execute(self._sql_select_rows % self.repo)
         self.table = cursor.fetchall()
 
-    def in_table (self, element):
+    def in_table(self, element):
         """Is this element in self.table?"""
 
         if element in self.table:
@@ -166,7 +167,7 @@ class DBTable:
         else:
             return False
 
-    def add_pending_row (self, row):
+    def add_pending_row(self, row):
         """Add row to list of rows pending to be inserted in the table.
 
         First element in row should be id. If it is None, it is set using
@@ -176,88 +177,89 @@ class DBTable:
         if id is None:
             id = self.counter
             self.counter += 1
-        self.pending.append ((id,) + row[1:])
+        self.pending.append((id,) + row[1:])
 
-    def insert_rows (self, cursor):
+    def insert_rows(self, cursor):
         """Inserts a list of pending rows into table.
 
         It also empties the list of pending rows, after insertion."""
 
         if self.pending:
-            cursor.executemany (self._sql_row_insert, self.pending)
+            cursor.executemany(self._sql_row_insert, self.pending)
             self.pending = []
 
 
-class TableComLines (DBTable):
+class TableComLines(DBTable):
     """Class for managing the commits_lines table"""
 
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE commits_lines (" + \
-        "id integer primary key," + \
-        "commit_id integer," + \
-        "added integer," + \
-        "removed integer" + \
-        ")"
+                               "id integer primary key," + \
+                               "commit_id integer," + \
+                               "added integer," + \
+                               "removed integer" + \
+                               ")"
 
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE commits_lines (" + \
-        "id INT primary key," + \
-        "commit_id INT(11) NOT NULL," + \
-        "added int," + \
-        "removed int," + \
-        "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" + \
-        ") ENGINE=MyISAM DEFAULT CHARACTER SET=utf8"
+                              "id INT primary key," + \
+                              "commit_id INT(11) NOT NULL," + \
+                              "added int," + \
+                              "removed int," + \
+                              "FOREIGN KEY (commit_id) REFERENCES scmlog(id)" + \
+                              ") ENGINE=MyISAM DEFAULT CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM commits_lines"
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO commits_lines " + \
-        "(id, commit_id, added, removed) VALUES (%s, %s, %s, %s)"
+                      "(id, commit_id, added, removed) VALUES (%s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
     # Should return a unique identifier which will be key in self.table
     # In this case, this is the commit id (for commits in repository_id)
     _sql_select_rows = "SELECT c.commit_id FROM commits_lines c, scmlog s " + \
-        "WHERE c.commit_id = s.id AND s.repository_id = %s"
+                       "WHERE c.commit_id = s.id AND s.repository_id = %s"
 
-class TableComFilLines (DBTable):
+
+class TableComFilLines(DBTable):
     """Class for managing the commits_files_lines table"""
 
     # SQL string for creating the table, specialized for SQLite
     _sql_create_table_sqlite = "CREATE TABLE commits_files_lines (" + \
-        "id integer primary key," + \
-        "commit integer," + \
-        "path varchar," + \
-        "added integer," + \
-        "removed integer" + \
-        ")"
+                               "id integer primary key," + \
+                               "commit integer," + \
+                               "path varchar," + \
+                               "added integer," + \
+                               "removed integer" + \
+                               ")"
 
     # SQL string for creating the table, specialized for MySQL
     _sql_create_table_mysql = "CREATE TABLE commits_files_lines (" + \
-        "id INTEGER PRIMARY KEY," + \
-        "commit INT(11) NOT NULL," + \
-        "path VARCHAR(255)," + \
-        "added INTEGER," + \
-        "removed INTEGER," + \
-        "FOREIGN KEY (commit) REFERENCES scmlog(id)" + \
-        ") ENGINE=MyISAM DEFAULT CHARACTER SET=utf8"
+                              "id INTEGER PRIMARY KEY," + \
+                              "commit INT(11) NOT NULL," + \
+                              "path VARCHAR(255)," + \
+                              "added INTEGER," + \
+                              "removed INTEGER," + \
+                              "FOREIGN KEY (commit) REFERENCES scmlog(id)" + \
+                              ") ENGINE=MyISAM DEFAULT CHARACTER SET=utf8"
 
     # SQL string for getting the max id in table
     _sql_max_id = "SELECT max(id) FROM commits_files_lines"
 
     # SQL string for inserting a row in table
     _sql_row_insert = "INSERT INTO commits_files_lines " + \
-        "(id, commit, path, added, removed) VALUES (%s, %s, %s, %s, %s)"
+                      "(id, commit, path, added, removed) VALUES (%s, %s, %s, %s, %s)"
 
     # SQL string for selecting all rows to fill self.table
     # (rows already in table), corresponding to repository_id
     # Should return a unique identifier which will be key in self.table
     # In this case, this is the pair commit id and path
     _sql_select_rows = "SELECT c.commit, c.path " + \
-        "FROM commits_files_lines c, scmlog s " + \
-        "WHERE c.commit = s.id AND s.repository_id = %s"
+                       "FROM commits_files_lines c, scmlog s " + \
+                       "WHERE c.commit = s.id AND s.repository_id = %s"
 
 
 class LineCounter:
@@ -266,21 +268,21 @@ class LineCounter:
     Will specialized in counters for specific kinds of repositories.
     """
 
-    def __init__ (self, repo, uri):
+    def __init__(self, repo, uri):
         self.repo = repo
         self.uri = uri
-    
-    def get_lines_for_revision (self, revision):
+
+    def get_lines_for_revision(self, revision):
         raise NotImplementedError
 
-class GitLineCounter (LineCounter):
 
-    def __init__ (self, repo, uri):
-        LineCounter.__init__ (self, repo, uri)
+class GitLineCounter(LineCounter):
+    def __init__(self, repo, uri):
+        LineCounter.__init__(self, repo, uri)
 
-        self.commit_pattern = re.compile ("^(\w+) ")
-        self.file_pattern = re.compile ("^(\d+)\s+(\d+)\s+([^\s].*)$")
-        
+        self.commit_pattern = re.compile("^(\w+) ")
+        self.file_pattern = re.compile("^(\d+)\s+(\d+)\s+([^\s].*)$")
+
         # Dictionary for storing added, removed pairs, keyed by commit.
         self.lines = {}
         # Dictionary for storing list of paths, keyed by commit.
@@ -290,22 +292,22 @@ class GitLineCounter (LineCounter):
         self.lines_files = {}
 
         # Run git command
-        self.git = find_program ('git')
+        self.git = find_program('git')
         if self.git is None:
-            raise ExtensionRunError ("Error running CommitsLOCDet extension: " + \
-                                     "required git command cannot be found in path")
+            raise ExtensionRunError("Error running CommitsLOCDet extension: " +
+                                    "required git command cannot be found in path")
         cmd = [self.git, 'log',
                '--all', '--topo-order', '--numstat', '--pretty=oneline']
-        c = Command (cmd, uri)
+        c = Command(cmd, uri)
         try:
-            c.run (parser_out_func=self.__parse_line)
+            c.run(parser_out_func=self.__parse_line)
         except CommandError, e:
             if e.error:
-                printerr ("Error running git log command: %s", (e.error,))
-            raise ExtensionRunError ("Error running " +
-                                     "CommitsLOCDet extension: %s", str (e))
+                printerr("Error running git log command: %s", (e.error,))
+            raise ExtensionRunError("Error running " +
+                                    "CommitsLOCDet extension: %s", str(e))
 
-    def __parse_line (self, line):
+    def __parse_line(self, line):
         """Parse a line from the git log.
 
         Fills in the dictionaries self.lines and self.lines_files.
@@ -317,73 +319,75 @@ class GitLineCounter (LineCounter):
            For now, those lines are silently removed.
         """
 
-        match = self.commit_pattern.match (line)
+        match = self.commit_pattern.match(line)
         if match:
-            self.commit = match.group (1)
+            self.commit = match.group(1)
             self.added = 0
             self.removed = 0
             self.paths[self.commit] = []
         else:
-            match = self.file_pattern.match (line)
+            match = self.file_pattern.match(line)
             if match:
-                file_added = match.group (1)
-                file_removed = match.group (2)
-                file_name = match.group (3)
-                self.paths[self.commit].append (file_name)
+                file_added = match.group(1)
+                file_removed = match.group(2)
+                file_name = match.group(3)
+                self.paths[self.commit].append(file_name)
                 self.lines_files[self.commit + ',' + file_name] = \
                     (file_added, file_removed)
-                self.added += int (file_added)
-                self.removed += int (file_removed)
+                self.added += int(file_added)
+                self.removed += int(file_removed)
                 self.lines[self.commit] = (self.added, self.removed)
-    
-    def get_lines_for_commit (self, commit):
+
+    def get_lines_for_commit(self, commit):
         """Get lines added, removed for a given commit."""
 
-        return self.lines.get (commit, (0, 0))
+        return self.lines.get(commit, (0, 0))
 
-    def get_paths_for_commit (self, commit):
+    def get_paths_for_commit(self, commit):
         """Get lines added, removed for a given commit."""
 
-        return self.paths.get (commit, [])
+        return self.paths.get(commit, [])
 
-    def get_lines_for_commit_file (self, commit, path):
+    def get_lines_for_commit_file(self, commit, path):
         """Get lines added, removed for a given commit & file path pair."""
 
-        return self.lines_files.get (commit + ',' + path, (0, 0))
+        return self.lines_files.get(commit + ',' + path, (0, 0))
+
 
 _counters = {
-    'git' : GitLineCounter
+    'git': GitLineCounter
 }
 
-def create_line_counter_for_repository (repo, uri):
+
+def create_line_counter_for_repository(repo, uri):
     """Creates and returns a counter for the kind of repository specified.
 
     Raises exception if repository is not supported.
     """
 
     try:
-        counter = _counters[repo.get_type ()]
+        counter = _counters[repo.get_type()]
     except KeyError:
         error = "Repository type %s is not supported " + \
-            "by CommitsLOCDet extension"
-        raise ExtensionRunError (error % (repo.get_type ()))
-    return counter (repo, uri)
+                "by CommitsLOCDet extension"
+        raise ExtensionRunError(error % (repo.get_type()))
+    return counter(repo, uri)
 
-class CommitsLOCDet (Extension):
 
-    def _get_repo_id (self, repo, uri, cursor):
+class CommitsLOCDet(Extension):
+    def _get_repo_id(self, repo, uri, cursor):
         """Get repository id from repositories table"""
-    
-        path = uri_to_filename (uri)
+
+        path = uri_to_filename(uri)
         if path is not None:
-            repo_uri = repo.get_uri_for_path (path)
+            repo_uri = repo.get_uri_for_path(path)
         else:
             repo_uri = uri
-        cursor.execute ("SELECT id FROM repositories WHERE uri = '%s'" % 
-                        repo_uri)
-        return (cursor.fetchone ()[0])
+        cursor.execute("SELECT id FROM repositories WHERE uri = '%s'" %
+                       repo_uri)
+        return (cursor.fetchone()[0])
 
-    def run (self, repo, uri, db):
+    def run(self, repo, uri, db):
         """Fill in the commits_lines table.
 
         Create a counter to find number of lines added and removed
@@ -393,56 +397,57 @@ class CommitsLOCDet (Extension):
         (except for those that already were in the table).
         """
 
-        cnn = db.connect ()
+        cnn = db.connect()
         # Cursor for reading from the database
-        cursor = cnn.cursor ()
+        cursor = cnn.cursor()
         # Cursor for writing to the database
-        write_cursor = cnn.cursor ()
-        repo_id = self._get_repo_id (repo, uri, cursor)
+        write_cursor = cnn.cursor()
+        repo_id = self._get_repo_id(repo, uri, cursor)
         # Counter to find lines added, removed for each commit
-        counter = create_line_counter_for_repository (repo, uri)
+        counter = create_line_counter_for_repository(repo, uri)
         # Object to manage the commits_lines table
         theTableComLines = TableComLines(db, cnn, repo_id)
         # Object to manage the commits_files_lines table
         theTableComFilLines = TableComFilLines(db, cnn, repo_id)
 
-        cursor.execute ("SELECT id, rev, composed_rev " +
-                        "FROM scmlog WHERE repository_id = '%s'",
-                        repo_id)
+        cursor.execute("SELECT id, rev, composed_rev " +
+                       "FROM scmlog WHERE repository_id = '%s'",
+                       repo_id)
         rows_left = True
         while rows_left:
-            rows = cursor.fetchmany ()
+            rows = cursor.fetchmany()
             for id, revision, composed_rev in rows:
                 if composed_rev:
-                    commit = revision.split ("|")[0]
+                    commit = revision.split("|")[0]
                 else:
                     commit = revision
                 cadded = cremoved = 0
-                if not theTableComLines.in_table (id):
-                    (cadded, cremoved) = counter.get_lines_for_commit (commit)
-                    theTableComLines.add_pending_row ((None, id,
-                                                       cadded, cremoved))
+                if not theTableComLines.in_table(id):
+                    (cadded, cremoved) = counter.get_lines_for_commit(commit)
+                    theTableComLines.add_pending_row((None, id,
+                                                      cadded, cremoved))
                 tadded = tremoved = 0
                 for path in counter.get_paths_for_commit(commit):
-                    if not theTableComFilLines.in_table (str(id) + ',' + path):
+                    if not theTableComFilLines.in_table(str(id) + ',' + path):
                         (added, removed) = \
                             counter.get_lines_for_commit_file(commit, path)
-                        theTableComFilLines.add_pending_row ((None, id, path,
-                                                              added, removed))
+                        theTableComFilLines.add_pending_row((None, id, path,
+                                                             added, removed))
                         tadded += int(added)
                         tremoved += int(removed)
                 # Sanity check
                 if (cadded != tadded) or (cremoved != tremoved):
-                    printerr ("Sanity check failed: %d, %s, %d, %d, %d, %d" %
-                              (id, commit, cadded, tadded, cremoved, tremoved))
-                    printerr (counter.get_paths_for_commit(commit))
-            theTableComLines.insert_rows (write_cursor)
-            theTableComFilLines.insert_rows (write_cursor)
+                    printerr("Sanity check failed: %d, %s, %d, %d, %d, %d" %
+                             (id, commit, cadded, tadded, cremoved, tremoved))
+                    printerr(counter.get_paths_for_commit(commit))
+            theTableComLines.insert_rows(write_cursor)
+            theTableComFilLines.insert_rows(write_cursor)
             if not rows:
                 rows_left = False
-        cnn.commit ()
-        write_cursor.close ()
-        cursor.close ()
-        cnn.close ()
+        cnn.commit()
+        write_cursor.close()
+        cursor.close()
+        cnn.close()
 
-register_extension ("CommitsLOCDet", CommitsLOCDet)
+
+register_extension("CommitsLOCDet", CommitsLOCDet)
