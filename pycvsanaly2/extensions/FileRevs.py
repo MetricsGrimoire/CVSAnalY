@@ -33,9 +33,8 @@ class FileRevs:
 from scmlog s, action_files af where s.id = af.commit_id and s.repository_id = ? order by s.id'''
     # This query selects the newest entry for those cases with two filepaths
     # for the same file. See https://github.com/MetricsGrimoire/CVSAnalY/issues/3 for more info.
-    __path_query__ = '''SELECT file_path FROM file_links,
-(SELECT MAX(id) id FROM file_links WHERE file_id = ? AND commit_id <= ? ORDER BY commit_id DESC) fp
-WHERE file_links.id = fp.id'''
+    __path_query__ = '''SELECT rev, file_path FROM file_links fl JOIN scmlog s
+    ON fl.commit_id=s.id WHERE file_id = ? AND commit_id <= ? ORDER BY commit_id DESC, fl.id DESC'''
 
     def __init__(self, db, cnn, cursor, repoid):
         self.db = db
@@ -69,7 +68,7 @@ WHERE file_links.id = fp.id'''
         self.current = self.__get_next()
         return self.current
 
-    def get_path(self):
+    def get_path(self, repo=None, repo_path=None):
         if not self.current:
             return None
 
@@ -78,22 +77,29 @@ WHERE file_links.id = fp.id'''
             rev = revision.split("|")[0]
         else:
             rev = revision
-
-        relative_path = self.__get_path_from_db(file_id, commit_id).strip("/")
-
-        return relative_path
-
-    def __get_path_from_db(self, file_id, commit_id):
         cursor = self.cnn.cursor()
-
         cursor.execute(statement(self.__path_query__, self.db.place_holder),
                        (file_id, commit_id))
-        path = cursor.fetchone()[0]
+        file_link = cursor.fetchone()
+        relative_path = None
+        if repo is None:
+            relative_path = file_link[1]
+        else:
+            try:
+                while file_link:
+                    if repo.is_ancestor(repo_path, file_link[0], rev):
+                        relative_path = file_link[1]
+                        break
+                    else:
+                        file_link = cursor.fetchone()
+            except CommandError as e:
+                printerr(str(e) + '\n' + e.error)
 
         cursor.close()
-
-        return "/" + path
-
+        if relative_path is None:
+            return None
+        else:
+            return relative_path.strip("/")
 
 if __name__ == '__main__':
     import sys

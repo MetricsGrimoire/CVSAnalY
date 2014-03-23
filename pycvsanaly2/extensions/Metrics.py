@@ -901,7 +901,7 @@ class Metrics(Extension):
                 continue
 
             try:
-                relative_path = fr.get_path()
+                relative_path = fr.get_path(repo, path or repo.get_uri())
             except AttributeError, e:
                 if self.config.metrics_noerr:
                     printerr("Error getting path for file %d@%d: %s", (file_id, commit_id, str(e)))
