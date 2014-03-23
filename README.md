@@ -1,6 +1,4 @@
-# CVSAnaly
-
-[![Build Status](https://travis-ci.org/MetricsGrimoire/CVSAnalY.svg?branch=master)](https://travis-ci.org/MetricsGrimoire/CVSAnalY)
+# CVSAnaly [![Build Status](https://travis-ci.org/MetricsGrimoire/CVSAnalY.svg?branch=master)](https://travis-ci.org/MetricsGrimoire/CVSAnalY)
 
 ## Description
 
