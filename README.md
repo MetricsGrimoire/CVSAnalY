@@ -1,5 +1,7 @@
 # CVSAnaly
 
+[![Build Status](https://travis-ci.org/MetricsGrimoire/CVSAnalY.svg?branch=master)](https://travis-ci.org/MetricsGrimoire/CVSAnalY)
+
 ## Description
 
 The CVSAnalY tool extracts information out of source code repository logs and stores it into a database.
