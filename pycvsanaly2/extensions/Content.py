@@ -137,13 +137,8 @@ class ContentJob(Job):
             # utf-8, ie. it's not already unicode, or latin-1, or something
             # obvious. This almost always means that the file isn't source
             # code at all. 
-            # TODO: I should really throw a "not source" exception,
-            # but just doing None is fine for now.
-            try:
-                return to_utf8(self._file_contents).encode("utf-8")
-            except:
-                return None
-    
+            return to_utf8(self._file_contents)
+
     def _set_file_contents(self, contents):
         self._file_contents = contents
         
