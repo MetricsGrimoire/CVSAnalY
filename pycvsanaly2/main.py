@@ -65,6 +65,7 @@ Options:
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
   -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
+      --files=file1,file2        Only analyze the history of these files or directories. Ignored when '-l' flag is set.
 
 Database:
 
@@ -92,9 +93,9 @@ def main(argv):
     short_opts = "hVgqnf:l:s:u:p:d:H:e"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=",
-                 "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
-                 "db-hostname=", "db-database=", "db-driver=", "extensions=",
-                 "metrics-all", "metrics-noerr", "list-extensions"]
+                 "repo-logfile=", "save-logfile=", "no-parse", "files=",
+                 "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver=",
+                 "extensions=", "metrics-all", "metrics-noerr", "list-extensions"]
 
     # Default options
     debug = None
@@ -102,6 +103,7 @@ def main(argv):
     profile = None
     configfile = None
     no_parse = None
+    files = None
     user = None
     passwd = None
     hostname = None
@@ -141,6 +143,8 @@ def main(argv):
             no_parse = True
         elif opt in ("-f", "--config-file"):
             configfile = value
+        elif opt in ("--files", ):
+            files = value.split(',')
         elif opt in ("-u", "--db-user"):
             user = value
         elif opt in ("-p", "--db-password"):
@@ -189,6 +193,8 @@ def main(argv):
         config.save_logfile = save_logfile
     if no_parse is not None:
         config.no_parse = no_parse
+    if files is not None:
+        config.files.extend([item for item in files if item not in config.files])
     if driver is not None:
         config.db_driver = driver
     if user is not None:
@@ -239,7 +245,7 @@ def main(argv):
     if not config.no_parse:
         # Create reader
         reader = LogReader()
-        reader.set_repo(repo, path or uri)
+        reader.set_repo(repo, path or uri, files=config.files)
 
         # Create parser
         if config.repo_logfile is not None:

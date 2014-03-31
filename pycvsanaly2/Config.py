@@ -31,6 +31,7 @@ class Config:
                       'repo_logfile': None,
                       'save_logfile': None,
                       'no_parse': False,
+                      'files' : [],
                       'db_driver': 'mysql',
                       'db_user': 'operator',
                       'db_password': None,
@@ -83,6 +84,10 @@ class Config:
             pass
         try:
             self.no_parse = config.no_parse
+        except:
+            pass
+        try:
+            self.files.extend([item for item in config.files if item not in self.files])
         except:
             pass
         try:

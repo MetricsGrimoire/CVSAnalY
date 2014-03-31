@@ -32,11 +32,14 @@ class LogReader:
         self.logfile = None
         self.repo = None
         self.uri = None
+        self.files = None
 
-    def set_repo(self, repo, uri=None):
+    def set_repo(self, repo, uri=None, files=None):
         self.repo = repo
         if uri is not None:
             self.uri = uri
+        if files is not None:
+            self.files = files
 
     def set_logfile(self, filename):
         self.logfile = filename
@@ -60,7 +63,7 @@ class LogReader:
             queue.put(data)
 
         repo.add_watch(LOG, new_line)
-        repo.log(self.uri or repo.get_uri())
+        repo.log(self.uri or repo.get_uri(), files=self.files)
 
     def _read_from_repository(self, new_line_cb, user_data):
         queue = AsyncQueue()
