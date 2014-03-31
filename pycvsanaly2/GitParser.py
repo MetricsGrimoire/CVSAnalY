@@ -64,7 +64,7 @@ class GitParser(Parser):
     patterns['committer'] = re.compile("^Commit:[ \t]+(.*)[ \t]+<(.*)>$")
     patterns['date'] = re.compile(
         "^CommitDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
-    patterns['file'] = re.compile("^([MAD])[ \t]+(.*)$")
+    patterns['file'] = re.compile("^([MAD]+)[ \t]+(.*)$")
     patterns['file-moved'] = re.compile("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
     patterns['branch'] = re.compile("refs/remotes/origin/([^,]*)")
     patterns['local-branch'] = re.compile("refs/heads/([^,]*)")
@@ -237,7 +237,16 @@ class GitParser(Parser):
         match = self.patterns['file'].match(line)
         if match:
             action = Action()
-            action.type = match.group(1)
+            type = match.group(1)
+            if len(type) > 1:
+                # merge actions
+                if 'M' in type:
+                    type = 'M'
+                else:
+                    # ignore merge actions without 'M'
+                    return
+
+            action.type = type
             action.f1 = match.group(2)
 
             self.commit.actions.append(action)
