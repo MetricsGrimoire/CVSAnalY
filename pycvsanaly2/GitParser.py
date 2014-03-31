@@ -147,6 +147,10 @@ class GitParser(Parser):
                     self.commit.tags = [m.group(1)]
                     printdbg("Commit %s tagged as '%s'", (self.commit.revision, self.commit.tags[0]))
 
+            if not branch and not self.branch:
+                branch = self.GitBranch(self.GitBranch.LOCAL, "(no-branch)", git_commit)
+                printdbg("Commit %s on unknown local branch '%s'", (self.commit.revision, branch.name))
+
             if branch is not None and self.branch is not None:
                 # Detect empty branches. Ideally, the head of a branch
                 # can't have children. When this happens is because the
