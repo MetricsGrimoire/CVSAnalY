@@ -412,7 +412,7 @@ class CommitsLOCDet(Extension):
 
         cursor.execute("SELECT id, rev, composed_rev " +
                        "FROM scmlog WHERE repository_id = '%s'",
-                       repo_id)
+                       (repo_id,))
         rows_left = True
         while rows_left:
             rows = cursor.fetchmany()
