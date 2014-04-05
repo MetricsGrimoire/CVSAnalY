@@ -21,7 +21,7 @@
 from pycvsanaly2.extensions import Extension, register_extension, \
         ExtensionRunError
 from pycvsanaly2.Database import SqliteDatabase, MysqlDatabase, statement
-from pycvsanaly2.utils import printdbg, printerr, uri_to_filename, to_utf8
+from pycvsanaly2.utils import printdbg, printerr, uri_to_filename, to_unicode
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from FileRevs import FileRevs
 from repositoryhandler.backends import RepositoryCommandError
@@ -137,7 +137,7 @@ class ContentJob(Job):
             # utf-8, ie. it's not already unicode, or latin-1, or something
             # obvious. This almost always means that the file isn't source
             # code at all. 
-            return to_utf8(self._file_contents)
+            return to_unicode(self._file_contents)
 
     def _set_file_contents(self, contents):
         self._file_contents = contents
@@ -283,15 +283,13 @@ class Content(Extension):
         # but in the source, these are referred to as commit IDs.
         # Don't ask me why!
         while finished_job is not None:
-            file_contents = str(finished_job.file_contents)
-            
             query = """
                 insert into content(commit_id, file_id, content, loc, size) 
                     values(?,?,?,?,?)"""
             insert_statement = statement(query, db.place_holder)
             parameters = (finished_job.commit_id,
                           finished_job.file_id,
-                          file_contents,
+                          finished_job.file_contents,
                           finished_job.file_number_of_lines,
                           finished_job.file_size)
             try:                    
