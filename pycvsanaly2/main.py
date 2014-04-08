@@ -49,7 +49,7 @@ def usage ():
     print
     print "Usage: cvsanaly2 [options] [URI]"
     print """
-Analyze the given URI. An URI can be a checked out directory, 
+Analyze the given URI. An URI can be a checked out directory,
 or a remote URL pointing to a repository. If URI is omitted,
 the current working directory will be used as a checked out directory.
 
@@ -64,7 +64,7 @@ Options:
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
   -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
-      --git-ref                      Parse only commit tree starting with this reference. (Git only)
+      --git-ref                  Parse only commit tree starting with this reference. (Git only)
 
 Database:
 
@@ -90,7 +90,7 @@ def main (argv):
     # Short (one letter) options. Those requiring argument followed by :
     short_opts = "hVgqnf:l:s:u:p:d:H:e"
     # Long options (all started by --). Those requiring argument followed by =
-    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=", 
+    long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=",
                  "repo-logfile=", "save-logfile=", "no-parse", "db-user=", "db-password=",
                  "db-hostname=", "db-database=", "db-driver=", "extensions=",
                  "metrics-all", "metrics-noerr", "list-extensions", "git-ref="]
@@ -269,7 +269,7 @@ def main (argv):
     except Exception, e:
         printerr ("Unknown extensions error: %s", (str (e),))
         return 1
-    
+
     db_exists = False
 
     try:
@@ -287,7 +287,7 @@ def main (argv):
     except DatabaseDriverNotSupported:
         printerr ("Database driver %s is not supported by cvsanaly", (config.db_driver,))
         return 1
-    
+
     cnn = db.connect ()
     cursor = cnn.cursor ()
     try:
@@ -313,7 +313,7 @@ def main (argv):
     if config.no_parse and rep is None:
         printerr ("The option --no-parse must be used with an already filled database")
         return 1
-        
+
     if not db_exists or rep is None:
         # We consider the name of the repo as the last item of the root path
         name = uri.rstrip ("/").split ("/")[-1].strip ()
@@ -328,17 +328,17 @@ def main (argv):
     if not config.no_parse:
         # Start the parsing process
         printout ("Parsing log for %s (%s)", (path or uri, repo.get_type ()))
-        
+
         def new_line (line, user_data):
             parser, writer = user_data
-        
+
             parser.feed (line)
             writer and writer.add_line (line)
-        
+
         writer = None
         if config.save_logfile is not None:
             writer = LogWriter (config.save_logfile)
-        
+
         parser.set_content_handler (DBProxyContentHandler (db))
         reader.start (new_line, (parser, writer))
         parser.end ()
@@ -347,4 +347,3 @@ def main (argv):
     # Run extensions
     printout ("Executing extensions")
     emg.run_extensions (repo, path or uri, db)
-
