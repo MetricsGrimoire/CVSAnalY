@@ -27,7 +27,8 @@ class Commit:
                          'branch': None,
                          'tags': None,
                          'message': "",
-                         'composed_rev': False}
+                         'composed_rev': False,
+                         'parents': []}
 
     def __getinitargs__(self):
         return ()

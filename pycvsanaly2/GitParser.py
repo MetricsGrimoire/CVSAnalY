@@ -115,6 +115,7 @@ class GitParser(Parser):
             parents = match.group(3)
             if parents:
                 parents = parents.split()
+                self.commit.parents = parents
             git_commit = self.GitCommit(self.commit, parents)
 
             decorate = match.group(5)
