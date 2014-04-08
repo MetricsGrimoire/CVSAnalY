@@ -19,9 +19,9 @@
 #       Zhongpeng Lin <linzhp@soe.ucsc.edu>
 
 from pycvsanaly2.extensions import Extension, register_extension, \
-        ExtensionRunError
+    ExtensionRunError
 from pycvsanaly2.Database import SqliteDatabase, MysqlDatabase, statement
-from pycvsanaly2.utils import printdbg, printerr, uri_to_filename, to_utf8
+from pycvsanaly2.utils import printdbg, printerr, uri_to_filename, to_unicode
 from pycvsanaly2.profile import profiler_start, profiler_stop
 from FileRevs import FileRevs
 from repositoryhandler.backends import RepositoryCommandError
@@ -43,7 +43,7 @@ class ContentJob(Job):
         self._file_contents = ""
         self.file_size = None
 
-    def run(self, repo, repo_uri):        
+    def run(self, repo, repo_uri):
         self.repo = repo
         self.repo_uri = repo_uri
         self.repo_type = self.repo.get_type()
@@ -100,19 +100,19 @@ class ContentJob(Job):
                 done = True
             except RepositoryCommandError, e:
                 if retries > 0:
-                    printerr("Command %s returned %d(%s), try again",\
+                    printerr("Command %s returned %d(%s), try again",
                             (e.cmd, e.returncode, e.error))
                     retries -= 1
                     io.seek(0)
                 elif retries == 0:
                     failed = True
                     printerr("Error obtaining %s@%s. " +
-                                "Command %s returned %d(%s)", \
-                                (self.path, self.rev, e.cmd, \
-                                e.returncode, e.error))
+                             "Command %s returned %d(%s)",
+                             (self.path, self.rev, e.cmd,
+                             e.returncode, e.error))
             except:
                 failed = True
-                printerr("Error obtaining %s@%s.", \
+                printerr("Error obtaining %s@%s.",
                         (self.path, self.rev))
                 traceback.print_exc()
                 
@@ -124,7 +124,7 @@ class ContentJob(Job):
                 results = io.getvalue()
             except Exception, e:
                 printerr("Error getting contents." +
-                            "Exception: %s", (str(e),))
+                         "Exception: %s", (str(e),))
             finally:
                 io.close()
         return results
@@ -134,10 +134,10 @@ class ContentJob(Job):
             at either end
             """
             # An encode will fail if the source code can't be converted to
-            # utf-8, ie. it's not already unicode, or latin-1, or something
+            # unicode, ie. it's not already utf-8, or latin-1, or something
             # obvious. This almost always means that the file isn't source
             # code at all. 
-            return to_utf8(self._file_contents)
+            return to_unicode(self._file_contents)
 
     def _set_file_contents(self, contents):
         self._file_contents = contents
@@ -283,15 +283,13 @@ class Content(Extension):
         # but in the source, these are referred to as commit IDs.
         # Don't ask me why!
         while finished_job is not None:
-            file_contents = str(finished_job.file_contents)
-            
             query = """
                 insert into content(commit_id, file_id, content, loc, size) 
                     values(?,?,?,?,?)"""
             insert_statement = statement(query, db.place_holder)
             parameters = (finished_job.commit_id,
                           finished_job.file_id,
-                          file_contents,
+                          finished_job.file_contents,
                           finished_job.file_number_of_lines,
                           finished_job.file_size)
             try:                    
@@ -301,8 +299,9 @@ class Content(Extension):
                     # Ignore duplicate entry
                     pass
                 else:
-                    printerr('Error while inserting content for file %d @ commit %d' % \
-                             (finished_job.file_id, finished_job.commit_id))
+                    printerr(
+                        'Error while inserting content for file %d @ commit %d'
+                        % (finished_job.file_id, finished_job.commit_id))
                     raise
 
             processed_jobs += 1
@@ -330,18 +329,18 @@ class Content(Extension):
             else:
                 repo_uri = uri
 
-            read_cursor.execute(statement( \
-                    "SELECT id from repositories where uri = ?", \
-                    db.place_holder), (repo_uri,))
+            read_cursor.execute(statement(
+                "SELECT id from repositories where uri = ?",
+                db.place_holder), (repo_uri,))
             repo_id = read_cursor.fetchone()[0]
         except NotImplementedError:
-            raise ExtensionRunError( \
-                    "Content extension is not supported for %s repos" % \
-                    (repo.get_type()))
+            raise ExtensionRunError(
+                "Content extension is not supported for %s repos" %
+                (repo.get_type()))
         except Exception, e:
-            raise ExtensionRunError( \
-                    "Error creating repository %s. Exception: %s" % \
-                    (repo.get_uri(), str(e)))
+            raise ExtensionRunError(
+                "Error creating repository %s. Exception: %s" %
+                (repo.get_uri(), str(e)))
             
         # Try to create a table for storing the content
         # TODO: Removed use case for choosing between all or just the HEAD,
@@ -349,7 +348,7 @@ class Content(Extension):
         try:
             self.__prepare_table(connection)
         except Exception as e:
-            raise ExtensionRunError("Couldn't prepare table because " + \
+            raise ExtensionRunError("Couldn't prepare table because " +
                                     str(e))
 
         queuesize = self.MAX_THREADS
@@ -373,7 +372,7 @@ class Content(Extension):
             where c.file_id=f.id and f.repository_id=?
         """
         read_cursor.execute(statement(query, db.place_holder), (repo_id,))
-        existing_content = [(item[0], item[1]) \
+        existing_content = [(item[0], item[1])
                             for item in read_cursor.fetchall()]
 
         fr = FileRevs(db, connection, read_cursor, repo_id)
