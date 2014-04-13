@@ -65,11 +65,8 @@ Options:
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
   -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
-<<<<<<< HEAD
       --files=file1,file2        Only analyze the history of these files or directories. Ignored when '-l' flag is set.
-=======
       --git-ref                  Parse only commit tree starting with this reference. (Git only)
->>>>>>> pr/51
 
 Database:
 
