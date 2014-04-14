@@ -30,6 +30,7 @@ class Config:
                       'profile': False,
                       'repo_logfile': None,
                       'save_logfile': None,
+                      'writable_path': None,
                       'no_parse': False,
                       'files' : [],
                       'db_driver': 'mysql',
@@ -80,6 +81,10 @@ class Config:
             pass
         try:
             self.save_logfile = config.save_logfile
+        except:
+            pass
+        try:
+            self.writable_path = config.writable_path
         except:
             pass
         try:

@@ -11,6 +11,9 @@
 # save_logfile = None
 # no_parse = False
 #
+# Writable path for CVSAnaly (used for caching, maybe config, etc.)
+# writable_path = None
+#
 ## Database parameters
 # db_driver = 'mysql'
 # db_user = 'operator'

@@ -64,6 +64,7 @@ Options:
   -f, --config-file              Use a custom configuration file
   -l, --repo-logfile=path        Logfile to use instead of getting log from the repository
   -s, --save-logfile[=path]      Save the repository log to the given path
+  -w, --writable-path[=path]     Storage of files (e.g. cache, config) to the given path
   -n, --no-parse                 Skip the parsing process. It only makes sense in conjunction with --extensions
       --files=file1,file2        Only analyze the history of these files or directories. Ignored when '-l' flag is set.
       --git-ref                  Parse only commit tree starting with this reference. (Git only)
@@ -91,12 +92,12 @@ Extensions:
 
 def main(argv):
     # Short (one letter) options. Those requiring argument followed by :
-    short_opts = "hVgqnf:l:s:u:p:d:H:e"
+    short_opts = "hVgqnf:l:s:u:p:d:H:w:e"
     # Long options (all started by --). Those requiring argument followed by =
     long_opts = ["help", "version", "debug", "quiet", "profile", "config-file=",
                  "repo-logfile=", "save-logfile=", "no-parse", "files=",
                  "db-user=", "db-password=", "db-hostname=", "db-database=", "db-driver=",
-                 "extensions=", "metrics-all", "metrics-noerr", "list-extensions", "git-ref="]
+                 "extensions=", "metrics-all", "metrics-noerr", "list-extensions", "git-ref=", "writable-path="]
 
     # Default options
     debug = None
@@ -112,6 +113,7 @@ def main(argv):
     driver = None
     logfile = None
     save_logfile = None
+    writable_path = None
     extensions = None
     metrics_all = None
     metrics_noerr = None
@@ -161,6 +163,8 @@ def main(argv):
             logfile = value
         elif opt in ("-s", "--save-logfile"):
             save_logfile = value
+        elif opt in ("-w", "--writable-path"):
+            writable_path = value
         elif opt in ("--extensions", ):
             extensions = value.split(',')
         elif opt in ("--metrics-all", ):
@@ -195,6 +199,8 @@ def main(argv):
         config.repo_logfile = logfile
     if save_logfile is not None:
         config.save_logfile = save_logfile
+    if writable_path is not None:
+        config.writable_path = writable_path
     if no_parse is not None:
         config.no_parse = no_parse
     if files is not None:
@@ -225,6 +231,11 @@ def main(argv):
         import repositoryhandler.backends
 
         repositoryhandler.backends.DEBUG = True
+
+    if config.writable_path is not None:
+        from utils import set_writable_path_from_config
+        set_writable_path_from_config('cache', config.writable_path)
+        set_writable_path_from_config('dot', config.writable_path)
 
     # Create repository
     path = uri_to_filename(uri)
