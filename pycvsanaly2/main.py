@@ -234,8 +234,20 @@ def main(argv):
 
     if config.writable_path is not None:
         from utils import set_writable_path_from_config
-        set_writable_path_from_config('cache', config.writable_path)
-        set_writable_path_from_config('dot', config.writable_path)
+
+        try:
+            set_writable_path_from_config('cache', config.writable_path)
+        except OSError, e:
+            printerr("Cannot create cache directory in %s. Error: %s" ,
+                     (config.writable_path, repr(e)))
+            return 1
+
+        try:
+            set_writable_path_from_config('dot', config.writable_path)
+        except OSError, e:
+            printerr("Cannot create .cvsanaly2 directory in %s. Error: %s",
+                     (config.writable_path, repr(e)))
+            return 1
 
     # Create repository
     path = uri_to_filename(uri)
