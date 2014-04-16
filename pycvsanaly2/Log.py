@@ -28,19 +28,21 @@ class RepoOrLogfileRequired(Exception):
 
 
 class LogReader:
-    def __init__(self, gitref=None):
+    def __init__(self):
         self.logfile = None
         self.repo = None
         self.uri = None
         self.files = None
-        self.gitref = gitref
+        self.gitref = None
 
-    def set_repo(self, repo, uri=None, files=None):
+    def set_repo(self, repo, uri=None, files=None, gitref=None):
         self.repo = repo
         if uri is not None:
             self.uri = uri
         if files is not None:
             self.files = files
+        if gitref is not None:
+            self.gitref = gitref
 
     def set_logfile(self, filename):
         self.logfile = filename
@@ -64,7 +66,11 @@ class LogReader:
             queue.put(data)
 
         repo.add_watch(LOG, new_line)
-        repo.log(self.uri or repo.get_uri(), files=self.files, gitref=self.gitref)
+
+        if repo.type == 'git':
+            repo.log(self.uri or repo.get_uri(), files=self.files, gitref=self.gitref)
+        else:
+            repo.log(self.uri or repo.get_uri(), files=self.files)
 
     def _read_from_repository(self, new_line_cb, user_data):
         queue = AsyncQueue()

@@ -260,8 +260,9 @@ def main(argv):
 
     if not config.no_parse:
         # Create reader
-        reader = LogReader(config.gitref)
-        reader.set_repo(repo, path or uri, files=config.files)
+        reader = LogReader()
+        reader.set_repo(repo, path or uri,
+                        files=config.files, gitref=config.gitref)
 
         # Create parser
         if config.repo_logfile is not None:
