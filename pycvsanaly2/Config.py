@@ -33,6 +33,7 @@ class Config:
                       'writable_path': None,
                       'no_parse': False,
                       'files' : [],
+                      'gitref' : None,
                       'db_driver': 'mysql',
                       'db_user': 'operator',
                       'db_password': None,
@@ -93,6 +94,10 @@ class Config:
             pass
         try:
             self.files.extend([item for item in config.files if item not in self.files])
+        except:
+            pass
+        try:
+            self.gitref = config.gitref
         except:
             pass
         try:
