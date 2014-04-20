@@ -57,13 +57,23 @@ class GitParser(Parser):
             self.tail.commit.branch = self.name
 
     patterns = {}
+    # commit 801c1b2511957ea99308bf0733e695cc78cd4a31 481e028bba471b788bddc53e0b925256c4585295
     patterns['commit'] = re.compile("^commit[ \t]+([^ ]+)( ([^\(]+))?( \((.*)\))?$")
+
+    # Author:     Santiago Duenas <sduenas@bitergia.com>
     patterns['author'] = re.compile("^Author:[ \t]+(.*)[ \t]+<(.*)>$")
+
+    # AuthorDate: Wed Apr 16 18:44:59 2014 +0200
     patterns['author_date'] = re.compile(
         "^AuthorDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
+
+    # Commit:     Santiago Duenas <sduenas@bitergia.com>
     patterns['committer'] = re.compile("^Commit:[ \t]+(.*)[ \t]+<(.*)>$")
+
+    # CommitDate: Wed Apr 16 18:44:59 2014 +0200
     patterns['date'] = re.compile(
         "^CommitDate: (.* [0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9][0-9][0-9][0-9]) ([+-][0-9][0-9][0-9][0-9])$")
+
     patterns['file'] = re.compile("^([MAD]+)[ \t]+(.*)$")
     patterns['file-moved'] = re.compile("^([RC])[0-9]+[ \t]+(.*)[ \t]+(.*)$")
     patterns['branch'] = re.compile("refs/remotes/origin/([^,]*)")
@@ -227,6 +237,10 @@ class GitParser(Parser):
                 *(time.strptime(match.group(1).strip(" "), "%a %b %d %H:%M:%S %Y")[0:6]))
             # datetime.datetime.strptime not supported by Python2.4
             #self.commit.date = datetime.datetime.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")
+
+            # match.group(2) represents the timezone. E.g. -0300, +0200, +0430 (Afghanistan)
+            # This string will be parsed to int and recalculated into seconds (60 * 60)
+            self.commit.date_tz = (((int(match.group(2))) * 60 * 60) / 100)
             return
 
         # Author date
@@ -236,6 +250,10 @@ class GitParser(Parser):
                 *(time.strptime(match.group(1).strip(" "), "%a %b %d %H:%M:%S %Y")[0:6]))
             # datetime.datetime.strptime not supported by Python2.4
             #self.commit.author_date = datetime.datetime.strptime (match.group (1).strip (" "), "%a %b %d %H:%M:%S %Y")
+
+            # match.group(2) represents the timezone. E.g. -0300, +0200, +0430 (Afghanistan)
+            # This string will be parsed to int and recalculated into seconds (60 * 60)
+            self.commit.author_date_tz = (((int(match.group(2))) * 60 * 60) / 100)
             return
 
         # File

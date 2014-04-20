@@ -41,7 +41,7 @@ class DBRepository:
 class DBLog:
     id_counter = 1
 
-    __insert__ = "INSERT INTO scmlog (id, rev, committer_id, author_id, date, author_date, message, composed_rev, repository_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    __insert__ = "INSERT INTO scmlog (id, rev, committer_id, author_id, date, date_tz, author_date, author_date_tz, message, composed_rev, repository_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     def __init__(self, id, commit):
         if id is None:
@@ -54,7 +54,9 @@ class DBLog:
         self.committer = None
         self.author = None
         self.date = commit.date
+        self.date_tz = commit.date_tz
         self.author_date = commit.author_date
+        self.author_date_tz = commit.author_date_tz
         self.message = to_unicode(commit.message)
         self.composed_rev = commit.composed_rev
         
@@ -405,7 +407,9 @@ class SqliteDatabase(Database):
                            "committer_id integer," +
                            "author_id integer," +
                            "date datetime," +
+                           "date_tz integer," +
                            "author_date datetime," +
+                           "author_date_tz integer," +
                            "message varchar," +
                            "composed_rev bool," +
                            "repository_id integer" +
@@ -532,7 +536,9 @@ class MysqlDatabase(Database):
                            "committer_id INT," +
                            "author_id INT," +
                            "date datetime," +
+                           "date_tz INT," +
                            "author_date datetime," +
+                           "author_date_tz INT," +
                            "message longtext," +
                            "composed_rev bool," +
                            "repository_id INT," +
