@@ -20,6 +20,7 @@
 #       Santiago Dueñas <sduenas@libresoft.es>
 
 from pycvsanaly2.Database import statement, ICursor
+from pycvsanaly2.Command import CommandError
 
 if __name__ == '__main__':
     import sys
