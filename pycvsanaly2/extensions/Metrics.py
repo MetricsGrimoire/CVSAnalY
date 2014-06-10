@@ -891,6 +891,10 @@ class Metrics(Extension):
             if file_id not in code_files:
                 continue
 
+            # Ignore actions that do not alter metric values
+            if action_type in ('D', 'V'):
+                continue
+
             failed = False
 
             if (file_id, commit_id) in metrics_failed:
