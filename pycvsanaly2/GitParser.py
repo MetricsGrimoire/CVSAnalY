@@ -162,12 +162,23 @@ class GitParser(Parser):
                 branch = self.GitBranch(self.GitBranch.LOCAL, "(no-branch)", git_commit)
                 printdbg("Commit %s on unknown local branch '%s'", (self.commit.revision, branch.name))
 
+            # This part of code looks wired at first time so here is a small description what it does:
+            #
+            # * self.branch is the branch to which the last inspected commit belonged to
+            # * branch is the branch of the current parsed commit
+            #
+            # This check is only to find branches which are fully merged into a already analyzed branch
+            #
+            # For more detailed information see https://github.com/MetricsGrimoire/CVSAnalY/issues/64
             if branch is not None and self.branch is not None:
-                # Detect empty branches. Ideally, the head of a branch
-                # can't have children. When this happens is because the
-                # branch is empty, so we just ignore such branch
+                # Detect empty branches.
+                # Ideally, the head of a branch can't have children.
+                # When this happens is because the branch is empty, so we just ignore such branch.
                 if self.branch.is_my_parent(git_commit):
-                    printout("Warning: Detected empty branch '%s', it'll be ignored", (branch.name,))
+                    printout(
+                        "Info: Branch '%s' will be ignored, because it was already merged in an active one.",
+                        (branch.name,)
+                    )
                     branch = None
 
             if len(self.branches) >= 2:
