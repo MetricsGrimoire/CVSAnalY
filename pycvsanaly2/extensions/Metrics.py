@@ -589,14 +589,14 @@ class MetricsJob(Job):
     def run(self, repo, repo_uri):
         def write_file(line, fd):
             fd.write(line)
-
+        
+        self.measures = Measures()
+        
         #skip this if self.path is None, this can happen in new versions
         if self.path is None:
             printerr("No path for file %d in commit '%s'", (self.file_id, self.rev))
             return
         
-        self.measures = Measures()
-
         repo_type = repo.get_type()
         if repo_type == 'cvs':
             # CVS paths contain the module stuff
@@ -785,7 +785,6 @@ class Metrics(Extension):
     def __insert_many(self, cursor):
         if not self.metrics:
             return
-
         cursor.executemany(statement(self.__insert__, self.db.place_holder), self.metrics)
         self.metrics = []
 
