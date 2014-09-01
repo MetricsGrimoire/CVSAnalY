@@ -88,9 +88,19 @@ learnt by running "cvsanaly2 --help"
 * Raise your `max_allowed_packet`-setting of your database (MySQL). 1 or 16 MB might be to low (depends on your repository)
 
 
-## Analysis
+## Extensions
 
-[To be written]
+You can extend CVSAnalY with various extensions. Some extenstions are delivered with the application itselfs.
+
+### Metrics
+The goal of the metrics extension is to collect various programing language related metrics like lines of code, McCabe and so on. To enable the full feature set of this extension please be sure that the following programs are installed on your system:
+
+* kdsi
+* halstead
+* mccabe
+* [PyMetrics](http://sourceforge.net/projects/pymetrics/) for Python
+* [CCCC](http://cccc.sourceforge.net/) for C and C++
+* [SLOCCount](http://www.dwheeler.com/sloccount/) for C, C++, C#, Haskell, Java, Perl, PHP, Python, etc.
 
 
 ## Improving CVSAnalY
