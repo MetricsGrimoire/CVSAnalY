@@ -221,7 +221,8 @@ def main(argv):
         config.metrics_all = metrics_all
     if metrics_noerr is not None:
         config.metrics_noerr = metrics_noerr
-    config.gitref = gitref
+    if gitref is not None:
+        config.gitref = gitref
 
     if not config.extensions and config.no_parse:
         # Do nothing!!!
