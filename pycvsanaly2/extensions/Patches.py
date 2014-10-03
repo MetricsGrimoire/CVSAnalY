@@ -67,7 +67,7 @@ class Patches(Extension):
             import _mysql_exceptions
 
             try:
-                cursor.execut("CREATE TABLE patches (" +
+                cursor.execute("CREATE TABLE patches (" +
                               "  id INT primary key," +
                               "  commit_id integer," +
                               "  patch LONGBLOB," +
